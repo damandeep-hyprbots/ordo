@@ -1,0 +1,63 @@
+/* ══════════════════════════════════════════════════════════════
+   ORDO BETA — Stripe variant (navy + purple signal)
+   Usage: <link rel="stylesheet" href="ordo-beta.css">
+          <link rel="stylesheet" href="ordo.css">
+   ══════════════════════════════════════════════════════════════ */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+[data-theme="light"] {
+  --bg:       #E8EDF5;
+  --surface:  #F0F4FB;
+  --surf2:    #F8FAFF;
+  --surf3:    #FFFFFF;
+  --line:     #C4CFDE;
+  --line-hi:  #7888A0;
+  --tx:       #0A2540;
+  --tx2:      #2D4A68;
+  --tx3:      #486888;
+  --tx4:      #5F7D98;
+  --invert:   #0A2540;
+  --invert-tx:#F0F4FB;
+  --card-shadow: 0 1px 4px rgba(10,37,64,0.08), 0 6px 16px rgba(10,37,64,0.05);
+  --card-shadow-hover: 0 6px 24px rgba(10,37,64,0.12), 0 12px 40px rgba(10,37,64,0.07);
+  --glass-rgb: 240,244,251;
+  --ascii-color: #7A5A10;
+}
+
+[data-theme="dark"] {
+  --bg:       #06101E;
+  --surface:  #0E1A2C;
+  --surf2:    #15243A;
+  --surf3:    #1C2E48;
+  --line:     #253A56;
+  --line-hi:  #3E5878;
+  --tx:       #E0E8F4;
+  --tx2:      #A8BAD0;
+  --tx3:      #7890AC;
+  --tx4:      #5E7898;
+  --invert:   #E0E8F4;
+  --invert-tx:#06101E;
+  --card-shadow: 0 2px 6px rgba(0,0,0,0.5), 0 8px 20px rgba(0,0,0,0.35);
+  --card-shadow-hover: 0 6px 28px rgba(0,0,0,0.6), 0 14px 48px rgba(0,0,0,0.4);
+  --glass-rgb: 14,26,44;
+  --ascii-color: #D4A24A;
+}
+
+:root {
+  --signal:     #635BFF;
+  --signal-hi:  #8B85FF;
+  --signal-lo:  #4840CC;
+  --amber:      #B8860B;
+  --amber-hi:   #E8AA20;
+  --danger:     #DF1B41;
+  --ok:         #0EAD69;
+
+  --font-h: 'Barlow Condensed', sans-serif;
+  --font-m: 'IBM Plex Mono', monospace;
+
+  --s1:4px;--s2:8px;--s3:12px;--s4:16px;--s5:24px;
+  --s6:32px;--s7:48px;--s8:64px;--s9:96px;--s10:128px;
+
+  --glass-blur: 8px;
+}

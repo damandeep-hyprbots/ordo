@@ -1,0 +1,63 @@
+/* ══════════════════════════════════════════════════════════════
+   ORDO DELTA — Radix Slate variant (cool slate + violet signal)
+   Usage: <link rel="stylesheet" href="ordo-delta.css">
+          <link rel="stylesheet" href="ordo.css">
+   ══════════════════════════════════════════════════════════════ */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+[data-theme="light"] {
+  --bg:       #F0F1F6;
+  --surface:  #F6F7FC;
+  --surf2:    #FBFBFF;
+  --surf3:    #FFFFFF;
+  --line:     #CDCED8;
+  --line-hi:  #7C7F90;
+  --tx:       #11131D;
+  --tx2:      #2E3148;
+  --tx3:      #50546C;
+  --tx4:      #686C82;
+  --invert:   #11131D;
+  --invert-tx:#F6F7FC;
+  --card-shadow: 0 1px 3px rgba(17,19,29,0.07), 0 5px 14px rgba(17,19,29,0.04);
+  --card-shadow-hover: 0 5px 20px rgba(17,19,29,0.11), 0 10px 36px rgba(17,19,29,0.06);
+  --glass-rgb: 246,247,252;
+  --ascii-color: #6E5C8C;
+}
+
+[data-theme="dark"] {
+  --bg:       #0C0D14;
+  --surface:  #131520;
+  --surf2:    #1C1E2E;
+  --surf3:    #26283C;
+  --line:     #32354C;
+  --line-hi:  #505470;
+  --tx:       #E8E9F2;
+  --tx2:      #B0B3C8;
+  --tx3:      #8488A4;
+  --tx4:      #6A6E88;
+  --invert:   #E8E9F2;
+  --invert-tx:#0C0D14;
+  --card-shadow: 0 2px 5px rgba(0,0,0,0.5), 0 6px 18px rgba(0,0,0,0.3);
+  --card-shadow-hover: 0 5px 22px rgba(0,0,0,0.55), 0 12px 42px rgba(0,0,0,0.38);
+  --glass-rgb: 19,21,32;
+  --ascii-color: #9080C0;
+}
+
+:root {
+  --signal:     #6E56CF;
+  --signal-hi:  #9B8AE8;
+  --signal-lo:  #5340A8;
+  --amber:      #CC7B2E;
+  --amber-hi:   #FFB224;
+  --danger:     #E54666;
+  --ok:         #46A758;
+
+  --font-h: 'Barlow Condensed', sans-serif;
+  --font-m: 'IBM Plex Mono', monospace;
+
+  --s1:4px;--s2:8px;--s3:12px;--s4:16px;--s5:24px;
+  --s6:32px;--s7:48px;--s8:64px;--s9:96px;--s10:128px;
+
+  --glass-blur: 8px;
+}

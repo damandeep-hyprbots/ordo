@@ -1,0 +1,63 @@
+/* ══════════════════════════════════════════════════════════════
+   ORDO GAMMA — Geist variant (black/white + electric blue)
+   Usage: <link rel="stylesheet" href="ordo-gamma.css">
+          <link rel="stylesheet" href="ordo.css">
+   ══════════════════════════════════════════════════════════════ */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+[data-theme="light"] {
+  --bg:       #FFFFFF;
+  --surface:  #FFFFFF;
+  --surf2:    #F5F5F5;
+  --surf3:    #FAFAFA;
+  --line:     #EBEBEB;
+  --line-hi:  #888888;
+  --tx:       #000000;
+  --tx2:      #333333;
+  --tx3:      #555555;
+  --tx4:      #717171;
+  --invert:   #000000;
+  --invert-tx:#FFFFFF;
+  --card-shadow: 0 0 0 1px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.04);
+  --card-shadow-hover: 0 0 0 1px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.08);
+  --glass-rgb: 255,255,255;
+  --ascii-color: #666666;
+}
+
+[data-theme="dark"] {
+  --bg:       #000000;
+  --surface:  #0A0A0A;
+  --surf2:    #141414;
+  --surf3:    #1E1E1E;
+  --line:     #2E2E2E;
+  --line-hi:  #555555;
+  --tx:       #EDEDED;
+  --tx2:      #A0A0A0;
+  --tx3:      #7A7A7A;
+  --tx4:      #666666;
+  --invert:   #EDEDED;
+  --invert-tx:#000000;
+  --card-shadow: 0 0 0 1px rgba(255,255,255,0.06), 0 2px 8px rgba(0,0,0,0.5);
+  --card-shadow-hover: 0 0 0 1px rgba(255,255,255,0.10), 0 4px 16px rgba(0,0,0,0.6);
+  --glass-rgb: 10,10,10;
+  --ascii-color: #505050;
+}
+
+:root {
+  --signal:     #0070F3;
+  --signal-hi:  #52A8FF;
+  --signal-lo:  #0055BB;
+  --amber:      #F5A623;
+  --amber-hi:   #FFD666;
+  --danger:     #EE0000;
+  --ok:         #50E3C2;
+
+  --font-h: 'Barlow Condensed', sans-serif;
+  --font-m: 'IBM Plex Mono', monospace;
+
+  --s1:4px;--s2:8px;--s3:12px;--s4:16px;--s5:24px;
+  --s6:32px;--s7:48px;--s8:64px;--s9:96px;--s10:128px;
+
+  --glass-blur: 8px;
+}

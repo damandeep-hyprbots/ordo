@@ -1,0 +1,1878 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ORDO ALPHA — Design System</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="ordo.css">
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">
+    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="22" y1="12" x2="18" y2="12"/>
+      <line x1="6" y1="12" x2="2" y2="12"/>
+      <line x1="12" y1="6" x2="12" y2="2"/>
+      <line x1="12" y1="18" x2="12" y2="22"/>
+    </svg>
+    ORDO
+  </div>
+  <ul class="nav-tabs">
+    <li class="active"><a href="#color">Color</a></li>
+    <li><a href="#type">Type</a></li>
+    <li><a href="#space">Space</a></li>
+    <li><a href="#comp">Components</a></li>
+    <li><a href="#motion">Motion</a></li>
+    <li><a href="#depth">Depth</a></li>
+    <li><a href="#surf">Surfaces</a></li>
+  </ul>
+
+  <button class="nav-action-btn" id="shareBtn" title="Copy shareable URL" aria-label="Copy shareable URL">
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+    SHARE
+  </button>
+  <button class="nav-action-btn" id="brandBtn" title="Brand Configurator" aria-label="Brand configurator">
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="13.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="10.5" r="2.5"/><circle cx="8.5" cy="7.5" r="2.5"/><circle cx="6.5" cy="12.5" r="2.5"/><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+    BRAND
+  </button>
+  <button class="nav-action-btn" id="exportBtn" title="Export Design Tokens" aria-label="Export design tokens">
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    EXPORT
+  </button>
+  <button class="theme-btn" id="themeBtn" title="Toggle theme" aria-label="Toggle theme">☀</button>
+</nav>
+
+<!-- HERO -->
+<div class="hero noise">
+  <div class="hero-grid" data-ascii="plasma"></div>
+  <!-- corner marks -->
+  <svg style="position:absolute;top:14px;left:14px;z-index:3;opacity:0.35" width="14" height="14"><line x1="7" y1="0" x2="7" y2="14" stroke="currentColor" stroke-width="1"/><line x1="0" y1="7" x2="14" y2="7" stroke="currentColor" stroke-width="1"/></svg>
+  <svg style="position:absolute;top:14px;right:14px;z-index:3;opacity:0.35" width="14" height="14"><line x1="7" y1="0" x2="7" y2="14" stroke="currentColor" stroke-width="1"/><line x1="0" y1="7" x2="14" y2="7" stroke="currentColor" stroke-width="1"/></svg>
+  <svg style="position:absolute;bottom:14px;left:14px;z-index:3;opacity:0.35" width="14" height="14"><line x1="7" y1="0" x2="7" y2="14" stroke="currentColor" stroke-width="1"/><line x1="0" y1="7" x2="14" y2="7" stroke="currentColor" stroke-width="1"/></svg>
+  <svg style="position:absolute;bottom:14px;right:14px;z-index:3;opacity:0.35" width="14" height="14"><line x1="7" y1="0" x2="7" y2="14" stroke="currentColor" stroke-width="1"/><line x1="0" y1="7" x2="14" y2="7" stroke="currentColor" stroke-width="1"/></svg>
+
+  <div class="hero-inner">
+    <div class="hero-left">
+      <div>
+        <h1 class="hero-title">
+          AX<span class="acc">I</span>S<br>
+          <span class="dim">DE</span>SIGN<br>
+          <span class="dim">SYS</span><span class="warn">TEM</span>
+        </h1>
+      </div>
+      <div class="hero-actions">
+        <button class="btn b-solid" onclick="ripple(event);showToast('Initializing ORDO · v1.0 · all systems nominal')">Init System</button>
+        <button class="btn b-out" onclick="ripple(event);document.getElementById('color').scrollIntoView({behavior:'smooth'})">View Docs</button>
+        <button class="btn b-ghost" onclick="ripple(event);showToast('2025-03-11 · v1.0 · initial release · 0 breaking changes')">Changelog</button>
+      </div>
+    </div>
+    <div class="hero-right">
+      <div class="stat"><span class="stat-k">Tokens</span><span class="stat-v s">148</span></div>
+      <div class="stat"><span class="stat-k">Colors</span><span class="stat-v">23</span></div>
+      <div class="stat"><span class="stat-k">Type Scale</span><span class="stat-v">8</span></div>
+      <div class="stat"><span class="stat-k">Components</span><span class="stat-v a">18</span></div>
+      <div class="stat"><span class="stat-k">Spacing</span><span class="stat-v">10</span></div>
+      <div class="stat"><span class="stat-k">Elevations</span><span class="stat-v">5</span></div>
+      <div class="stat"><span class="stat-k">Build</span><span class="stat-v sm">2025-03-11</span></div>
+      <div class="stat"><span class="stat-k">Render</span><span class="stat-v sm" id="ascii-fps">-- FPS</span></div>
+      <div class="stat"><span class="stat-k">Mode</span><span class="stat-v sm" id="ascii-mode">PLASMA</span></div>
+    </div>
+  </div>
+  <div class="ascii-modes">
+    <span class="modes-label">RENDER MODE</span>
+    <button class="mode-btn active" data-mode="plasma">PLASMA</button>
+    <button class="mode-btn"        data-mode="vortex">VORTEX</button>
+    <button class="mode-btn"        data-mode="wave">WAVE</button>
+    <button class="mode-btn"        data-mode="rain">RAIN</button>
+    <button class="mode-btn"        data-mode="pulse">PULSE</button>
+    <button class="mode-btn"        data-mode="noise">NOISE</button>
+    <button class="mode-btn"        data-mode="fire">FIRE</button>
+    <button class="mode-btn"        data-mode="fluid">FLUID</button>
+    <button class="mode-btn"        data-mode="turing">TURING</button>
+    <button class="mode-btn"        data-mode="fractal">FRACTAL</button>
+    <button class="mode-btn"        data-mode="moire">MOIRE</button>
+    <button class="mode-btn"        data-mode="lightning">LIGHTNING</button>
+  </div>
+</div>
+
+<!-- COLOR -->
+<section class="section" id="color" aria-labelledby="h-color">
+  <div class="sec-bar">
+    <div class="sec-n">01</div>
+    <div class="sec-name" id="h-color">Color Palette</div>
+    <div class="sec-meta">Click any swatch to copy</div>
+  </div>
+  <div class="sec-body">
+    <div class="color-grid-wrap" id="swatchGrid"></div>
+    <div class="accent-strip" id="accentStrip"></div>
+  </div>
+</section>
+
+<!-- TYPE -->
+<section class="section" id="type" aria-labelledby="h-type">
+  <div class="sec-bar">
+    <div class="sec-n">02</div>
+    <div class="sec-name" id="h-type">Typography</div>
+    <div class="sec-meta">Barlow Condensed · IBM Plex Mono</div>
+  </div>
+  <div class="sec-body" style="padding:0;">
+    <div class="type-list">
+
+      <div class="type-row">
+        <div class="t-meta"><span class="t-role">Display</span><span class="t-code">D</span></div>
+        <div class="t-sample"><span style="font-family:var(--font-h);font-size:76px;font-weight:900;line-height:0.88;letter-spacing:-0.02em;text-transform:uppercase;color:var(--tx)">ORDO</span></div>
+        <div class="t-attrs"><div class="attr">Size<span>76px</span></div><div class="attr">Weight<span>900</span></div><div class="attr">Track<span>−2%</span></div><div class="attr">Lead<span>0.88</span></div></div>
+      </div>
+
+      <div class="type-row">
+        <div class="t-meta"><span class="t-role">Heading 1</span><span class="t-code">H1</span></div>
+        <div class="t-sample"><span style="font-family:var(--font-h);font-size:50px;font-weight:800;line-height:1;letter-spacing:-0.01em;text-transform:uppercase;color:var(--tx)">System Design</span></div>
+        <div class="t-attrs"><div class="attr">Size<span>50px</span></div><div class="attr">Weight<span>800</span></div><div class="attr">Track<span>−1%</span></div><div class="attr">Lead<span>1.0</span></div></div>
+      </div>
+
+      <div class="type-row">
+        <div class="t-meta"><span class="t-role">Heading 2</span><span class="t-code">H2</span></div>
+        <div class="t-sample"><span style="font-family:var(--font-h);font-size:34px;font-weight:700;text-transform:uppercase;letter-spacing:0.02em;color:var(--tx)">Color Tokens</span></div>
+        <div class="t-attrs"><div class="attr">Size<span>34px</span></div><div class="attr">Weight<span>700</span></div><div class="attr">Track<span>+2%</span></div><div class="attr">Lead<span>1.1</span></div></div>
+      </div>
+
+      <div class="type-row">
+        <div class="t-meta"><span class="t-role">Label</span><span class="t-code">LB</span></div>
+        <div class="t-sample"><span style="font-family:var(--font-h);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.26em;color:var(--tx2)">Section Header — Metric Display</span></div>
+        <div class="t-attrs"><div class="attr">Size<span>13px</span></div><div class="attr">Weight<span>700</span></div><div class="attr">Track<span>+26%</span></div><div class="attr">UC<span>Yes</span></div></div>
+      </div>
+
+      <div class="type-row">
+        <div class="t-meta"><span class="t-role">Body</span><span class="t-code">BD</span></div>
+        <div class="t-sample" style="padding-top:16px;padding-bottom:16px;"><span style="font-family:var(--font-m);font-size:12px;color:var(--tx3);line-height:1.9;">Precise spatial logic defines every decision. The grid holds. The hierarchy holds. Nothing decorative — everything structural and load-bearing by design.</span></div>
+        <div class="t-attrs"><div class="attr">Size<span>12px</span></div><div class="attr">Family<span>Mono</span></div><div class="attr">Track<span>+2%</span></div><div class="attr">Lead<span>1.9</span></div></div>
+      </div>
+
+      <div class="type-row">
+        <div class="t-meta"><span class="t-role">Caption</span><span class="t-code">CP</span></div>
+        <div class="t-sample"><span style="font-family:var(--font-m);font-size:10px;color:var(--tx3);letter-spacing:0.06em;">sys.token · v1.0 · 2025-03-11 · build.stable</span></div>
+        <div class="t-attrs"><div class="attr">Size<span>10px</span></div><div class="attr">Family<span>Mono</span></div><div class="attr">Track<span>+6%</span></div><div class="attr">Lead<span>1.6</span></div></div>
+      </div>
+
+      <div class="type-row" style="border-bottom:none">
+        <div class="t-meta"><span class="t-role">Numeric</span><span class="t-code">NM</span></div>
+        <div class="t-sample" style="gap:32px;">
+          <span style="font-family:var(--font-h);font-size:58px;font-weight:800;letter-spacing:-0.02em;color:var(--signal-hi);margin-right:32px;">1,248</span>
+          <span style="font-family:var(--font-h);font-size:58px;font-weight:800;letter-spacing:-0.02em;color:var(--line-hi)">99.4%</span>
+        </div>
+        <div class="t-attrs"><div class="attr">Size<span>58px</span></div><div class="attr">Weight<span>800</span></div><div class="attr">Use<span>Data</span></div></div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- SPACING -->
+<section class="section" id="space" aria-labelledby="h-space">
+  <div class="sec-bar">
+    <div class="sec-n">03</div>
+    <div class="sec-name" id="h-space">Spacing Scale</div>
+    <div class="sec-meta">Hover to highlight · 4px base unit</div>
+  </div>
+  <div class="sec-body">
+    <div class="space-bars" id="spaceBars"></div>
+  </div>
+</section>
+
+<!-- COMPONENTS -->
+<section class="section" id="comp" aria-labelledby="h-comp">
+  <div class="sec-bar">
+    <div class="sec-n">04</div>
+    <div class="sec-name" id="h-comp">Components</div>
+    <div class="sec-meta">Buttons · Inputs · Badges · Cards</div>
+  </div>
+  <div class="sec-body" style="padding:0;">
+    <div class="comp-cols">
+      <div class="ccol">
+        <div class="clabel">Buttons <span>6 variants</span></div>
+        <button class="btn b-solid" onclick="ripple(event)">Primary Action</button>
+        <button class="btn b-out"   onclick="ripple(event)">Secondary</button>
+        <button class="btn b-sig"   onclick="ripple(event)">Signal Blue</button>
+        <button class="btn b-ghost" onclick="ripple(event)">Ghost</button>
+        <button class="btn b-amb"   onclick="ripple(event)">Warning</button>
+        <button class="btn b-err"   onclick="ripple(event)">Destructive</button>
+      </div>
+      <div class="cdiv"></div>
+
+      <div class="ccol">
+        <div class="clabel">Inputs <span>4 states</span></div>
+        <div class="igroup"><label class="ilabel">Default</label><input class="inp" type="text" placeholder="Search tokens…"></div>
+        <div class="igroup"><label class="ilabel">Focus</label><input class="inp" type="text" value="axis.token.color" style="border-color:var(--signal-hi);box-shadow:0 0 0 3px rgba(90,159,224,0.12);"></div>
+        <div class="igroup"><label class="ilabel">Error</label><input class="inp ie" type="text" value="invalid.token"></div>
+        <div class="igroup"><label class="ilabel">Disabled</label><input class="inp" type="text" value="read_only" disabled style="opacity:0.38;cursor:not-allowed;"></div>
+      </div>
+      <div class="cdiv"></div>
+
+      <div class="ccol">
+        <div class="clabel">Badges <span>6 states</span></div>
+        <div><span class="badge bd">Default</span></div>
+        <div><span class="badge bs">Active</span></div>
+        <div><span class="badge bo">Stable</span></div>
+        <div><span class="badge bw">Warning</span></div>
+        <div><span class="badge be">Error</span></div>
+        <div><span class="badge bf">Filled</span></div>
+      </div>
+    </div>
+
+    <div style="padding:var(--s5) var(--s5) 0;border-top:1px solid var(--line);">
+      <div class="clabel" style="margin-bottom:var(--s4);">Cards <span>hover to lift</span></div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--s4);padding:0 var(--s5) var(--s5);">
+      <div class="card">
+        <div class="card-top" style="background:var(--line-hi);"></div>
+        <div class="card-id">CARD-001 · default</div>
+        <div class="card-ttl">Flat Surface</div>
+        <div class="card-bd">Standard bordered card. Neutral top rule. Use for data panels and secondary content areas.</div>
+      </div>
+      <div class="card">
+        <div class="card-top" style="background:var(--signal-hi);"></div>
+        <div class="card-id">CARD-002 · signal</div>
+        <div class="card-ttl">Active State</div>
+        <div class="card-bd">Signal blue top rule indicates active or selected state — primary focus within a panel group.</div>
+      </div>
+      <div class="card">
+        <div class="card-top" style="background:var(--amber-hi);"></div>
+        <div class="card-id">CARD-003 · amber</div>
+        <div class="card-ttl">Alert State</div>
+        <div class="card-bd">Amber rule indicates degraded state, warning condition, or threshold exceeded.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MOTION -->
+<section class="section" id="motion" aria-labelledby="h-motion">
+  <div class="sec-bar">
+    <div class="sec-n">05</div>
+    <div class="sec-name" id="h-motion">Motion Tokens</div>
+    <div class="sec-meta">Hover each cell to preview · duration · easing</div>
+  </div>
+  <div class="sec-body">
+    <div class="clabel" style="margin-bottom:var(--s4);">Duration Scale <span>6 steps</span></div>
+    <div class="motion-dur-grid">
+      <div class="motion-cell"><div class="motion-track"><div class="motion-ball" style="--mdur:0ms"></div></div><span class="motion-dur-label">instant</span><span class="motion-dur-val">0ms</span><span class="motion-use">Immediate feedback</span></div>
+      <div class="motion-cell"><div class="motion-track"><div class="motion-ball" style="--mdur:75ms"></div></div><span class="motion-dur-label">micro</span><span class="motion-dur-val">75ms</span><span class="motion-use">Button press, icon swap</span></div>
+      <div class="motion-cell"><div class="motion-track"><div class="motion-ball" style="--mdur:150ms"></div></div><span class="motion-dur-label">fast</span><span class="motion-dur-val">150ms</span><span class="motion-use">Hover, tooltip</span></div>
+      <div class="motion-cell"><div class="motion-track"><div class="motion-ball" style="--mdur:300ms"></div></div><span class="motion-dur-label">base</span><span class="motion-dur-val">300ms</span><span class="motion-use">Panel, card expand</span></div>
+      <div class="motion-cell"><div class="motion-track"><div class="motion-ball" style="--mdur:500ms"></div></div><span class="motion-dur-label">slow</span><span class="motion-dur-val">500ms</span><span class="motion-use">Page transition</span></div>
+      <div class="motion-cell"><div class="motion-track"><div class="motion-ball" style="--mdur:1000ms"></div></div><span class="motion-dur-label">deliberate</span><span class="motion-dur-val">1000ms</span><span class="motion-use">Intro, hero reveal</span></div>
+    </div>
+
+    <div class="clabel" style="margin-top:var(--s6);margin-bottom:var(--s4);">Easing Curves <span>hover to animate</span></div>
+    <div class="ease-grid">
+      <div class="ease-cell"><div class="ease-track"><div class="ease-bar" style="--edur:0.5s;--eease:linear"></div></div><span class="ease-name">Linear</span><span class="ease-fn">linear</span></div>
+      <div class="ease-cell"><div class="ease-track"><div class="ease-bar" style="--edur:0.5s;--eease:ease-in"></div></div><span class="ease-name">Ease In</span><span class="ease-fn">ease-in</span></div>
+      <div class="ease-cell"><div class="ease-track"><div class="ease-bar" style="--edur:0.5s;--eease:ease-out"></div></div><span class="ease-name">Ease Out</span><span class="ease-fn">ease-out</span></div>
+      <div class="ease-cell"><div class="ease-track"><div class="ease-bar" style="--edur:0.5s;--eease:ease-in-out"></div></div><span class="ease-name">Ease In-Out</span><span class="ease-fn">ease-in-out</span></div>
+      <div class="ease-cell"><div class="ease-track"><div class="ease-bar" style="--edur:0.6s;--eease:cubic-bezier(0.34,1.56,0.64,1)"></div></div><span class="ease-name">Spring</span><span class="ease-fn">cubic-bezier(0.34,1.56,0.64,1)</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- DEPTH -->
+<section class="section" id="depth" aria-labelledby="h-depth">
+  <div class="sec-bar">
+    <div class="sec-n">06</div>
+    <div class="sec-name" id="h-depth">Depth · Radius · Shadows</div>
+    <div class="sec-meta">Hover to preview · 5 elevations · 4 radii</div>
+  </div>
+  <div class="sec-body">
+    <div class="depth-grid" style="margin-bottom:var(--s6);">
+      <div class="d-cell"><div class="d-block" style="box-shadow:none;">None</div><div class="d-lbl">Flat<br>shadow: none</div></div>
+      <div class="d-cell"><div class="d-block" style="box-shadow:0 1px 3px rgba(0,0,0,0.12);">dp1</div><div class="d-lbl">Crisp<br>1px · 0.12</div></div>
+      <div class="d-cell"><div class="d-block" style="box-shadow:0 4px 12px rgba(0,0,0,0.12),0 1px 4px rgba(0,0,0,0.06);">dp2</div><div class="d-lbl">Lift<br>4px · 0.12</div></div>
+      <div class="d-cell"><div class="d-block" style="box-shadow:0 8px 24px rgba(0,0,0,0.14),0 2px 8px rgba(0,0,0,0.08);">dp3</div><div class="d-lbl">Deep<br>8px · 0.14</div></div>
+      <div class="d-cell"><div class="d-block" style="box-shadow:3px 3px 0 var(--line-hi);">dp4</div><div class="d-lbl">Sharp<br>3px offset</div></div>
+    </div>
+    <div class="rad-row">
+      <div class="r-cell"><div class="r-sq" style="border-radius:0;"></div><span class="r-lbl">r0</span><span class="r-px">0px</span></div>
+      <div class="r-cell"><div class="r-sq" style="border-radius:2px;"></div><span class="r-lbl">r1</span><span class="r-px">2px</span></div>
+      <div class="r-cell"><div class="r-sq" style="border-radius:4px;"></div><span class="r-lbl">r2</span><span class="r-px">4px</span></div>
+      <div class="r-cell"><div class="r-sq" style="border-radius:8px;"></div><span class="r-lbl">r3</span><span class="r-px">8px</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- SURFACES -->
+<section class="section" id="surf" aria-labelledby="h-surf">
+  <div class="sec-bar">
+    <div class="sec-n">07</div>
+    <div class="sec-name" id="h-surf">Surfaces</div>
+    <div class="sec-meta">Glass · ASCII Field · Backdrop tokens</div>
+  </div>
+  <div class="sec-body">
+
+    <div class="clabel" style="margin-bottom:var(--s4);">Glass Surface <span>--glass-rgb · --glass-blur</span></div>
+    <div class="surf-grid" style="margin-bottom:var(--s6);">
+      <div class="surf-glass-demo">
+        <div class="surf-glass-panel" style="--g-alpha:0.40">rgba( <b>--glass-rgb</b>, 0.40 )</div>
+        <div class="surf-glass-sublabel">.b-ghost · subtle</div>
+      </div>
+      <div class="surf-glass-demo">
+        <div class="surf-glass-panel" style="--g-alpha:0.55">rgba( <b>--glass-rgb</b>, 0.55 )</div>
+        <div class="surf-glass-sublabel">.hero-right · panel</div>
+      </div>
+      <div class="surf-glass-demo">
+        <div class="surf-glass-panel" style="--g-alpha:0.88">rgba( <b>--glass-rgb</b>, 0.88 )</div>
+        <div class="surf-glass-sublabel">.sec-bar · sticky</div>
+      </div>
+    </div>
+
+    <div class="clabel" style="margin-bottom:var(--s4);">ASCII Field <span>--ascii-color · --ascii-opacity · data-ascii="mode"</span></div>
+    <div class="ascii-modes-grid" id="asciiModesGrid"></div>
+
+  </div>
+</section>
+
+<!-- FOOTER -->
+<div class="footer noise">
+  <div class="ft-col">
+    <div class="ft-h">System</div>
+    <div class="ft-l"><span class="k">name: </span><span class="s">"ORDO"</span></div>
+    <div class="ft-l"><span class="k">version: </span><span class="v">1.0.0</span></div>
+    <div class="ft-l"><span class="k">theme: </span><span class="s">"space-grey"</span></div>
+    <div class="ft-l"><span class="k">mode: </span><span class="v">industrial</span></div>
+    <div class="ft-l"><span class="k">status: </span><span class="ok">stable</span></div>
+  </div>
+  <div class="ft-div"></div>
+  <div class="ft-col">
+    <div class="ft-h">Fonts</div>
+    <div class="ft-l"><span class="k">display: </span><span class="s">"Barlow Condensed"</span></div>
+    <div class="ft-l"><span class="k">weights: </span><span class="v">700, 800, 900</span></div>
+    <div class="ft-l"><span class="k">mono: </span><span class="s">"IBM Plex Mono"</span></div>
+    <div class="ft-l"><span class="k">weights: </span><span class="v">300, 400, 500</span></div>
+    <div class="ft-l"><span class="k">base-size: </span><span class="v">12px</span></div>
+  </div>
+  <div class="ft-div"></div>
+  <div class="ft-col">
+    <div class="ft-h">Build</div>
+    <div class="ft-l"><span class="k">date: </span><span class="v">2025-03-11</span></div>
+    <div class="ft-l"><span class="k">tokens: </span><span class="v">148</span></div>
+    <div class="ft-l"><span class="k">grid: </span><span class="v">4px base unit</span></div>
+    <div class="ft-l"><span class="k">radius: </span><span class="v">0 / 2 / 4 / 8px</span></div>
+  </div>
+</div>
+
+<!-- EXPORT MODAL -->
+<div class="modal-backdrop" id="exportModal">
+  <div class="modal">
+    <div class="modal-header">
+      Export Tokens
+      <button class="modal-close" id="exportClose">✕ CLOSE</button>
+    </div>
+    <div class="modal-tabs">
+      <button class="modal-tab active" data-fmt="css">CSS Vars</button>
+      <button class="modal-tab" data-fmt="tailwind">Tailwind</button>
+      <button class="modal-tab" data-fmt="json">JSON</button>
+      <button class="modal-tab" data-fmt="swift">Swift</button>
+      <button class="modal-tab" data-fmt="kotlin">Kotlin</button>
+    </div>
+    <div class="modal-body">
+      <pre class="export-code" id="exportCode"></pre>
+    </div>
+    <div class="modal-footer">
+      <span class="modal-info" id="exportInfo">148 tokens · ORDO v1.0</span>
+      <button class="btn b-sig" id="exportCopy" onclick="ripple(event)">Copy to Clipboard</button>
+    </div>
+  </div>
+</div>
+
+<!-- BRAND CONFIGURATOR PANEL -->
+<div class="brand-panel" id="brandPanel">
+  <div class="brand-panel-header">
+    Brand Config
+    <button class="modal-close" id="brandClose">✕</button>
+  </div>
+  <div class="brand-panel-body">
+    <div class="brand-section-title">Brand Colors</div>
+
+    <div class="brand-row">
+      <div><div class="brand-label">Signal (Primary)</div><div class="brand-sublabel">--signal</div></div>
+      <div class="color-swatch-btn" id="sw-signal"><div class="color-swatch-preview" style="background:#3B82C4"></div><input type="color" value="#3B82C4" data-var="--signal" class="brand-color-input"></div>
+    </div>
+    <div class="brand-row">
+      <div><div class="brand-label">Amber (Warning)</div><div class="brand-sublabel">--amber</div></div>
+      <div class="color-swatch-btn" id="sw-amber"><div class="color-swatch-preview" style="background:#C4882A"></div><input type="color" value="#C4882A" data-var="--amber" class="brand-color-input"></div>
+    </div>
+    <div class="brand-row">
+      <div><div class="brand-label">Danger</div><div class="brand-sublabel">--danger</div></div>
+      <div class="color-swatch-btn" id="sw-danger"><div class="color-swatch-preview" style="background:#C43B3B"></div><input type="color" value="#C43B3B" data-var="--danger" class="brand-color-input"></div>
+    </div>
+    <div class="brand-row">
+      <div><div class="brand-label">OK (Success)</div><div class="brand-sublabel">--ok</div></div>
+      <div class="color-swatch-btn" id="sw-ok"><div class="color-swatch-preview" style="background:#3BC47A"></div><input type="color" value="#3BC47A" data-var="--ok" class="brand-color-input"></div>
+    </div>
+
+    <div class="brand-section-title">Typography</div>
+    <div style="margin-bottom:var(--s3)">
+      <div class="brand-label" style="margin-bottom:var(--s2)">Display Font</div>
+      <select class="font-select" id="fontHeadSelect">
+        <option value="'Barlow Condensed', sans-serif">Barlow Condensed</option>
+        <option value="'Inter', sans-serif">Inter</option>
+        <option value="'Space Grotesk', sans-serif">Space Grotesk</option>
+        <option value="'DM Sans', sans-serif">DM Sans</option>
+        <option value="'Outfit', sans-serif">Outfit</option>
+      </select>
+    </div>
+    <div>
+      <div class="brand-label" style="margin-bottom:var(--s2)">Mono Font</div>
+      <select class="font-select" id="fontMonoSelect">
+        <option value="'IBM Plex Mono', monospace">IBM Plex Mono</option>
+        <option value="'Fira Code', monospace">Fira Code</option>
+        <option value="'JetBrains Mono', monospace">JetBrains Mono</option>
+        <option value="'Source Code Pro', monospace">Source Code Pro</option>
+      </select>
+    </div>
+
+    <div class="brand-section-title">ASCII Color</div>
+    <div class="brand-row">
+      <div><div class="brand-label">Light mode</div><div class="brand-sublabel">--ascii-color (light)</div></div>
+      <div class="color-swatch-btn"><div class="color-swatch-preview" style="background:#B8720E"></div><input type="color" value="#B8720E" data-themevar="light-ascii" class="brand-color-input"></div>
+    </div>
+    <div class="brand-row" style="border-bottom:none">
+      <div><div class="brand-label">Dark mode</div><div class="brand-sublabel">--ascii-color (dark)</div></div>
+      <div class="color-swatch-btn"><div class="color-swatch-preview" style="background:#E8A840"></div><input type="color" value="#E8A840" data-themevar="dark-ascii" class="brand-color-input"></div>
+    </div>
+  </div>
+  <div class="brand-panel-footer">
+    <button class="btn b-sig" id="applyBrandBtn" onclick="ripple(event)" style="width:100%;justify-content:center">Apply Brand</button>
+    <button class="btn b-ghost" id="resetBrandBtn" onclick="ripple(event)" style="width:100%;justify-content:center">Reset to Default</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
+
+// ── THEME TOGGLE ──
+const btn = document.getElementById('themeBtn');
+let dark = false;
+btn.onclick = () => {
+  dark = !dark;
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  btn.textContent = dark ? '☾' : '☀';
+};
+
+// ── COLOR DATA ──
+const greys = [
+  {name:'Void',      hex:'#080809'},{name:'Obsidian',  hex:'#0F1012'},
+  {name:'Graphite',  hex:'#181A1D'},{name:'Slate 900', hex:'#222528'},
+  {name:'Slate 800', hex:'#2C2F34'},{name:'Slate 700', hex:'#3A3E45'},
+  {name:'Slate 600', hex:'#50545C'},{name:'Slate 500', hex:'#696E78'},
+  {name:'Slate 400', hex:'#888D97'},{name:'Slate 300', hex:'#A8ACB5'},
+  {name:'Slate 200', hex:'#C5C8CE'},{name:'Slate 100', hex:'#DEE0E4'},
+  {name:'Fog',       hex:'#ECEEF1'},{name:'White',     hex:'#F9FAFB'},
+];
+
+const swatchGrid = document.getElementById('swatchGrid');
+// Swatches rendered below after WCAG helpers are defined
+
+// ── ACCENT STRIP ──
+const astrip = document.getElementById('accentStrip');
+function renderAccentStrip() {
+  const cs = getComputedStyle(document.documentElement);
+  const g = v => cs.getPropertyValue(v).trim() || (typeof brandDefaults !== 'undefined' ? brandDefaults[v] : '') || '';
+  const fg = hex => {
+    const n = parseInt((hex || '#888').replace('#',''), 16);
+    return (0.299*(n>>16) + 0.587*((n>>8)&255) + 0.114*(n&255)) > 128 ? '#1a1c20' : '#fff';
+  };
+  const ac = [
+    ['Signal',    g('--signal')],    ['Signal Hi', g('--signal-hi')],
+    ['Amber',     g('--amber')],     ['Amber Hi',  g('--amber-hi')],
+    ['Danger',    g('--danger')],    ['OK',        g('--ok')],
+  ];
+  astrip.innerHTML = '';
+  ac.forEach(([n, v]) => {
+    const d = document.createElement('div');
+    d.className = 'ac-swatch';
+    d.style.cssText = `background:${v};color:${fg(v)};border-color:transparent;`;
+    d.innerHTML = `<b>${n}</b><small>${v}</small>`;
+    d.onclick = () => copyVal(v);
+    astrip.appendChild(d);
+  });
+}
+const debouncedRenderStrip = debounce(renderAccentStrip, 120);
+
+// ── SPACING BARS ──
+const spaces = [
+  {tok:'s1',px:4},{tok:'s2',px:8},{tok:'s3',px:12},{tok:'s4',px:16},
+  {tok:'s5',px:24},{tok:'s6',px:32},{tok:'s7',px:48},{tok:'s8',px:64},
+  {tok:'s9',px:96},{tok:'s10',px:128}
+];
+const sbars = document.getElementById('spaceBars');
+const maxH = 88;
+spaces.forEach(s => {
+  const h = Math.round((s.px / 128) * maxH);
+  const cell = document.createElement('div');
+  cell.className = 'sp-cell';
+  cell.innerHTML = `
+    <div class="sp-track">
+      <div class="sp-fill" style="height:${h}px;"></div>
+    </div>
+    <span class="sp-tok">${s.tok}</span>
+    <span class="sp-px">${s.px}</span>`;
+  sbars.appendChild(cell);
+});
+
+// ── RIPPLE ──
+function ripple(e) {
+  const btn = e.currentTarget;
+  const r = document.createElement('span');
+  r.className = 'ripple';
+  const rect = btn.getBoundingClientRect();
+  const size = Math.max(rect.width, rect.height);
+  r.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX-rect.left-size/2}px;top:${e.clientY-rect.top-size/2}px`;
+  btn.appendChild(r);
+  setTimeout(() => r.remove(), 600);
+}
+
+// ── TOAST ──
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.opacity = 1; t.style.transform = 'translateY(0)';
+  clearTimeout(window._tt);
+  window._tt = setTimeout(() => { t.style.opacity=0; t.style.transform='translateY(8px)'; }, 2400);
+}
+
+// ── COPY ──
+function copyVal(val) {
+  navigator.clipboard.writeText(val).then(() => {
+    const t = document.getElementById('toast');
+    t.textContent = val + ' — copied';
+    t.style.opacity = 1; t.style.transform = 'translateY(0)';
+    clearTimeout(window._tt);
+    window._tt = setTimeout(() => { t.style.opacity=0; t.style.transform='translateY(8px)'; }, 1800);
+  });
+}
+
+// ── ASCII MODES — shared render algorithms ──
+const ASCII_MODES = {
+  plasma: {
+    label: 'PLASMA',
+    ramp: '$&%B8@#WMoahkbdpq*+=~-:,. ',
+    sample(c, r, t, cols, rows) {
+      const x  = c * 0.11, y = r * 0.20;
+      const dx = (c / cols - 0.5) * cols * 0.11;
+      const dy = (r / rows - 0.55) * rows * 0.20;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const a  = Math.sin(x + t * 1.50);
+      const b  = Math.sin(y * 0.90 - t * 1.20 + Math.cos(x * 0.42 + t * 0.53) * 1.8);
+      const cc = Math.sin(dist * 0.78 - t * 1.10);
+      const d  = Math.sin(x * 0.55 + y * 0.78 + t * 0.82);
+      return (a + b + cc + d) * 0.125 + 0.5;
+    }
+  },
+  vortex: {
+    label: 'VORTEX',
+    ramp: '$&%B8@#WMoahkbdpq*+=~-:,. ',
+    sample(c, r, t, cols, rows) {
+      const dx = (c / cols - 0.5), dy = (r / rows - 0.5);
+      const dist  = Math.hypot(dx, dy);
+      const angle = Math.atan2(dy, dx);
+      const spiral = Math.sin(angle * 5 - dist * 18 + t * 2.5);
+      const radial = Math.sin(dist * 12 - t * 3.0);
+      const ring   = Math.sin(dist * 25 - t * 1.8) * 0.4;
+      return (spiral * 0.5 + radial * 0.3 + ring * 0.2) * 0.5 + 0.5;
+    }
+  },
+  wave: {
+    label: 'WAVE',
+    ramp: '≈~WMHoahkbdpq*+=−-:,. ',
+    sample(c, r, t, cols, rows) {
+      const x = c / cols, y = r / rows;
+      const w1 = Math.sin(x * 22 - t * 2.1 + Math.sin(y * 9 + t * 0.6) * 1.6);
+      const w2 = Math.sin((x + y) * 15 - t * 1.7);
+      const w3 = Math.sin(x * 8 + y * 6 - t * 0.9) * 0.5;
+      return (w1 + w2 + w3) / 3 * 0.5 + 0.5;
+    }
+  },
+  rain: {
+    label: 'RAIN',
+    ramp: '01@BqkdpWM#$%&*+=-~:,. ',
+    _splashes: null,
+    _prevMx: 0.5, _prevMy: 0.5,
+    sample(c, r, t, cols, rows) {
+      // Mouse repulsion: rain bends away from cursor
+      const mx = _heroMx * cols, my = _heroMy * rows;
+      const dxm = c - mx, dym = r - my;
+      const mdist = Math.sqrt(dxm * dxm + dym * dym);
+      const repelR = Math.min(cols, rows) * 0.18;
+      let cOff = 0;
+      if (mdist < repelR) {
+        const w = (1 - mdist / repelR);
+        cOff = dxm * w * 3.5;
+      }
+      const vc = c + cOff;
+
+      // Multiple rain layers at different speeds/densities
+      let v = 0.015;
+      const layers = [
+        { scale: 1.0,  sp: 0.3,  trail: 0.55, seed1: 127.1, seed2: 43.1 },
+        { scale: 0.5,  sp: 0.45, trail: 0.35, seed1: 83.7,  seed2: 97.3 },
+        { scale: 0.3,  sp: 0.6,  trail: 0.2,  seed1: 211.3, seed2: 157.9 },
+      ];
+      for (const l of layers) {
+        const sp = l.sp + (Math.sin(vc * l.seed1 + 311.7) * 43758.5 % 1 + 1) % 1 * 1.2;
+        const ph = (Math.sin(vc * l.seed2 + 71.3) * 43758.5 % 1 + 1) % 1 * rows;
+        const lead = (t * sp * rows * 0.25 + ph) % (rows * 1.4);
+        const d = lead - r;
+        if (d >= 0 && d <= rows * l.trail) {
+          v += Math.exp(-d * 8 / rows) * l.scale * 0.7;
+        }
+      }
+
+      // Splash rings at ground near cursor
+      const groundY = rows - 1;
+      if (r > groundY - 4) {
+        const splashD = Math.abs(c - mx);
+        if (splashD < repelR * 1.5) {
+          const ripple = Math.sin(splashD * 1.2 - t * 6) * 0.5 + 0.5;
+          const fadeY = 1 - (groundY - r) / 4;
+          v += ripple * fadeY * 0.3 * Math.exp(-splashD / (repelR * 0.8));
+        }
+      }
+
+      // Wind sway based on mouse horizontal velocity
+      const windV = Math.sin(t * 0.7 + r * 0.15) * 0.04;
+      v += windV;
+
+      return Math.max(0, Math.min(1, v));
+    }
+  },
+  pulse: {
+    label: 'PULSE',
+    ramp: '$&%B8@#WMoahkbdpq*+=~-:,. ',
+    sample(c, r, t, cols, rows) {
+      const dx = (c / cols - 0.5) * 2, dy = (r / rows - 0.5) * 2;
+      const dist  = Math.hypot(dx, dy);
+      const ring1 = Math.sin(dist * 14 - t * 2.8);
+      const ring2 = Math.sin(dist * 7  - t * 1.9) * 0.5;
+      const spoke = Math.sin(Math.atan2(dy, dx) * 8 + t * 0.6) * 0.2;
+      return (ring1 + ring2 + spoke) / 2.7 * 0.5 + 0.5;
+    }
+  },
+  noise: {
+    label: 'NOISE',
+    ramp: '$&%B8@#WMoahkbdpq*+=~-:,. ',
+    sample(c, r, t, cols, rows) {
+      const x = c * 0.08, y = r * 0.14;
+      const wx = x + 1.7 * Math.sin(0.5 * y + t * 0.4);
+      const wy = y + 1.7 * Math.sin(0.5 * x + t * 0.3);
+      const n1 = Math.sin(wx * 1.1 + wy * 0.9 + t * 0.7);
+      const n2 = Math.sin(wx * 2.3 - wy * 1.7 + t * 1.1) * 0.5;
+      const n3 = Math.sin(wx * 0.7 + wy * 2.1 - t * 0.8) * 0.25;
+      return (n1 + n2 + n3) / 1.75 * 0.5 + 0.5;
+    }
+  },
+
+  // ── NEW MODES ──
+
+  fire: {
+    label: 'WILDFIRE',
+    ramp: ' `.,:;\'~*+=x$#%@█',
+    _g: null, _cols: 0, _rows: 0,
+    _embers: null, _t: 0,
+    _hotspots: null, _flareT: 0, _flareCol: 0,
+    // Compact hash-based smooth noise (no deps)
+    _h(n) { const s = Math.sin(n) * 43758.5453; return s - Math.floor(s); },
+    _n3(x, y, z) {
+      const h = this._h;
+      const ix = Math.floor(x), iy = Math.floor(y), iz = Math.floor(z);
+      const fx = x - ix, fy = y - iy, fz = z - iz;
+      const sx = fx*fx*(3-2*fx), sy = fy*fy*(3-2*fy), sz = fz*fz*(3-2*fz);
+      const a = h(ix + iy*57 + iz*113);
+      const b = h(ix+1 + iy*57 + iz*113);
+      const c = h(ix + (iy+1)*57 + iz*113);
+      const d = h(ix+1 + (iy+1)*57 + iz*113);
+      const e = h(ix + iy*57 + (iz+1)*113);
+      const f = h(ix+1 + iy*57 + (iz+1)*113);
+      const g = h(ix + (iy+1)*57 + (iz+1)*113);
+      const hh = h(ix+1 + (iy+1)*57 + (iz+1)*113);
+      const x1 = a + sx*(b-a), x2 = c + sx*(d-c);
+      const x3 = e + sx*(f-e), x4 = g + sx*(hh-g);
+      const y1 = x1 + sy*(x2-x1), y2 = x3 + sy*(x4-x3);
+      return y1 + sz*(y2-y1);
+    },
+    // Fractal noise: 3 octaves
+    _fbm(x, y, z) {
+      return this._n3(x, y, z) * 0.6
+           + this._n3(x*2.1, y*2.1, z*2.1) * 0.3
+           + this._n3(x*4.3, y*4.3, z*4.3) * 0.1;
+    },
+    tick(dt, cols, rows) {
+      if (this._cols !== cols || this._rows !== rows) {
+        this._cols = cols; this._rows = rows;
+        this._g = new Float32Array(cols * rows);
+        this._embers = Array.from({ length: 30 }, () => ({
+          x: Math.random() * cols, y: rows - 1,
+          vx: 0, vy: -(2 + Math.random() * 3),
+          life: Math.random(), bright: 0.6 + Math.random() * 0.4
+        }));
+        this._hotspots = [
+          { x: cols * 0.2, phase: 0, width: cols * 0.12, speed: 0.31 },
+          { x: cols * 0.5, phase: 1.7, width: cols * 0.15, speed: 0.23 },
+          { x: cols * 0.8, phase: 3.5, width: cols * 0.11, speed: 0.37 },
+          { x: cols * 0.35, phase: 5.1, width: cols * 0.09, speed: 0.29 },
+        ];
+        this._flareT = 2; this._flareCol = cols * 0.5;
+      }
+      this._t += dt;
+      const g = this._g, t = this._t;
+
+      // ── Wind: mouse + slow organic sway ──
+      const wind = Math.sin(t * 0.4) * 0.8 + Math.sin(t * 1.1) * 0.3
+                 + (_heroMx - 0.5) * 3.0;
+
+      // ── Drift hotspots with noise ──
+      for (const hs of this._hotspots) {
+        hs.x += Math.sin(t * hs.speed + hs.phase) * dt * cols * 0.04;
+        hs.x = Math.max(cols * 0.05, Math.min(cols * 0.95, hs.x));
+      }
+
+      // ── Flare-ups: periodic intense bursts ──
+      this._flareT -= dt;
+      let flareHeat = 0, flareX = this._flareCol;
+      if (this._flareT <= 0) {
+        this._flareT = 1.5 + Math.random() * 3;
+        this._flareCol = cols * 0.1 + Math.random() * cols * 0.8;
+      }
+      if (this._flareT > this._flareT - 0.5 && this._flareT < 1.5 + 3) {
+        flareHeat = 0.4;
+      }
+
+      // ── Propagate fire upward with noise-displaced source lookup ──
+      for (let r = 0; r < rows - 1; r++) {
+        const hf = r / rows; // 0 at top approach, 1 near base
+        const heightFade = 1 - hf;
+        for (let c = 0; c < cols; c++) {
+          // Coherent noise displacement (the key technique)
+          const nx = c * 0.08, ny = (r + t * 4) * 0.12;
+          const dx = this._fbm(nx, ny, t * 0.6) * 4 - 2;       // lateral turbulence
+          const dy = this._fbm(nx + 50, ny + 50, t * 0.5) * 0.8; // vertical perturbation
+          // Wind bends flames more at top
+          const windOff = wind * heightFade * 1.5;
+          const srcC = Math.max(0, Math.min(cols - 1, c + dx + windOff));
+          const srcR = Math.min(rows - 1, r + 1 + dy);
+          // Bilinear sample from source
+          const c0 = Math.floor(srcC), c1 = Math.min(c0 + 1, cols - 1);
+          const r0 = Math.floor(srcR), r1 = Math.min(r0 + 1, rows - 1);
+          const fc = srcC - c0, fr = srcR - r0;
+          const val = g[r0*cols+c0]*(1-fc)*(1-fr) + g[r0*cols+c1]*fc*(1-fr)
+                    + g[r1*cols+c0]*(1-fc)*fr      + g[r1*cols+c1]*fc*fr;
+          // Cooling: noise-modulated (creates dark voids and bright channels)
+          const coolNoise = this._fbm(c * 0.06, r * 0.1, t * 0.3 + 100);
+          const cooling = 0.03 + coolNoise * 0.04 + heightFade * 0.02;
+          g[r * cols + c] = Math.max(0, val - cooling);
+        }
+      }
+
+      // ── Seed base heat: distinct hotspot peaks with dark gaps ──
+      for (let c = 0; c < cols; c++) {
+        // Dark ambient base — most columns are NOT fully lit
+        let heat = 0.15 + this._fbm(c * 0.12, t * 0.9, 0) * 0.25;
+        // Each hotspot creates a distinct Gaussian tongue root
+        for (const hs of this._hotspots) {
+          const d = c - hs.x;
+          const pulse = 0.7 + 0.3 * Math.sin(t * 2.3 + hs.phase);
+          heat = Math.max(heat, pulse * Math.exp(-(d * d) / (2 * hs.width * hs.width)));
+        }
+        // Flare burst
+        const fd = c - flareX;
+        heat += flareHeat * Math.exp(-(fd * fd) / (2 * cols * 0.8));
+        // Mouse intensification: bright tongue below cursor
+        const md = Math.abs(c / cols - _heroMx);
+        heat += Math.exp(-md * 8) * 0.4;
+        g[(rows-1)*cols+c] = Math.min(1, heat);
+        // Second fuel row for taller base
+        if (rows > 2) g[(rows-2)*cols+c] = Math.max(g[(rows-2)*cols+c], heat * 0.7);
+      }
+
+      // ── Embers: sparse bright rising streaks ──
+      for (const em of this._embers) {
+        em.vy -= 0.3 * dt;
+        em.vx += wind * dt * 0.5 + (Math.random() - 0.5) * dt * 2;
+        em.life -= dt * 0.35;
+        em.x += em.vx * dt * 15;
+        em.y += em.vy * dt * 15;
+        if (em.life <= 0 || em.y < -2 || em.x < -4 || em.x >= cols + 4) {
+          // Respawn from a random hotspot
+          const hs = this._hotspots[Math.floor(Math.random() * this._hotspots.length)];
+          em.x = hs.x + (Math.random() - 0.5) * hs.width * 2;
+          em.y = rows - 1;
+          em.vx = (Math.random() - 0.5) * 1.5;
+          em.vy = -(1.5 + Math.random() * 3);
+          em.life = 0.4 + Math.random() * 0.6;
+          em.bright = 0.6 + Math.random() * 0.4;
+        }
+        const ex = Math.floor(em.x), ey = Math.floor(em.y);
+        if (ex >= 0 && ex < cols && ey >= 0 && ey < rows) {
+          // Gaussian splat: 3x1 vertical for streak effect
+          const v = em.life * em.bright;
+          g[ey*cols+ex] = Math.max(g[ey*cols+ex], v);
+          if (ey > 0) g[(ey-1)*cols+ex] = Math.max(g[(ey-1)*cols+ex], v * 0.5);
+          if (ey < rows-1) g[(ey+1)*cols+ex] = Math.max(g[(ey+1)*cols+ex], v * 0.3);
+        }
+      }
+    },
+    sample(c, r, t, cols, rows) {
+      if (!this._g) return 0;
+      const v = this._g[r * cols + c];
+      // Gamma curve: darken most of the fire, make bright cores pop
+      const g = Math.pow(v, 1.6);
+      // Edge flicker: cells with low brightness get extra jitter
+      const jitter = v > 0.02 && v < 0.25
+        ? (this._h(c * 13.7 + r * 91.1 + t * 67) - 0.5) * 0.15
+        : 0;
+      return Math.max(0, Math.min(1, g + jitter));
+    }
+  },
+
+  fluid: {
+    label: 'FLUID',
+    ramp: ' .,:+=*#@█',
+    _D: null, _D2: null, _vx: null, _vy: null,
+    _cols: 0, _rows: 0, _pmx: 0.5, _pmy: 0.5,
+    tick(dt, cols, rows) {
+      if (this._cols !== cols || this._rows !== rows) {
+        this._cols = cols; this._rows = rows;
+        const N = cols * rows;
+        this._D  = new Float32Array(N);
+        this._D2 = new Float32Array(N);
+        this._vx = new Float32Array(N);
+        this._vy = new Float32Array(N);
+        this._pmx = _heroMx; this._pmy = _heroMy;
+      }
+      const D = this._D, D2 = this._D2, vx = this._vx, vy = this._vy;
+      // Mouse velocity injection
+      const dvx = (_heroMx - this._pmx) * cols * 40;
+      const dvy = (_heroMy - this._pmy) * rows * 40;
+      this._pmx = _heroMx; this._pmy = _heroMy;
+      const mx = _heroMx * cols, my = _heroMy * rows;
+      const rad = Math.max(cols, rows) * 0.09;
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const dist = Math.hypot(c - mx, r - my);
+          if (dist < rad) {
+            const w = 1 - dist / rad;
+            D[r * cols + c]  += w * dt * 2.5;
+            vx[r * cols + c] += dvx * w * dt;
+            vy[r * cols + c] += dvy * w * dt;
+          }
+        }
+      }
+      // Add ambient curl turbulence
+      const tt = performance.now() * 0.0006;
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const i = r * cols + c;
+          vx[i] += Math.sin(r * 0.18 - tt * 0.7 + c * 0.05) * dt * 1.2;
+          vy[i] += Math.cos(c * 0.14 + tt * 0.5 - r * 0.07) * dt * 1.2;
+        }
+      }
+      // Semi-Lagrangian advection of density
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const i = r * cols + c;
+          const sc = Math.max(0, Math.min(cols - 1, c - vx[i] * dt * 0.5));
+          const sr = Math.max(0, Math.min(rows - 1, r - vy[i] * dt * 0.5));
+          const c0 = Math.floor(sc), c1 = Math.min(c0 + 1, cols - 1);
+          const r0 = Math.floor(sr), r1 = Math.min(r0 + 1, rows - 1);
+          const tw = sc - c0, th = sr - r0;
+          D2[i] = D[r0*cols+c0]*(1-tw)*(1-th) + D[r0*cols+c1]*tw*(1-th)
+                + D[r1*cols+c0]*(1-tw)*th      + D[r1*cols+c1]*tw*th;
+        }
+      }
+      // Decay and copy back
+      for (let i = 0, N = cols * rows; i < N; i++) {
+        D[i]  = Math.min(1, D2[i] * 0.975);
+        vx[i] *= 0.96;
+        vy[i] *= 0.96;
+      }
+    },
+    sample(c, r, t, cols, rows) {
+      return this._D ? this._D[r * cols + c] : 0;
+    }
+  },
+
+  turing: {
+    label: 'TURING',
+    ramp: ' .,:;+=xX$&#@█',
+    _U: null, _V: null, _U2: null, _V2: null,
+    _cols: 0, _rows: 0,
+    tick(dt, cols, rows) {
+      if (this._cols !== cols || this._rows !== rows) {
+        this._cols = cols; this._rows = rows;
+        const N = cols * rows;
+        this._U  = new Float32Array(N).fill(1);
+        this._V  = new Float32Array(N);
+        this._U2 = new Float32Array(N);
+        this._V2 = new Float32Array(N);
+        // Seed random patches of V
+        for (let i = 0; i < N * 0.03; i++) {
+          const c = Math.floor(Math.random() * cols);
+          const r = Math.floor(Math.random() * rows);
+          const idx = r * cols + c;
+          this._U[idx] = 0.5; this._V[idx] = 0.25;
+        }
+      }
+      const U = this._U, V = this._V, U2 = this._U2, V2 = this._V2;
+      // Mouse injects V activator
+      const mx = Math.floor(_heroMx * cols);
+      const my = Math.floor(_heroMy * rows);
+      const mrad = Math.max(2, Math.floor(Math.min(cols, rows) * 0.05));
+      for (let dr = -mrad; dr <= mrad; dr++) {
+        for (let dc = -mrad; dc <= mrad; dc++) {
+          const r = my + dr, c = mx + dc;
+          if (r >= 0 && r < rows && c >= 0 && c < cols) {
+            const i = r * cols + c;
+            U[i] = Math.max(0, U[i] - 0.05);
+            V[i] = Math.min(1, V[i] + 0.05);
+          }
+        }
+      }
+      // Gray-Scott reaction-diffusion — 40 steps per frame for fast evolution
+      const Du = 0.21, Dv = 0.105, f = 0.055, k = 0.062;
+      for (let step = 0; step < 40; step++) {
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            const i = r * cols + c;
+            const l = c > 0         ? i - 1         : i;
+            const ri = c < cols - 1 ? i + 1         : i;
+            const u2 = r > 0         ? i - cols      : i;
+            const d  = r < rows - 1  ? i + cols      : i;
+            const lapU = U[l] + U[ri] + U[u2] + U[d] - 4 * U[i];
+            const lapV = V[l] + V[ri] + V[u2] + V[d] - 4 * V[i];
+            const uvv  = U[i] * V[i] * V[i];
+            U2[i] = Math.max(0, Math.min(1, U[i] + Du * lapU - uvv + f * (1 - U[i])));
+            V2[i] = Math.max(0, Math.min(1, V[i] + Dv * lapV + uvv - (f + k) * V[i]));
+          }
+        }
+        U.set(U2); V.set(V2);
+      }
+    },
+    sample(c, r, t, cols, rows) {
+      return this._V ? this._V[r * cols + c] : 0;
+    }
+  },
+
+  fractal: {
+    label: 'FRACTAL',
+    ramp: ' .:-=+*#%@$',
+    sample(c, r, t, cols, rows) {
+      // Julia set — mouse X/Y continuously morph the c parameter
+      const cx = (_heroMx - 0.5) * 1.5 + Math.sin(t * 0.07) * 0.05;
+      const cy = (_heroMy - 0.5) * 1.5 + Math.cos(t * 0.05) * 0.05;
+      // Aspect-correct mapping to complex plane
+      const aspect = cols / rows / 2.2;
+      const zr0 = (c / cols - 0.5) * 3.2;
+      const zi0 = (r / rows - 0.5) * 3.2 / aspect;
+      let zr = zr0, zi = zi0;
+      const maxIter = 48;
+      let i = 0;
+      while (i < maxIter && zr * zr + zi * zi < 4) {
+        const tmp = zr * zr - zi * zi + cx;
+        zi = 2 * zr * zi + cy;
+        zr = tmp;
+        i++;
+      }
+      // Smooth escape-time colouring
+      if (i === maxIter) return 1.0;
+      const log2 = Math.log(2);
+      const smooth = i - Math.log(Math.log(zr*zr+zi*zi) / 2 / log2) / log2;
+      return Math.max(0, Math.min(1, smooth / maxIter));
+    }
+  },
+
+  moire: {
+    label: 'MOIRE',
+    ramp: ' .:;=+*#@█',
+    sample(c, r, t, cols, rows) {
+      const x = (c / cols - 0.5) * 2;
+      const y = (r / rows - 0.5) * 2;
+      // Mouse X = rotation angle, Mouse Y = frequency
+      const theta = _heroMx * Math.PI * 2;
+      const freq  = 6 + _heroMy * 22;
+      const phi   = Math.PI / 3 + t * 0.08;  // slow angular drift
+      const g1 = Math.sin(freq * (x * Math.cos(theta)       + y * Math.sin(theta)));
+      const g2 = Math.sin(freq * (x * Math.cos(theta + phi) + y * Math.sin(theta + phi)));
+      return g1 * g2 * 0.5 + 0.5;
+    }
+  },
+
+  lightning: {
+    label: 'LIGHTNING',
+    ramp: ' .:;=+*#@▓█',
+    _g: null, _cols: 0, _rows: 0, _next: 0, _flash: 0,
+    _restrikes: null,
+    tick(dt, cols, rows) {
+      if (this._cols !== cols || this._rows !== rows) {
+        this._cols = cols; this._rows = rows;
+        this._g = new Float32Array(cols * rows);
+        this._next = 0; this._flash = 0;
+        this._restrikes = [];
+      }
+      const g = this._g;
+
+      // ── Shimmer decay: per-cell random rate so channels fizz/crackle ──
+      for (let i = 0, N = cols * rows; i < N; i++) {
+        if (g[i] > 0.005) g[i] *= 0.74 + Math.random() * 0.18;
+        else g[i] = 0;
+      }
+      this._flash *= 0.70;
+
+      // ── Corona paint ──
+      const paint = (x, y, I) => {
+        if (x < 0 || x >= cols || y < 0 || y >= rows) return;
+        const idx = y * cols + x;
+        g[idx] = Math.max(g[idx], I);
+        const c1 = [[-1,0],[1,0],[0,-1],[0,1]];
+        const c2 = [[-2,0],[2,0],[0,-2],[0,2],[-1,-1],[1,-1],[-1,1],[1,1]];
+        for (const [dx,dy] of c1) {
+          const nx=x+dx,ny=y+dy;
+          if(nx>=0&&nx<cols&&ny>=0&&ny<rows) g[ny*cols+nx]=Math.max(g[ny*cols+nx],I*0.48);
+        }
+        for (const [dx,dy] of c2) {
+          const nx=x+dx,ny=y+dy;
+          if(nx>=0&&nx<cols&&ny>=0&&ny<rows) g[ny*cols+nx]=Math.max(g[ny*cols+nx],I*0.20);
+        }
+      };
+
+      // ── Process re-strikes (authentic multi-stroke lightning) ──
+      for (let i = this._restrikes.length - 1; i >= 0; i--) {
+        const rs = this._restrikes[i];
+        rs.delay -= dt;
+        if (rs.delay <= 0) {
+          const I = [0.95, 0.72, 0.45][rs.stroke] ?? 0;
+          if (I > 0) { for (const [px,py] of rs.path) paint(px, py, I); }
+          this._flash = Math.max(this._flash, I * 0.65);
+          rs.stroke++;
+          if (rs.stroke >= 3) this._restrikes.splice(i, 1);
+          else rs.delay = 0.04 + Math.random() * 0.09;
+        }
+      }
+
+      // ── New strike ──
+      this._next -= dt;
+      if (this._next > 0) return;
+      this._next = 0.38 + Math.random() * 0.72;   // dramatic pause between strikes
+      this._flash = 0.88 + Math.random() * 0.12;
+
+      const rv = Math.random();
+      const strikes = rv < 0.52 ? 1 : rv < 0.84 ? 2 : 3;
+
+      for (let s = 0; s < strikes; s++) {
+        const tx = Math.floor(_heroMx * cols);
+        const ty = Math.floor(_heroMy * rows);
+        const bt = Math.random();
+        let sx, sy, ex, ey;
+        if (bt < 0.62) {
+          // Cloud-to-ground: most common
+          sx = Math.floor(cols * 0.05 + Math.random() * cols * 0.9); sy = 0;
+          ex = tx; ey = ty;
+        } else if (bt < 0.82) {
+          // Cloud-to-cloud: horizontal arc near top
+          sx = Math.floor(Math.random() * cols); sy = Math.floor(Math.random() * rows * 0.08);
+          ex = Math.floor(Math.random() * cols); ey = Math.floor(Math.random() * rows * 0.08);
+        } else {
+          // Ground-up: rare, dramatic
+          sx = Math.floor(cols * 0.05 + Math.random() * cols * 0.9); sy = rows - 1;
+          ex = tx; ey = 0;
+        }
+
+        const trunk = [];
+        const stepSign = ey >= sy ? 1 : -1;
+        const stack = [{ x: sx, y: sy, I: 1.0, tr: true }];
+        let budget = 3500;
+
+        while (stack.length && budget-- > 0) {
+          const { x, y, I, tr } = stack.pop();
+          if (x < 0 || x >= cols || y < 0 || y >= rows || I < 0.018) continue;
+          paint(x, y, I);
+          if (tr) trunk.push([x, y]);
+          if (Math.abs(x - ex) < 3 && Math.abs(y - ey) < 3) continue;
+
+          // Heavy lateral jitter → authentic jagged geometry
+          const dx = ex - x, dy = ey - y;
+          const dist = Math.hypot(dx, dy) || 1;
+          const jx = (Math.random() - 0.5) * cols * 0.22;
+          const nx = Math.round(x + (dx / dist) * 2 + jx);
+          const ny = y + stepSign;
+          stack.push({ x: nx, y: ny, I: I * 0.93, tr });
+
+          // Dense fractal branching — wilder than before
+          if (Math.random() < 0.65 && I > 0.06) {
+            stack.push({ x: x + Math.round((Math.random()-0.5)*20), y: y + stepSign, I: I * 0.60, tr: false });
+          }
+          if (Math.random() < 0.32 && I > 0.10) {
+            stack.push({ x: x + Math.round((Math.random()-0.5)*32), y: y + stepSign * Math.ceil(Math.random()*3), I: I * 0.40, tr: false });
+          }
+        }
+
+        // Queue 2 re-strikes along saved trunk
+        if (trunk.length > 4) {
+          this._restrikes.push({ path: trunk, stroke: 0, delay: 0.06 + Math.random() * 0.1 });
+        }
+      }
+    },
+    sample(c, r, t, cols, rows) {
+      if (!this._g) return 0;
+      return Math.min(1, (this._g[r * cols + c] || 0) + this._flash * 0.18);
+    }
+  },
+};
+
+// ── ASCII CANVAS FACTORY ──
+// Usage: createAsciiCanvas(containerEl, { mode, fpsEl, modeEl })
+// Or declaratively: add data-ascii="mode" to any element
+function createAsciiCanvas(container, { mode = 'plasma', fpsEl = null, modeEl = null } = {}) {
+  const CW = 5.4, LH = 9.9;
+  const el = document.createElement('div');
+  el.className = 'ascii-bg';
+  container.prepend(el);
+
+  let cols = 0, rows = 0, t = 0, lastTs = performance.now(), smoothFps = 60;
+  let activeMode = ASCII_MODES[mode] ? mode : 'plasma';
+  let modeInstance = Object.create(ASCII_MODES[activeMode]);
+
+  function setMode(id) {
+    if (!ASCII_MODES[id]) return;
+    activeMode = id;
+    modeInstance = Object.create(ASCII_MODES[id]);
+    if (modeEl) modeEl.textContent = ASCII_MODES[id].label;
+  }
+
+  function resize() {
+    cols = Math.ceil((container.offsetWidth  || window.innerWidth) / CW);
+    rows = Math.ceil((container.offsetHeight || 340) / LH);
+  }
+
+  function frame(ts) {
+    const dt = Math.min((ts - lastTs) / 1000, 0.05);
+    lastTs = ts;
+    t += dt;
+    smoothFps = smoothFps * 0.93 + (dt > 0 ? 1 / dt : 60) * 0.07;
+    if (fpsEl) fpsEl.textContent = Math.round(smoothFps) + ' FPS';
+
+    const m = modeInstance;
+    if (m.tick) m.tick(dt, cols, rows);
+    const ramp = m.ramp, rl = ramp.length - 1;
+    const lines = [];
+    for (let r = 0; r < rows; r++) {
+      let line = '';
+      for (let c = 0; c < cols; c++) {
+        const v = Math.max(0, Math.min(1, m.sample(c, r, t, cols, rows)));
+        line += ramp[Math.floor(v * rl)];
+      }
+      lines.push(line);
+    }
+    el.textContent = lines.join('\n');
+    requestAnimationFrame(frame);
+  }
+
+  resize();
+  new ResizeObserver(resize).observe(container);
+  requestAnimationFrame(frame);
+
+  return { setMode };
+}
+
+// ── HERO ASCII INSTANCE ──
+const heroGrid = document.querySelector('.hero-grid[data-ascii]');
+if (heroGrid) {
+  const heroAscii = createAsciiCanvas(heroGrid, {
+    mode: heroGrid.dataset.ascii,
+    fpsEl: document.getElementById('ascii-fps'),
+    modeEl: document.getElementById('ascii-mode'),
+  });
+  document.querySelectorAll('.mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      heroAscii.setMode(btn.dataset.mode);
+      document.querySelectorAll('.mode-btn').forEach(b =>
+        b.classList.toggle('active', b === btn));
+    });
+  });
+}
+
+// ── AUTO-INIT: data-ascii on any element ──
+document.querySelectorAll('[data-ascii]:not(.hero-grid):not(.ascii-mode-cell)').forEach(el => {
+  createAsciiCanvas(el, { mode: el.dataset.ascii });
+});
+
+// ── AUTO-POPULATE ASCII MODES GRID ──
+function renderAsciiModesGrid() {
+  const grid = document.getElementById('asciiModesGrid');
+  if (!grid) return;
+  const modes = Object.keys(ASCII_MODES);
+  const total = modes.length;
+  const cols = total <= 6 ? total : Math.ceil(total / Math.ceil(total / 6));
+  grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+  grid.innerHTML = '';
+  modes.forEach((mode, i) => {
+    const cell = document.createElement('div');
+    cell.className = 'ascii-mode-cell';
+    cell.dataset.ascii = mode;
+    const label = document.createElement('div');
+    label.className = 'ascii-mode-label';
+    label.textContent = mode;
+    cell.appendChild(label);
+    if ((i + 1) % cols === 0 || i === total - 1) cell.style.borderRight = 'none';
+    grid.appendChild(cell);
+    createAsciiCanvas(cell, { mode });
+  });
+}
+renderAsciiModesGrid();
+
+
+// ── WCAG CONTRAST ──
+function getLuminance(hex) {
+  const c = parseInt(hex.replace('#',''), 16);
+  return [c>>16&255, c>>8&255, c&255].reduce((lum, ch, i) => {
+    ch /= 255;
+    ch = ch <= 0.03928 ? ch / 12.92 : Math.pow((ch+0.055)/1.055, 2.4);
+    return lum + ch * [0.2126, 0.7152, 0.0722][i];
+  }, 0);
+}
+function contrastRatio(h1, h2) {
+  const l1 = getLuminance(h1), l2 = getLuminance(h2);
+  return (Math.max(l1,l2)+0.05) / (Math.min(l1,l2)+0.05);
+}
+function wcagChips(hex) {
+  const onW = contrastRatio(hex,'#FFFFFF'), onB = contrastRatio(hex,'#000000');
+  const best = onW >= onB ? {ratio:onW,label:'on White'} : {ratio:onB,label:'on Black'};
+  const r = best.ratio, l = best.label;
+  const chips = [];
+  if (r >= 7)        chips.push(`<span class="wcag-chip wcag-pass">AAA ${r.toFixed(1)}</span>`);
+  else if (r >= 4.5) chips.push(`<span class="wcag-chip wcag-pass">AA ${r.toFixed(1)}</span>`);
+  else if (r >= 3)   chips.push(`<span class="wcag-chip wcag-warn">AA-LG ${r.toFixed(1)}</span>`);
+  else               chips.push(`<span class="wcag-chip wcag-fail">✕ ${r.toFixed(1)}</span>`);
+  chips.push(`<span class="wcag-chip wcag-fail">${l}</span>`);
+  return chips.join('');
+}
+
+// Rebuild swatches with WCAG badges
+swatchGrid.innerHTML = '';
+greys.forEach(c => {
+  const d = document.createElement('div');
+  d.className = 'swatch';
+  d.innerHTML = `
+    <div class="sw-color" style="background:${c.hex}">
+      <div class="sw-copied">✓ Copied</div>
+    </div>
+    <div class="sw-info">
+      <div class="sw-name">${c.name}</div>
+      <div class="sw-hex">${c.hex}</div>
+    </div>
+    <div class="sw-wcag">${wcagChips(c.hex)}</div>`;
+  d.onclick = () => {
+    copyVal(c.hex);
+    d.classList.add('copied');
+    setTimeout(() => d.classList.remove('copied'), 1000);
+  };
+  swatchGrid.appendChild(d);
+});
+
+// ── CURSOR-REACTIVE ASCII ──
+let _heroMx = 0.5, _heroMy = 0.5;
+const heroEl = document.querySelector('.hero');
+if (heroEl) {
+  heroEl.addEventListener('mousemove', e => {
+    const r = heroEl.getBoundingClientRect();
+    _heroMx = (e.clientX - r.left) / r.width;
+    _heroMy = (e.clientY - r.top) / r.height;
+  });
+  heroEl.addEventListener('mouseleave', () => {
+    _heroMx = 0.5; _heroMy = 0.5;
+  });
+}
+
+// Patch plasma + vortex modes to use mouse position
+const _origPlasma = ASCII_MODES.plasma.sample;
+ASCII_MODES.plasma.sample = function(c, r, t, cols, rows) {
+  const x = c * 0.11, y = r * 0.20;
+  const mdx = (c/cols - _heroMx) * cols * 0.11;
+  const mdy = (r/rows - _heroMy) * rows * 0.20;
+  const mdist = Math.sqrt(mdx*mdx + mdy*mdy);
+  const a = Math.sin(x + t*1.50);
+  const b = Math.sin(y*0.90 - t*1.20 + Math.cos(x*0.42 + t*0.53)*1.8);
+  const cc = Math.sin(mdist*0.78 - t*1.10);
+  const d = Math.sin(x*0.55 + y*0.78 + t*0.82);
+  const mouse_pull = Math.exp(-mdist * 0.3) * Math.sin(mdist*3 - t*2.5) * 0.4;
+  return (a + b + cc + d + mouse_pull) * 0.1 + 0.5;
+};
+ASCII_MODES.vortex.sample = function(c, r, t, cols, rows) {
+  const dx = (c/cols - _heroMx), dy = (r/rows - _heroMy);
+  const dist = Math.hypot(dx, dy);
+  const angle = Math.atan2(dy, dx);
+  const spiral = Math.sin(angle*5 - dist*18 + t*2.5);
+  const radial = Math.sin(dist*12 - t*3.0);
+  const ring = Math.sin(dist*25 - t*1.8)*0.4;
+  return (spiral*0.5 + radial*0.3 + ring*0.2)*0.5 + 0.5;
+};
+
+ASCII_MODES.wave.sample = function(c, r, t, cols, rows) {
+  const x = c/cols, y = r/rows;
+  // Mouse pulls the wave source
+  const ox = (x - _heroMx) * 2.2, oy = (y - _heroMy) * 2.2;
+  const w1 = Math.sin(x*22 - t*2.1 + Math.sin(y*9 + t*0.6)*1.6 + ox*3);
+  const w2 = Math.sin((x+y)*15 - t*1.7 + oy*2);
+  const w3 = Math.sin(x*8 + y*6 - t*0.9 + Math.hypot(ox,oy)*4)*0.5;
+  return (w1+w2+w3)/3*0.5+0.5;
+};
+
+ASCII_MODES.rain.sample = function(c, r, t, cols, rows) {
+  // Bias rain toward mouse X column
+  const mouseBias = Math.exp(-Math.abs(c/cols - _heroMx)*8)*0.6;
+  const sp  = 0.3 + (Math.sin(c*127.1+311.7)*43758.5%1+1)%1*1.2;
+  const ph  = (Math.sin(c*43.1+71.3)*43758.5%1+1)%1*rows;
+  const lead = (t*sp*rows*0.25+ph)%(rows*1.4);
+  const d   = lead - r;
+  if (d<0||d>rows*0.55) return 0.02 + mouseBias*0.1;
+  return Math.exp(-d*8/rows)*0.95 + 0.02 + mouseBias*(1-d/(rows*0.55));
+};
+
+ASCII_MODES.pulse.sample = function(c, r, t, cols, rows) {
+  // Pulse origin tracks mouse
+  const dx = (c/cols - _heroMx)*2, dy = (r/rows - _heroMy)*2;
+  const dist = Math.hypot(dx, dy);
+  const ring1 = Math.sin(dist*14 - t*2.8);
+  const ring2 = Math.sin(dist*7  - t*1.9)*0.5;
+  const spoke = Math.sin(Math.atan2(dy,dx)*8 + t*0.6)*0.2;
+  return (ring1+ring2+spoke)/2.7*0.5+0.5;
+};
+
+ASCII_MODES.noise.sample = function(c, r, t, cols, rows) {
+  // Mouse warps the noise field
+  const mx = _heroMx - 0.5, my = _heroMy - 0.5;
+  const x = c*0.08 + mx*1.5, y = r*0.14 + my*1.5;
+  const wx = x + 1.7*Math.sin(0.5*y + t*0.4 + mx*2);
+  const wy = y + 1.7*Math.sin(0.5*x + t*0.3 + my*2);
+  const n1 = Math.sin(wx*1.1 + wy*0.9 + t*0.7);
+  const n2 = Math.sin(wx*2.3 - wy*1.7 + t*1.1)*0.5;
+  const n3 = Math.sin(wx*0.7 + wy*2.1 - t*0.8)*0.25;
+  return (n1+n2+n3)/1.75*0.5+0.5;
+};
+
+// ── EXPORT ENGINE ──
+function getCurrentTokens() {
+  const cs = getComputedStyle(document.documentElement);
+  const get = v => cs.getPropertyValue(v).trim();
+  return {
+    colors: {
+      signal:      get('--signal')    || brandDefaults['--signal'],
+      'signal-hi': get('--signal-hi') || brandDefaults['--signal-hi'],
+      'signal-lo': get('--signal-lo') || brandDefaults['--signal-lo'],
+      amber:       get('--amber')     || brandDefaults['--amber'],
+      'amber-hi':  get('--amber-hi')  || brandDefaults['--amber-hi'],
+      danger:      get('--danger')    || brandDefaults['--danger'],
+      ok:          get('--ok')        || brandDefaults['--ok'],
+    },
+    fontH:      get('--font-h') || "'Barlow Condensed', sans-serif",
+    fontM:      get('--font-m') || "'IBM Plex Mono', monospace",
+    asciiLight: _themeVars['[data-theme="light"]|--ascii-color']?.value || '#B8720E',
+    asciiDark:  _themeVars['[data-theme="dark"]|--ascii-color']?.value  || '#E8A840',
+  };
+}
+const EXPORTS = {
+  css() {
+    const tk = getCurrentTokens();
+    const c = tk.colors;
+    return `/* ORDO Design System v1.0 — Design Tokens */
+/* Generated ${new Date().toISOString().slice(0,10)} */
+
+:root {
+  /* ── Brand Colors ── */
+  --signal:     ${c.signal};
+  --signal-hi:  ${c['signal-hi']};
+  --signal-lo:  ${c['signal-lo']};
+  --amber:      ${c.amber};
+  --amber-hi:   ${c['amber-hi']};
+  --danger:     ${c.danger};
+  --ok:         ${c.ok};
+
+  /* ── Typography ── */
+  --font-h: ${tk.fontH};
+  --font-m: ${tk.fontM};
+
+  /* ── Spacing (4px base) ── */
+  --s1: 4px;   --s2: 8px;   --s3: 12px;  --s4: 16px;
+  --s5: 24px;  --s6: 32px;  --s7: 48px;  --s8: 64px;
+  --s9: 96px;  --s10: 128px;
+
+  /* ── Radius ── */
+  --r0: 0px;  --r1: 2px;  --r2: 4px;  --r3: 8px;
+
+  /* ── Motion ── */
+  --dur-instant:    0ms;
+  --dur-micro:      75ms;
+  --dur-fast:       150ms;
+  --dur-base:       300ms;
+  --dur-slow:       500ms;
+  --dur-deliberate: 1000ms;
+  --ease-standard: ease-out;
+  --ease-spring:   cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-enter:    ease-out;
+  --ease-exit:     ease-in;
+}
+
+/* ── Light Theme ── */
+[data-theme="light"] {
+  --bg:      #E8EAED;  --surface: #F2F3F5;
+  --surf2:   #FAFBFC;  --surf3:   #FFFFFF;
+  --line:    #D0D3D8;  --line-hi: #B0B4BC;
+  --tx:      #000004;  --tx2:     #0A0B12;
+  --tx3:     #252836;  --tx4:     #48505F;
+  --invert:  #1A1C20;  --invert-tx: #FAFBFC;
+  --glass-rgb: 242,243,245; --glass-blur: 8px;
+  --card-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
+  --ascii-color: ${tk.asciiLight};
+}
+
+/* ── Dark Theme ── */
+[data-theme="dark"] {
+  --bg:      #1E2124;  --surface: #252830;
+  --surf2:   #2D3138;  --surf3:   #343840;
+  --line:    #3C4048;  --line-hi: #525760;
+  --tx:      #FFFFFF;  --tx2:     #D5D8DE;
+  --tx3:     #9CA0AB;  --tx4:     #585D67;
+  --invert:  #F9FAFB;  --invert-tx: #1A1C20;
+  --glass-rgb: 37,40,48; --glass-blur: 8px;
+  --card-shadow: 0 1px 3px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.2);
+  --ascii-color: ${tk.asciiDark};
+}`;
+  },
+
+  tailwind() {
+    const tk = getCurrentTokens(); const c = tk.colors;
+    return `// tailwind.config.js — ORDO Design System v1.0
+module.exports = {
+  theme: {
+    extend: {
+      colors: {
+        axis: {
+          signal:     '${c.signal}',
+          'signal-hi':'${c['signal-hi']}',
+          'signal-lo':'${c['signal-lo']}',
+          amber:      '${c.amber}',
+          'amber-hi': '${c['amber-hi']}',
+          danger:     '${c.danger}',
+          ok:         '${c.ok}',
+        },
+      },
+      // Theme-aware surface/text tokens — reference via CSS var arbitrary values
+      // e.g. className="bg-[var(--bg)]" or "text-[var(--tx2)]"
+      // ASCII color: light=${tk.asciiLight} / dark=${tk.asciiDark}
+      backgroundColor: {
+        'axis-bg':      'var(--bg)',
+        'axis-surface': 'var(--surface)',
+        'axis-surf2':   'var(--surf2)',
+        'axis-surf3':   'var(--surf3)',
+      },
+      textColor: {
+        'axis-tx':  'var(--tx)',
+        'axis-tx2': 'var(--tx2)',
+        'axis-tx3': 'var(--tx3)',
+        'axis-tx4': 'var(--tx4)',
+      },
+      fontFamily: {
+        'axis-display': [${tk.fontH}],
+        'axis-mono':    [${tk.fontM}],
+      },
+      spacing: {
+        'axis-1':'4px',  'axis-2':'8px',   'axis-3':'12px',
+        'axis-4':'16px', 'axis-5':'24px',  'axis-6':'32px',
+        'axis-7':'48px', 'axis-8':'64px',  'axis-9':'96px',
+        'axis-10':'128px',
+      },
+      borderRadius: {
+        'axis-0':'0px', 'axis-1':'2px', 'axis-2':'4px', 'axis-3':'8px',
+      },
+      transitionDuration: {
+        'instant':'0ms',  'micro':'75ms',  'fast':'150ms',
+        'base':'300ms',   'slow':'500ms',  'deliberate':'1000ms',
+      },
+    },
+  },
+};`;
+  },
+
+  json() {
+    const tk = getCurrentTokens(); const c = tk.colors;
+    return JSON.stringify({
+      color: Object.fromEntries(
+        Object.entries(c).map(([k,v]) => [k, {value:v, type:'color'}])
+      ),
+      spacing: Object.fromEntries(
+        [4,8,12,16,24,32,48,64,96,128].map((v,i) =>
+          [`s${i+1}`, {value:`${v}px`, type:'spacing'}])
+      ),
+      borderRadius: {
+        r0:{value:'0px',type:'borderRadius'}, r1:{value:'2px',type:'borderRadius'},
+        r2:{value:'4px',type:'borderRadius'}, r3:{value:'8px',type:'borderRadius'},
+      },
+      typography: {
+        display:{value:tk.fontH, type:'fontFamily'},
+        mono:{value:tk.fontM, type:'fontFamily'},
+      },
+      motion: {
+        'dur-instant':  {value:'0ms',   type:'duration'},
+        'dur-micro':    {value:'75ms',  type:'duration'},
+        'dur-fast':     {value:'150ms', type:'duration'},
+        'dur-base':     {value:'300ms', type:'duration'},
+        'dur-slow':     {value:'500ms', type:'duration'},
+        'dur-deliberate':{value:'1000ms',type:'duration'},
+        'ease-spring':  {value:'cubic-bezier(0.34,1.56,0.64,1)',type:'cubic-bezier'},
+      },
+      theme: {
+        light: {
+          'ascii-color': {value: tk.asciiLight, type:'color'},
+        },
+        dark: {
+          'ascii-color': {value: tk.asciiDark, type:'color'},
+        },
+      },
+    }, null, 2);
+  },
+
+  swift() {
+    const tk = getCurrentTokens(); const c = tk.colors;
+    const sw = ([n,v]) => `  static let axis${n.split('-').map(s=>s[0].toUpperCase()+s.slice(1)).join('')} = Color(hex: "${v}")`;
+    return `// ORDO Design System v1.0 — Swift/SwiftUI
+// Generated ${new Date().toISOString().slice(0,10)}
+import SwiftUI
+
+extension Color {
+${Object.entries(c).map(sw).join('\n')}
+
+  // Spacing
+  static let axisS1: CGFloat = 4
+  static let axisS2: CGFloat = 8
+  static let axisS3: CGFloat = 12
+  static let axisS4: CGFloat = 16
+  static let axisS5: CGFloat = 24
+  static let axisS6: CGFloat = 32
+  static let axisS7: CGFloat = 48
+  static let axisS8: CGFloat = 64
+  static let axisS9: CGFloat = 96
+  static let axisS10: CGFloat = 128
+}
+
+// Usage: Color.axisSignal  ·  Color.axisOk  ·  Color.axisDanger`;
+  },
+
+  kotlin() {
+    const tk = getCurrentTokens(); const c = tk.colors;
+    const kn = n => 'Axis' + n.split('-').map(s=>s[0].toUpperCase()+s.slice(1)).join('');
+    const kl = ([n,v]) => `    val ${kn(n)} = Color(0xFF${v.replace('#','')})`;
+    return `// ORDO Design System v1.0 — Kotlin/Compose
+// Generated ${new Date().toISOString().slice(0,10)}
+import androidx.compose.ui.graphics.Color
+
+object AxisColors {
+${Object.entries(c).map(kl).join('\n')}
+}
+
+object AxisSpacing {
+    val S1 = 4.dp;  val S2 = 8.dp;   val S3 = 12.dp
+    val S4 = 16.dp; val S5 = 24.dp;  val S6 = 32.dp
+    val S7 = 48.dp; val S8 = 64.dp;  val S9 = 96.dp; val S10 = 128.dp
+}`;
+  },
+};
+
+// Export modal wiring
+const exportModal = document.getElementById('exportModal');
+const exportCode  = document.getElementById('exportCode');
+let activeExportFmt = 'css';
+
+function openExportModal() {
+  exportModal.classList.add('open');
+  renderExport(activeExportFmt);
+  const firstBtn = exportModal.querySelector('button');
+  if (firstBtn) firstBtn.focus();
+}
+function renderExport(fmt) {
+  activeExportFmt = fmt;
+  exportCode.textContent = EXPORTS[fmt]();
+  document.querySelectorAll('.modal-tab').forEach(t =>
+    t.classList.toggle('active', t.dataset.fmt === fmt));
+  const lineCount = exportCode.textContent.split('\n').length;
+  document.getElementById('exportInfo').textContent =
+    `${lineCount} lines · ORDO v1.0 · ${fmt.toUpperCase()} format`;
+}
+document.getElementById('exportBtn').onclick = openExportModal;
+document.getElementById('exportClose').onclick = () => exportModal.classList.remove('open');
+exportModal.addEventListener('click', e => { if (e.target === exportModal) exportModal.classList.remove('open'); });
+exportModal.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { exportModal.classList.remove('open'); return; }
+  if (e.key !== 'Tab') return;
+  const focusable = exportModal.querySelectorAll('button, [tabindex]:not([tabindex="-1"])');
+  if (!focusable.length) return;
+  const first = focusable[0], last = focusable[focusable.length - 1];
+  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+});
+document.querySelectorAll('.modal-tab').forEach(t =>
+  t.onclick = () => renderExport(t.dataset.fmt));
+document.getElementById('exportCopy').onclick = () => {
+  navigator.clipboard.writeText(exportCode.textContent).then(() =>
+    showToast('Tokens copied — ' + activeExportFmt.toUpperCase() + ' format'));
+};
+
+// ── BRAND CONFIGURATOR ──
+const brandPanel = document.getElementById('brandPanel');
+document.getElementById('brandBtn').onclick = () => brandPanel.classList.toggle('open');
+document.getElementById('brandClose').onclick = () => brandPanel.classList.remove('open');
+
+const brandDefaults = {
+  '--signal':'#3B82C4','--signal-hi':'#5A9FE0','--signal-lo':'#1E5FA0',
+  '--amber':'#C4882A','--amber-hi':'#E8A840','--danger':'#C43B3B','--ok':'#3BC47A',
+  '--font-h':"'Barlow Condensed', sans-serif",
+  '--font-m':"'IBM Plex Mono', monospace",
+};
+renderAccentStrip();
+
+document.querySelectorAll('.brand-color-input').forEach(inp => {
+  inp.addEventListener('input', () => {
+    const v = inp.value;
+    // Update preview swatch in panel
+    const preview = inp.closest('.color-swatch-btn')?.querySelector('.color-swatch-preview');
+    if (preview) preview.style.background = v;
+    // Apply live to the page
+    const root = document.documentElement;
+    if (inp.dataset.var) {
+      root.style.setProperty(inp.dataset.var, v);
+      if (inp.dataset.var === '--signal') {
+        const hi = lighten(v, 0.15), lo = darken(v, 0.15);
+        root.style.setProperty('--signal-hi', hi);
+        root.style.setProperty('--signal-lo', lo);
+      }
+      if (inp.dataset.var === '--amber') {
+        const hi = lighten(v, 0.15);
+        root.style.setProperty('--amber-hi', hi);
+      }
+      debouncedRenderStrip();
+    }
+    if (inp.dataset.themevar === 'light-ascii') setThemeVar('[data-theme="light"]', '--ascii-color', v);
+    if (inp.dataset.themevar === 'dark-ascii')  setThemeVar('[data-theme="dark"]',  '--ascii-color', v);
+  });
+});
+
+document.getElementById('applyBrandBtn').onclick = () => {
+  const root = document.documentElement;
+  document.querySelectorAll('.brand-color-input[data-var]').forEach(inp => {
+    root.style.setProperty(inp.dataset.var, inp.value);
+    if (inp.dataset.var === '--signal') {
+      const hi = lighten(inp.value, 0.15), lo = darken(inp.value, 0.15);
+      root.style.setProperty('--signal-hi', hi);
+      root.style.setProperty('--signal-lo', lo);
+    }
+    if (inp.dataset.var === '--amber') root.style.setProperty('--amber-hi', lighten(inp.value, 0.15));
+  });
+  document.querySelectorAll('.brand-color-input[data-themevar]').forEach(inp => {
+    if (inp.dataset.themevar === 'light-ascii') {
+      setThemeVar('[data-theme="light"]', '--ascii-color', inp.value);
+    } else if (inp.dataset.themevar === 'dark-ascii') {
+      setThemeVar('[data-theme="dark"]',  '--ascii-color', inp.value);
+    }
+  });
+  const fh = document.getElementById('fontHeadSelect').value;
+  const fm = document.getElementById('fontMonoSelect').value;
+  root.style.setProperty('--font-h', fh);
+  root.style.setProperty('--font-m', fm);
+  renderAccentStrip();
+  brandPanel.classList.remove('open');
+  showToast('Brand applied · export tokens to save');
+  updateShareURL();
+};
+
+document.getElementById('resetBrandBtn').onclick = () => {
+  const root = document.documentElement;
+  // Clear dynamic theme vars
+  Object.keys(_themeVars).forEach(k => delete _themeVars[k]);
+  const dynSheet = document.getElementById('_dyn_styles');
+  if (dynSheet) dynSheet.textContent = '';
+  // Reset root CSS vars
+  Object.entries(brandDefaults).forEach(([k,v]) => root.style.setProperty(k, v));
+  // Reset color inputs
+  document.querySelectorAll('.brand-color-input[data-var]').forEach(inp => {
+    if (brandDefaults[inp.dataset.var]) {
+      inp.value = brandDefaults[inp.dataset.var];
+      const preview = inp.closest('.color-swatch-btn')?.querySelector('.color-swatch-preview');
+      if (preview) preview.style.background = inp.value;
+    }
+  });
+  // Reset ASCII color inputs
+  const asciiDefs = { 'light-ascii': '#B8720E', 'dark-ascii': '#E8A840' };
+  document.querySelectorAll('.brand-color-input[data-themevar]').forEach(inp => {
+    const def = asciiDefs[inp.dataset.themevar];
+    if (def) {
+      inp.value = def;
+      const preview = inp.closest('.color-swatch-btn')?.querySelector('.color-swatch-preview');
+      if (preview) preview.style.background = def;
+    }
+  });
+  // Reset fonts
+  document.getElementById('fontHeadSelect').value = brandDefaults['--font-h'];
+  document.getElementById('fontMonoSelect').value = brandDefaults['--font-m'];
+  root.style.setProperty('--font-h', brandDefaults['--font-h']);
+  root.style.setProperty('--font-m', brandDefaults['--font-m']);
+  renderAccentStrip();
+  showToast('Reset to ORDO defaults');
+  updateShareURL();
+};
+
+// Live font preview
+document.getElementById('fontHeadSelect').addEventListener('change', function() {
+  document.documentElement.style.setProperty('--font-h', this.value);
+});
+document.getElementById('fontMonoSelect').addEventListener('change', function() {
+  document.documentElement.style.setProperty('--font-m', this.value);
+});
+
+function lighten(hex, amt) {
+  const cleaned = (hex || '').replace('#','');
+  if (!/^[0-9a-fA-F]{6}$/.test(cleaned)) return hex || '#000000';
+  const n = parseInt(cleaned, 16);
+  const r = Math.min(255, Math.max(0, (n>>16) + Math.round(255*amt)));
+  const g = Math.min(255, Math.max(0, ((n>>8)&255) + Math.round(255*amt)));
+  const b = Math.min(255, Math.max(0, (n&255) + Math.round(255*amt)));
+  return '#'+(r<<16|g<<8|b).toString(16).padStart(6,'0');
+}
+function darken(hex, amt) { return lighten(hex, -amt); }
+const _themeVars = {};
+function setThemeVar(sel, varName, value) {
+  _themeVars[sel + '|' + varName] = { sel, varName, value };
+  let sheet = document.getElementById('_dyn_styles');
+  if (!sheet) { sheet = document.createElement('style'); sheet.id = '_dyn_styles'; document.head.appendChild(sheet); }
+  const groups = {};
+  for (const { sel: s, varName: vn, value: vv } of Object.values(_themeVars)) {
+    (groups[s] = groups[s] || []).push(`  ${vn}: ${vv};`);
+  }
+  sheet.textContent = Object.entries(groups).map(([s, rs]) => `${s} {\n${rs.join('\n')}\n}`).join('\n');
+}
+
+// ── SHARE URL ──
+function updateShareURL() {
+  const cs = getComputedStyle(document.documentElement);
+  const get = v => cs.getPropertyValue(v).trim().replace(/[# ]/g,'');
+  const fhSel = document.getElementById('fontHeadSelect');
+  const fmSel = document.getElementById('fontMonoSelect');
+  const params = new URLSearchParams({
+    theme:  dark ? 'dark' : 'light',
+    mode:   document.querySelector('.mode-btn.active')?.dataset.mode || 'plasma',
+    signal: get('--signal'),
+    sgnhi:  get('--signal-hi'),
+    sgnlo:  get('--signal-lo'),
+    amber:  get('--amber'),
+    danger: get('--danger'),
+    ok:     get('--ok'),
+    fh:     fhSel.selectedIndex,
+    fm:     fmSel.selectedIndex,
+    asl:    (_themeVars['[data-theme="light"]|--ascii-color']?.value || '#B8720E').replace('#',''),
+    asd:    (_themeVars['[data-theme="dark"]|--ascii-color']?.value  || '#E8A840').replace('#',''),
+  });
+  history.replaceState(null, '', '#' + params.toString());
+}
+
+function loadShareURL() {
+  if (!location.hash) return;
+  try {
+    const params = new URLSearchParams(location.hash.slice(1));
+    if (params.get('theme') === 'dark' && !dark) {
+      dark = true;
+      document.documentElement.setAttribute('data-theme','dark');
+      document.getElementById('themeBtn').textContent = '☾';
+    }
+    const root = document.documentElement;
+    if (params.get('signal')) root.style.setProperty('--signal', '#'+params.get('signal'));
+    if (params.get('sgnhi'))  root.style.setProperty('--signal-hi', '#'+params.get('sgnhi'));
+    if (params.get('sgnlo'))  root.style.setProperty('--signal-lo', '#'+params.get('sgnlo'));
+    if (params.get('amber'))  root.style.setProperty('--amber',  '#'+params.get('amber'));
+    if (params.get('danger')) root.style.setProperty('--danger', '#'+params.get('danger'));
+    if (params.get('ok'))     root.style.setProperty('--ok',     '#'+params.get('ok'));
+    if (params.get('fh') !== null) {
+      const fhSel = document.getElementById('fontHeadSelect');
+      const idx = parseInt(params.get('fh'));
+      if (!isNaN(idx) && idx >= 0 && idx < fhSel.options.length) {
+        fhSel.selectedIndex = idx;
+        root.style.setProperty('--font-h', fhSel.value);
+      }
+    }
+    if (params.get('fm') !== null) {
+      const fmSel = document.getElementById('fontMonoSelect');
+      const idx = parseInt(params.get('fm'));
+      if (!isNaN(idx) && idx >= 0 && idx < fmSel.options.length) {
+        fmSel.selectedIndex = idx;
+        root.style.setProperty('--font-m', fmSel.value);
+      }
+    }
+    if (params.get('asl')) setThemeVar('[data-theme="light"]', '--ascii-color', '#'+params.get('asl'));
+    if (params.get('asd')) setThemeVar('[data-theme="dark"]',  '--ascii-color', '#'+params.get('asd'));
+    // Sync brand panel inputs with loaded values
+    const varMap = { signal:'--signal', amber:'--amber', danger:'--danger', ok:'--ok' };
+    Object.entries(varMap).forEach(([p, cssVar]) => {
+      if (params.get(p)) {
+        const inp = document.querySelector(`.brand-color-input[data-var="${cssVar}"]`);
+        if (inp) {
+          inp.value = '#' + params.get(p);
+          const prev = inp.closest('.color-swatch-btn')?.querySelector('.color-swatch-preview');
+          if (prev) prev.style.background = inp.value;
+        }
+      }
+    });
+    const lightInp = document.querySelector('.brand-color-input[data-themevar="light-ascii"]');
+    if (lightInp && params.get('asl')) {
+      lightInp.value = '#' + params.get('asl');
+      const p = lightInp.closest('.color-swatch-btn')?.querySelector('.color-swatch-preview');
+      if (p) p.style.background = lightInp.value;
+    }
+    const darkInp = document.querySelector('.brand-color-input[data-themevar="dark-ascii"]');
+    if (darkInp && params.get('asd')) {
+      darkInp.value = '#' + params.get('asd');
+      const p = darkInp.closest('.color-swatch-btn')?.querySelector('.color-swatch-preview');
+      if (p) p.style.background = darkInp.value;
+    }
+    if (params.get('mode')) {
+      const mb = document.querySelector(`.mode-btn[data-mode="${params.get('mode')}"]`);
+      if (mb) mb.click();
+    }
+    renderAccentStrip();
+  } catch(e) {}
+}
+loadShareURL();
+
+document.getElementById('shareBtn').onclick = () => {
+  updateShareURL();
+  const url = location.href;
+  navigator.clipboard.writeText(url).then(() =>
+    showToast('Shareable URL copied to clipboard'));
+};
+
+// ── ACTIVE NAV on scroll ──
+const sections = document.querySelectorAll('section[id], div.hero');
+const links = document.querySelectorAll('.nav-tabs a');
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      links.forEach(l => l.parentElement.classList.remove('active'));
+      const id = e.target.id || 'color';
+      const link = document.querySelector(`.nav-tabs a[href="#${id}"]`);
+      if (link) link.parentElement.classList.add('active');
+    }
+  });
+}, { threshold: 0.3 });
+document.querySelectorAll('section[id]').forEach(s => obs.observe(s));
+</script>
+</body>
+</html>
