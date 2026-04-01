@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Code — Terminal UI Engine</title>
+<style>
+:root{--bg:#0d1117;--surface:#161b22;--surface2:#1c2333;--border:#30363d;--text:#e6edf3;--muted:#8b949e;--accent:#58a6ff;--purple:#bc8cff;--green:#3fb950;--orange:#d29922;--red:#f85149;--pink:#f778ba;--teal:#39d353;--cyan:#76e4f7}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.65}
+.hero{text-align:center;padding:72px 20px 56px;background:linear-gradient(180deg,#0d1117 0%,#111820 100%);border-bottom:1px solid var(--border)}
+.hero h1{font-size:2.8rem;font-weight:800;background:linear-gradient(135deg,var(--cyan),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{color:var(--muted);font-size:1.1rem;max-width:720px;margin:12px auto 0}
+.toc{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:28px}
+.toc a{background:var(--surface);border:1px solid var(--border);color:var(--muted);padding:6px 14px;border-radius:100px;text-decoration:none;font-size:.82rem;transition:all .2s}
+.toc a:hover{border-color:var(--cyan);color:var(--cyan)}
+.container{max-width:1200px;margin:0 auto;padding:0 24px}
+section{padding:56px 0;border-bottom:1px solid var(--border)}
+section:last-of-type{border-bottom:none}
+.label{font-size:.72rem;letter-spacing:2px;text-transform:uppercase;color:var(--cyan);margin-bottom:6px}
+.title{font-size:1.9rem;font-weight:700;margin-bottom:6px}
+.desc{color:var(--muted);max-width:720px;margin-bottom:32px;font-size:1.02rem}
+.diagram{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:28px;overflow-x:auto;margin-bottom:24px}
+svg text{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',monospace}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;margin-top:20px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:22px;transition:border-color .2s}
+.card:hover{border-color:var(--cyan)}
+.card h3{font-size:1.05rem;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.card p,.card li{color:var(--muted);font-size:.9rem}
+.card ul{padding-left:18px;margin-top:6px}
+.badge{display:inline-block;font-size:.68rem;padding:2px 8px;border-radius:100px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.b-blue{background:rgba(88,166,255,.15);color:var(--accent)}.b-purple{background:rgba(188,140,255,.15);color:var(--purple)}
+.b-green{background:rgba(63,185,80,.15);color:var(--green)}.b-orange{background:rgba(210,153,34,.15);color:var(--orange)}
+.b-red{background:rgba(248,81,73,.15);color:var(--red)}.b-cyan{background:rgba(118,228,247,.15);color:var(--cyan)}
+.b-pink{background:rgba(247,120,186,.15);color:var(--pink)}
+.why{background:rgba(118,228,247,.06);border-left:3px solid var(--cyan);border-radius:0 8px 8px 0;padding:14px 18px;margin:14px 0;font-size:.92rem}
+.why strong{color:var(--cyan)}
+.code{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:18px 22px;font-family:'SF Mono','Fira Code',monospace;font-size:.83rem;color:var(--muted);overflow-x:auto;white-space:pre;line-height:1.7;margin:14px 0}
+.code .kw{color:var(--purple)}.code .fn{color:var(--accent)}.code .cm{color:#484f58}.code .st{color:var(--green)}.code .hi{color:var(--cyan)}
+.tbl-wrap{overflow-x:auto;margin:16px 0}
+table{width:100%;border-collapse:collapse;font-size:.88rem;background:var(--surface);border-radius:8px;overflow:hidden}
+th{background:var(--surface2);color:var(--cyan);text-align:left;padding:10px 14px;font-weight:600;font-size:.8rem;text-transform:uppercase;letter-spacing:.5px}
+td{padding:10px 14px;border-top:1px solid var(--border);color:var(--muted)}
+tr:hover td{background:rgba(118,228,247,.04)}
+@media(max-width:768px){.hero h1{font-size:2rem}.cards{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header class="hero">
+  <h1>Terminal UI Engine</h1>
+  <p>A near-complete rewrite of the Ink terminal renderer — double-buffered cell grids, an incremental diff engine, full Vim mode, synchronized frame painting, and 17+ terminal escape protocols.</p>
+  <nav class="toc">
+    <a href="#rendering">Rendering Pipeline</a><a href="#vms">Virtual Scroll</a><a href="#streaming">Streaming</a>
+    <a href="#focus">Focus</a><a href="#vim">Vim Mode</a><a href="#paste">Image Paste</a>
+    <a href="#terminal">Terminal Caps</a><a href="#animation">Animations</a><a href="#theme">Theme</a>
+    <a href="#search">Search</a><a href="#notify">Notifications</a><a href="#escapes">Escape Codes</a>
+  </nav>
+</header>
+<main class="container">
+
+<!-- RENDERING PIPELINE -->
+<section id="rendering">
+  <div class="label">Chapter 1</div>
+  <h2 class="title">Custom Rendering Pipeline</h2>
+  <p class="desc">Upstream Ink builds strings and reprints them. This fork maintains a 2D cell grid with typed pools, double-buffering, and an incremental diff engine that emits only changed cells.</p>
+  <div class="diagram">
+    <svg viewBox="0 0 1000 360" width="100%" xmlns="http://www.w3.org/2000/svg">
+      <defs><marker id="a" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#58a6ff"/></marker></defs>
+      <!-- React reconciler -->
+      <rect x="20" y="30" width="180" height="60" rx="8" fill="#1c2333" stroke="#bc8cff" stroke-width="1.5"/>
+      <text x="110" y="57" text-anchor="middle" fill="#bc8cff" font-size="11" font-weight="700">React Reconciler</text>
+      <text x="110" y="75" text-anchor="middle" fill="#8b949e" font-size="9">Yoga layout in commit phase</text>
+      <line x1="200" y1="60" x2="250" y2="60" stroke="#30363d" stroke-width="2" marker-end="url(#a)"/>
+
+      <!-- Screen -->
+      <rect x="250" y="10" width="220" height="100" rx="8" fill="rgba(118,228,247,.06)" stroke="#76e4f7" stroke-width="1.5"/>
+      <text x="360" y="38" text-anchor="middle" fill="#76e4f7" font-size="12" font-weight="700">Screen (2D Cell Grid)</text>
+      <text x="360" y="58" text-anchor="middle" fill="#8b949e" font-size="9">StylePool · CharPool · HyperlinkPool</text>
+      <text x="360" y="74" text-anchor="middle" fill="#8b949e" font-size="9">Cell: char, styleId, width, hyperlink</text>
+      <text x="360" y="90" text-anchor="middle" fill="#8b949e" font-size="9">Width: Normal/Wide/SpacerTail/SpacerHead</text>
+
+      <!-- Double buffer -->
+      <rect x="250" y="130" width="220" height="80" rx="8" fill="rgba(88,166,255,.06)" stroke="#58a6ff" stroke-width="1.5"/>
+      <text x="360" y="158" text-anchor="middle" fill="#58a6ff" font-size="12" font-weight="700">Double Buffer</text>
+      <text x="360" y="178" text-anchor="middle" fill="#8b949e" font-size="9">frontFrame ↔ backFrame swap</text>
+      <text x="360" y="194" text-anchor="middle" fill="#8b949e" font-size="9">Blits unchanged cells from prevScreen</text>
+
+      <line x1="470" y1="80" x2="530" y2="80" stroke="#30363d" stroke-width="2" marker-end="url(#a)"/>
+      <line x1="470" y1="170" x2="530" y2="120" stroke="#30363d" stroke-width="2" marker-end="url(#a)"/>
+
+      <!-- Diff engine -->
+      <rect x="530" y="30" width="200" height="120" rx="8" fill="rgba(63,185,80,.06)" stroke="#3fb950" stroke-width="1.5"/>
+      <text x="630" y="58" text-anchor="middle" fill="#3fb950" font-size="12" font-weight="700">LogUpdate Diff</text>
+      <text x="630" y="78" text-anchor="middle" fill="#8b949e" font-size="9">Virtual cursor tracking</text>
+      <text x="630" y="94" text-anchor="middle" fill="#8b949e" font-size="9">DECSTBM hardware scroll</text>
+      <text x="630" y="110" text-anchor="middle" fill="#8b949e" font-size="9">Wide-char CHA compensation</text>
+      <text x="630" y="126" text-anchor="middle" fill="#8b949e" font-size="9">Emoji VS16 handling</text>
+
+      <line x1="730" y1="90" x2="780" y2="90" stroke="#30363d" stroke-width="2" marker-end="url(#a)"/>
+
+      <!-- Optimizer -->
+      <rect x="780" y="50" width="190" height="80" rx="8" fill="rgba(210,153,34,.06)" stroke="#d29922" stroke-width="1.5"/>
+      <text x="875" y="78" text-anchor="middle" fill="#d29922" font-size="12" font-weight="700">Optimizer</text>
+      <text x="875" y="96" text-anchor="middle" fill="#8b949e" font-size="9">Merge consecutive cursorMoves</text>
+      <text x="875" y="112" text-anchor="middle" fill="#8b949e" font-size="9">Collapse cursorTo pairs</text>
+
+      <!-- BSU/ESU -->
+      <rect x="530" y="200" width="440" height="60" rx="8" fill="rgba(247,120,186,.06)" stroke="#f778ba" stroke-width="1.5"/>
+      <text x="750" y="228" text-anchor="middle" fill="#f778ba" font-size="12" font-weight="700">Synchronized Update (DECSET 2026)</text>
+      <text x="750" y="248" text-anchor="middle" fill="#8b949e" font-size="9">BSU (Begin Synchronized Update) → render → ESU (End) → atomic paint, no flicker</text>
+
+      <!-- Frame schedule -->
+      <rect x="20" y="200" width="480" height="60" rx="8" fill="rgba(188,140,255,.06)" stroke="#bc8cff" stroke-width="1"/>
+      <text x="260" y="228" text-anchor="middle" fill="#bc8cff" font-size="12" font-weight="700">Frame Scheduling</text>
+      <text x="260" y="248" text-anchor="middle" fill="#8b949e" font-size="9">throttle(queueMicrotask(onRender), FRAME_INTERVAL_MS) — defers past useLayoutEffect commit</text>
+
+      <!-- Terminal output -->
+      <rect x="20" y="290" width="960" height="50" rx="8" fill="rgba(57,211,83,.06)" stroke="#39d353" stroke-width="1.5"/>
+      <text x="500" y="320" text-anchor="middle" fill="#39d353" font-size="12" font-weight="700">Terminal Output — Only Changed Cells + Minimal Escape Sequences</text>
+    </svg>
+  </div>
+  <div class="why"><strong>Why typed pools (StylePool, CharPool)?</strong> Interning styles and characters by ID means identical cells across frames share the same pool entry. The diff engine compares pool IDs (integers) rather than style objects — O(1) equality check per cell, enabling fast full-screen diffs without string comparison.</div>
+  <div class="why"><strong>Why DECSTBM hardware scroll?</strong> When content scrolls up, DECSTBM tells the terminal to scroll its own framebuffer — the GPU/display controller moves pixels without the CPU repainting every line. On large terminals with long message histories, this can be the difference between smooth 60fps and visible tearing.</div>
+</section>
+
+<!-- VIRTUAL SCROLL -->
+<section id="vms">
+  <div class="label">Chapter 2</div>
+  <h2 class="title">Virtual Message List</h2>
+  <p class="desc">Long conversations can have hundreds of messages. Mounting all of them creates React churn and kills performance. The virtual scroll system mounts only what's visible ± an overscan buffer.</p>
+  <div class="diagram">
+    <svg viewBox="0 0 1000 300" width="100%" xmlns="http://www.w3.org/2000/svg">
+      <!-- Scroll container -->
+      <rect x="30" y="20" width="260" height="260" rx="10" fill="rgba(118,228,247,.04)" stroke="#76e4f7" stroke-width="1.5"/>
+      <text x="160" y="48" text-anchor="middle" fill="#76e4f7" font-size="12" font-weight="700">Full Message List</text>
+
+      <rect x="50" y="60" width="220" height="20" rx="3" fill="#1c2333" stroke="#484f58"/>
+      <text x="160" y="75" text-anchor="middle" fill="#484f58" font-size="8">msg[0] — NOT mounted</text>
+      <rect x="50" y="84" width="220" height="20" rx="3" fill="#1c2333" stroke="#484f58"/>
+      <text x="160" y="99" text-anchor="middle" fill="#484f58" font-size="8">msg[1] — NOT mounted</text>
+      <text x="160" y="118" text-anchor="middle" fill="#484f58" font-size="9">↑ topSpacer height</text>
+
+      <rect x="50" y="128" width="220" height="18" rx="3" fill="rgba(88,166,255,.15)" stroke="#58a6ff"/>
+      <text x="160" y="141" text-anchor="middle" fill="#58a6ff" font-size="8">OVERSCAN (80 rows above viewport)</text>
+      <rect x="50" y="150" width="220" height="50" rx="3" fill="rgba(63,185,80,.2)" stroke="#3fb950" stroke-width="2"/>
+      <text x="160" y="180" text-anchor="middle" fill="#3fb950" font-size="10" font-weight="600">VIEWPORT — Mounted &amp; Visible</text>
+      <rect x="50" y="204" width="220" height="18" rx="3" fill="rgba(88,166,255,.15)" stroke="#58a6ff"/>
+      <text x="160" y="217" text-anchor="middle" fill="#58a6ff" font-size="8">OVERSCAN (80 rows below viewport)</text>
+
+      <text x="160" y="240" text-anchor="middle" fill="#484f58" font-size="9">↓ bottomSpacer height</text>
+      <rect x="50" y="248" width="220" height="20" rx="3" fill="#1c2333" stroke="#484f58"/>
+      <text x="160" y="263" text-anchor="middle" fill="#484f58" font-size="8">msg[N] — NOT mounted</text>
+
+      <!-- Constants -->
+      <rect x="340" y="20" width="300" height="260" rx="10" fill="rgba(210,153,34,.04)" stroke="#d29922" stroke-width="1.5"/>
+      <text x="490" y="48" text-anchor="middle" fill="#d29922" font-size="12" font-weight="700">Key Constants</text>
+      <text x="360" y="76" fill="#8b949e" font-size="10" font-family="monospace">DEFAULT_ESTIMATE  = 3     rows</text>
+      <text x="360" y="96" fill="#8b949e" font-size="10" font-family="monospace">OVERSCAN_ROWS     = 80    rows</text>
+      <text x="360" y="116" fill="#d29922" font-size="10" font-family="monospace">SCROLL_QUANTUM    = 40    rows</text>
+      <text x="360" y="136" fill="#8b949e" font-size="10" font-family="monospace">MAX_MOUNTED_ITEMS = 300   items</text>
+      <text x="360" y="156" fill="#8b949e" font-size="10" font-family="monospace">SLIDE_STEP        = 25    per commit</text>
+      <text x="360" y="176" fill="#8b949e" font-size="10" font-family="monospace">COLD_START_COUNT  = 30    items</text>
+      <text x="360" y="196" fill="#8b949e" font-size="10" font-family="monospace">PESSIMISTIC_HEIGHT= 1     row</text>
+
+      <rect x="360" y="216" width="260" height="54" rx="6" fill="#1c2333" stroke="#d29922"/>
+      <text x="490" y="238" text-anchor="middle" fill="#d29922" font-size="10" font-weight="600">SCROLL_QUANTUM explained</text>
+      <text x="490" y="256" text-anchor="middle" fill="#8b949e" font-size="9">scrollTop quantized to 40-row bins.</text>
+      <text x="490" y="268" text-anchor="middle" fill="#8b949e" font-size="9">React only re-renders when range shifts.</text>
+
+      <!-- Measurement -->
+      <rect x="690" y="20" width="290" height="260" rx="10" fill="rgba(63,185,80,.04)" stroke="#3fb950" stroke-width="1.5"/>
+      <text x="835" y="48" text-anchor="middle" fill="#3fb950" font-size="12" font-weight="700">Height Measurement</text>
+      <text x="710" y="74" fill="#8b949e" font-size="9">1. Mount with DEFAULT_ESTIMATE</text>
+      <text x="710" y="94" fill="#8b949e" font-size="9">2. Yoga lays out element</text>
+      <text x="710" y="114" fill="#8b949e" font-size="9">3. measureRef callback fires</text>
+      <text x="710" y="134" fill="#8b949e" font-size="9">4. Real height replaces estimate</text>
+      <text x="710" y="154" fill="#8b949e" font-size="9">5. spacerRef reads yogaNode</text>
+      <text x="710" y="174" fill="#8b949e" font-size="9">   getComputedTop() — drift-free</text>
+
+      <rect x="710" y="196" width="250" height="70" rx="6" fill="#1c2333" stroke="#3fb950"/>
+      <text x="835" y="218" text-anchor="middle" fill="#3fb950" font-size="10" font-weight="600">useSyncExternalStore</text>
+      <text x="835" y="238" text-anchor="middle" fill="#8b949e" font-size="9">Subscribes to ScrollBox.subscribe</text>
+      <text x="835" y="254" text-anchor="middle" fill="#8b949e" font-size="9">Snapshot = quantized scrollTop</text>
+      <text x="835" y="268" text-anchor="middle" fill="#8b949e" font-size="9">React only sees new value when range shifts</text>
+    </svg>
+  </div>
+  <div class="why"><strong>Why SCROLL_QUANTUM=40 rows?</strong> A mouse wheel notch produces 5+ scroll events. Without quantization, each tick triggers a React re-render. By snapping scrollTop to 40-row bins, React only sees a new state when the visible range actually changes — reducing scroll renders by ~95%.</div>
+  <div class="why"><strong>Why DEFAULT_ESTIMATE=3 (intentionally low)?</strong> Overestimating height creates blank space below items before measurement. Underestimating causes slight layout jump but no visible gap. Users perceive layout-jumps as natural content reveal; blank space looks like a bug.</div>
+</section>
+
+<!-- STREAMING TEXT -->
+<section id="streaming">
+  <div class="label">Chapter 3</div>
+  <h2 class="title">Streaming Text &amp; Ratchet Component</h2>
+  <p class="desc">As tokens stream in, text appears progressively. The Ratchet component ensures message height never shrinks — preventing layout shift that makes content feel unstable.</p>
+  <div class="cards">
+    <div class="card">
+      <h3><span class="badge b-cyan">streamingText</span> Live Rendering</h3>
+      <p><code>streamingText: string | null</code> rendered as a separate Box appended to message list. Streaming tool uses with pending state get synthetic messages via <code>syntheticStreamingToolUseMessages</code>. <code>inProgressToolUseIDs</code> set gates spinner vs rendered output.</p>
+    </div>
+    <div class="card">
+      <h3><span class="badge b-green">Ratchet</span> Height Lock</h3>
+      <p>Measures element height via <code>measureElement</code> on every <code>useLayoutEffect</code>. Maintains a monotonically increasing <code>minHeight</code>. Once a message renders at height N, it never collapses smaller — even as streaming continues and text reflows.</p>
+    </div>
+    <div class="card">
+      <h3><span class="badge b-blue">Viewport Aware</span> Pause Off-Screen</h3>
+      <p>Ratchet pauses height-locking when <code>isVisible=false</code> via <code>useTerminalViewport</code>. Off-screen messages don't hold scroll height unnecessarily — only visible messages maintain their ratcheted minimum.</p>
+    </div>
+  </div>
+  <div class="why"><strong>Why ratchet instead of fixed heights?</strong> Token streaming can cause text to reflow as it grows (line wraps at different points with more text). Without ratcheting, each new token could collapse previously expanded content, causing the viewport to jump. The ratchet trades a tiny bit of extra vertical space for visual stability.</div>
+</section>
+
+<!-- FOCUS MANAGEMENT -->
+<section id="focus">
+  <div class="label">Chapter 4</div>
+  <h2 class="title">Focus Management System</h2>
+  <p class="desc">A DOM-like focus manager with a history stack, tab order traversal, and discrete React dispatch for tear-free focus transitions.</p>
+  <div class="cards">
+    <div class="card">
+      <h3><span class="badge b-purple">FocusManager</span> Architecture</h3>
+      <ul>
+        <li>Stored on root DOMElement (like <code>document</code>)</li>
+        <li>Focus stack: max 32 entries, deduped</li>
+        <li><code>handleNodeRemoved</code> restores to most recent still-mounted element</li>
+        <li>Custom <code>FocusEvent</code> class with <code>relatedTarget</code></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3><span class="badge b-blue">Tab Order</span> Traversal</h3>
+      <p><code>collectTabbable()</code> walks the element tree, collects all nodes with <code>tabIndex ≥ 0</code>. <code>focusNext()</code> / <code>focusPrevious()</code> wrap modularly. Same model as browser tab navigation.</p>
+    </div>
+    <div class="card">
+      <h3><span class="badge b-orange">Dialog Lock</span> enable/disable</h3>
+      <p><code>enable()</code> / <code>disable()</code> globally gate focus changes. Used when permission dialogs appear — disabling focus prevents the prompt input from stealing focus back while the dialog awaits a decision.</p>
+    </div>
+    <div class="card">
+      <h3><span class="badge b-green">Discrete Dispatch</span> Tear-Free</h3>
+      <p>Focus events dispatch via React reconciler's <code>dispatchDiscrete()</code> — same mechanism as browser click handlers. Ensures focus state updates are batched with their triggering event, preventing torn intermediate states.</p>
+    </div>
+  </div>
+</section>
+
+<!-- VIM MODE -->
+<section id="vim">
+  <div class="label">Chapter 5</div>
+  <h2 class="title">Full Vim Mode</h2>
+  <p class="desc">A complete Vim emulator inside the terminal prompt — INSERT/NORMAL modes, all major motions, operators, text objects, find, and dot-repeat.</p>
+  <div class="diagram">
+    <svg viewBox="0 0 1000 320" width="100%" xmlns="http://www.w3.org/2000/svg">
+      <!-- INSERT mode -->
+      <rect x="20" y="30" width="200" height="80" rx="10" fill="rgba(63,185,80,.08)" stroke="#3fb950" stroke-width="1.5"/>
+      <text x="120" y="58" text-anchor="middle" fill="#3fb950" font-size="13" font-weight="700">INSERT</text>
+      <text x="120" y="78" text-anchor="middle" fill="#8b949e" font-size="10">Normal typing</text>
+      <text x="120" y="96" text-anchor="middle" fill="#8b949e" font-size="9">Esc → NORMAL (cursor ←1)</text>
+
+      <!-- Transitions -->
+      <line x1="220" y1="70" x2="310" y2="70" stroke="#30363d" stroke-width="2" marker-end="url(#a)"/>
+      <line x1="310" y1="100" x2="220" y2="100" stroke="#30363d" stroke-width="2" marker-end="url(#a)"/>
+      <text x="265" y="65" text-anchor="middle" fill="#8b949e" font-size="8">Esc</text>
+      <text x="265" y="116" text-anchor="middle" fill="#8b949e" font-size="8">i/a/I/A/o/O</text>
+
+      <!-- NORMAL mode -->
+      <rect x="310" y="20" width="660" height="280" rx="10" fill="rgba(88,166,255,.04)" stroke="#58a6ff" stroke-width="1.5"/>
+      <text x="640" y="48" text-anchor="middle" fill="#58a6ff" font-size="13" font-weight="700">NORMAL — CommandState Machine</text>
+
+      <rect x="330" y="60" width="180" height="100" rx="6" fill="#1c2333" stroke="#bc8cff"/>
+      <text x="420" y="82" text-anchor="middle" fill="#bc8cff" font-size="10" font-weight="600">Operators</text>
+      <text x="420" y="100" text-anchor="middle" fill="#8b949e" font-size="9">d — delete</text>
+      <text x="420" y="116" text-anchor="middle" fill="#8b949e" font-size="9">c — change</text>
+      <text x="420" y="132" text-anchor="middle" fill="#8b949e" font-size="9">y — yank</text>
+      <text x="420" y="148" text-anchor="middle" fill="#8b949e" font-size="9">+ count prefix</text>
+
+      <rect x="530" y="60" width="200" height="100" rx="6" fill="#1c2333" stroke="#d29922"/>
+      <text x="630" y="82" text-anchor="middle" fill="#d29922" font-size="10" font-weight="600">Motions</text>
+      <text x="630" y="100" text-anchor="middle" fill="#8b949e" font-size="9">h/l/j/k · w/b/e · W/B/E</text>
+      <text x="630" y="116" text-anchor="middle" fill="#8b949e" font-size="9">0/^ (line start) · $ (end)</text>
+      <text x="630" y="132" text-anchor="middle" fill="#8b949e" font-size="9">f/F/t/T (find char)</text>
+      <text x="630" y="148" text-anchor="middle" fill="#8b949e" font-size="9">;/, (repeat find)</text>
+
+      <rect x="750" y="60" width="200" height="100" rx="6" fill="#1c2333" stroke="#f778ba"/>
+      <text x="850" y="82" text-anchor="middle" fill="#f778ba" font-size="10" font-weight="600">Text Objects</text>
+      <text x="850" y="100" text-anchor="middle" fill="#8b949e" font-size="9">w/W — word/WORD</text>
+      <text x="850" y="116" text-anchor="middle" fill="#8b949e" font-size="9">"/'/(/) — quoted/parens</text>
+      <text x="850" y="132" text-anchor="middle" fill="#8b949e" font-size="9">{'{'}/{'}'}  — braces</text>
+      <text x="850" y="148" text-anchor="middle" fill="#8b949e" font-size="9">&lt;&gt;/[] — angle/square</text>
+
+      <rect x="330" y="180" width="290" height="100" rx="6" fill="#1c2333" stroke="#76e4f7"/>
+      <text x="475" y="202" text-anchor="middle" fill="#76e4f7" font-size="10" font-weight="600">Dot-Repeat</text>
+      <text x="475" y="222" text-anchor="middle" fill="#8b949e" font-size="9">Records lastChange (PersistentState)</text>
+      <text x="475" y="240" text-anchor="middle" fill="#8b949e" font-size="9">. replays exact recorded change</text>
+      <text x="475" y="258" text-anchor="middle" fill="#8b949e" font-size="9">replayLastChange() with same OperatorContext</text>
+
+      <rect x="640" y="180" width="310" height="100" rx="6" fill="#1c2333" stroke="#3fb950"/>
+      <text x="795" y="202" text-anchor="middle" fill="#3fb950" font-size="10" font-weight="600">Sub-States (CommandState)</text>
+      <text x="795" y="222" text-anchor="middle" fill="#8b949e" font-size="9">idle → count → operator → operatorCount</text>
+      <text x="795" y="240" text-anchor="middle" fill="#8b949e" font-size="9">→ operatorFind → operatorTextObj</text>
+      <text x="795" y="258" text-anchor="middle" fill="#8b949e" font-size="9">find · g · operatorG · replace · indent</text>
+
+      <defs><marker id="a" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#58a6ff"/></marker></defs>
+    </svg>
+  </div>
+  <div class="code"><span class="cm">// Arrow key remapping in NORMAL mode</span>
+Arrow keys  → hjkl  (motion-expecting states)
+Backspace   → h     (move left)
+Delete      → x     (delete char)
+
+<span class="cm">// INSERT→NORMAL cursor adjustment</span>
+<span class="kw">on</span> Escape: cursorOffset = Math.max(0, cursorOffset - 1)
+<span class="cm">// Matches real vim behavior: cursor shifts left on Esc</span></div>
+  <div class="why"><strong>Why implement Vim in a terminal prompt?</strong> Developers who use Vim spend years building muscle memory. A 40-character prompt edit that takes 3 seconds in INSERT mode takes 0.5 seconds with Vim motions (<code>cw</code> to change a word, <code>$</code> to jump to end). For a tool used hundreds of times per day, this matters.</div>
+</section>
+
+<!-- IMAGE PASTE -->
+<section id="paste">
+  <div class="label">Chapter 6</div>
+  <h2 class="title">Image Paste Support</h2>
+  <p class="desc">Handles clipboard images, Finder drag-and-drop of multiple files, screenshot paths, and large bracketed paste chunking.</p>
+  <div class="cards">
+    <div class="card">
+      <h3><span class="badge b-blue">Bracketed Paste</span> Detection</h3>
+      <p>Terminal signals paste via <code>\x1b[200~ ... \x1b[201~</code>. <code>isPasted</code> flag set by keypress parser. Previous approach used competing <code>stdin.on('data')</code> listener that caused dropped characters.</p>
+    </div>
+    <div class="card">
+      <h3><span class="badge b-cyan">Path Detection</span> Multi-Image</h3>
+      <p>Pasted text split on <code>/ (?=\/|[A-Za-z]:\\)/</code> (space before Unix / or Windows C:\) then on <code>\n</code>. Each segment tested with <code>isImageFilePath</code>. Handles Finder multi-image drag as space-separated paths.</p>
+    </div>
+    <div class="card">
+      <h3><span class="badge b-purple">Clipboard Image</span> macOS Only</h3>
+      <p>Empty bracketed paste (<code>input.length === 0</code>) → calls <code>getImageFromClipboard()</code> debounced 50ms. Also triggered for temp screenshot paths like <code>TemporaryItems/.../screencaptureui/.../Screenshot</code> that no longer exist on disk.</p>
+    </div>
+    <div class="card">
+      <h3><span class="badge b-green">Chunk Aggregation</span> Large Pastes</h3>
+      <p>Large pastes arrive in multiple stdin chunks. A 100ms <code>setTimeout</code> aggregates them. <code>pastePendingRef.current</code> (synchronous ref) prevents a subsequent keystroke in the same React batch from bypassing the accumulator.</p>
+    </div>
+  </div>
+</section>
+
+<!-- TERMINAL CAPABILITY -->
+<section id="terminal">
+  <div class="label">Chapter 7</div>
+  <h2 class="title">Terminal Capability Detection</h2>
+  <p class="desc">Uses a DA1 (Device Attributes) sentinel as an ordering barrier — all capability queries fire in parallel, then the DA1 response signals "all previous responses received". No timeouts needed.</p>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Query</th><th>Protocol</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td>decrqm</td><td>DECRQM (DEC Request Mode)</td><td>Check which DEC modes are supported</td></tr>
+        <tr><td>da1 / da2</td><td>CSI c / CSI &gt; c</td><td>Primary/secondary device attributes (terminal type)</td></tr>
+        <tr><td>kittyKeyboard</td><td>CSI ? u</td><td>Kitty keyboard protocol support detection</td></tr>
+        <tr><td>cursorPosition</td><td>DECXCPR (CSI ? 6 n)</td><td>Current cursor position</td></tr>
+        <tr><td>oscColor</td><td>OSC 11</td><td>Terminal background color → auto light/dark theme</td></tr>
+        <tr><td>xtversion</td><td>CSI &gt; q</td><td>Terminal version string (xterm.js/SSH detection)</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="why"><strong>Why OSC 11 for theme?</strong> <code>$COLORFGBG</code> is unreliable (many terminals don't set it, or set it incorrectly). OSC 11 queries the terminal's actual background color and lets Claude Code reliably distinguish light-on-dark from dark-on-light terminals — no manual theme selection needed in most cases.</div>
+</section>
+
+<!-- ANIMATION -->
+<section id="animation">
+  <div class="label">Chapter 8</div>
+  <h2 class="title">Animation System</h2>
+  <p class="desc">A shared clock with viewport culling, terminal focus throttling, per-character shimmer, and stall detection that fades the spinner red after 3 seconds of silence.</p>
+  <div class="diagram">
+    <svg viewBox="0 0 1000 260" width="100%" xmlns="http://www.w3.org/2000/svg">
+      <!-- Clock -->
+      <rect x="20" y="30" width="220" height="100" rx="8" fill="rgba(118,228,247,.06)" stroke="#76e4f7" stroke-width="1.5"/>
+      <text x="130" y="58" text-anchor="middle" fill="#76e4f7" font-size="12" font-weight="700">Shared Clock</text>
+      <text x="130" y="78" text-anchor="middle" fill="#8b949e" font-size="9">ClockContext — one per app</text>
+      <text x="130" y="96" text-anchor="middle" fill="#8b949e" font-size="9">Only runs with active subscribers</text>
+      <text x="130" y="112" text-anchor="middle" fill="#8b949e" font-size="9">Slows when terminal loses focus</text>
+
+      <line x1="240" y1="80" x2="290" y2="80" stroke="#30363d" stroke-width="2" marker-end="url(#a)"/>
+
+      <!-- useAnimationFrame -->
+      <rect x="290" y="20" width="200" height="120" rx="8" fill="rgba(88,166,255,.06)" stroke="#58a6ff" stroke-width="1.5"/>
+      <text x="390" y="48" text-anchor="middle" fill="#58a6ff" font-size="11" font-weight="700">useAnimationFrame</text>
+      <text x="390" y="68" text-anchor="middle" fill="#8b949e" font-size="9">intervalMs param</text>
+      <text x="390" y="86" text-anchor="middle" fill="#8b949e" font-size="9">keepAlive flag</text>
+      <text x="390" y="104" text-anchor="middle" fill="#8b949e" font-size="9">Viewport culling:</text>
+      <text x="390" y="120" text-anchor="middle" fill="#8b949e" font-size="9">stops if off-screen</text>
+
+      <line x1="490" y1="80" x2="540" y2="80" stroke="#30363d" stroke-width="2" marker-end="url(#a)"/>
+
+      <!-- Shimmer -->
+      <rect x="540" y="20" width="200" height="120" rx="8" fill="rgba(247,120,186,.06)" stroke="#f778ba" stroke-width="1.5"/>
+      <text x="640" y="48" text-anchor="middle" fill="#f778ba" font-size="12" font-weight="700">Shimmer</text>
+      <text x="640" y="68" text-anchor="middle" fill="#8b949e" font-size="9">glimmerIndex sweeps string</text>
+      <text x="640" y="86" text-anchor="middle" fill="#8b949e" font-size="9">Per-char color interpolation</text>
+      <text x="640" y="104" text-anchor="middle" fill="#8b949e" font-size="9">50ms speed (requesting)</text>
+      <text x="640" y="120" text-anchor="middle" fill="#8b949e" font-size="9">200ms otherwise</text>
+
+      <line x1="740" y1="80" x2="790" y2="80" stroke="#30363d" stroke-width="2" marker-end="url(#a)"/>
+
+      <!-- Stall detection -->
+      <rect x="790" y="20" width="190" height="120" rx="8" fill="rgba(248,81,73,.06)" stroke="#f85149" stroke-width="1.5"/>
+      <text x="885" y="48" text-anchor="middle" fill="#f85149" font-size="12" font-weight="700">Stall Detection</text>
+      <text x="885" y="68" text-anchor="middle" fill="#8b949e" font-size="9">3000ms no new tokens</text>
+      <text x="885" y="86" text-anchor="middle" fill="#f85149" font-size="9">→ fade to red</text>
+      <text x="885" y="104" text-anchor="middle" fill="#8b949e" font-size="9">over 2000ms (smooth)</text>
+      <text x="885" y="120" text-anchor="middle" fill="#8b949e" font-size="9">Disabled if tools active</text>
+
+      <!-- Spinner frames -->
+      <rect x="20" y="160" width="960" height="80" rx="8" fill="rgba(63,185,80,.04)" stroke="#3fb950" stroke-width="1"/>
+      <text x="500" y="188" text-anchor="middle" fill="#3fb950" font-size="12" font-weight="700">Spinner: Palindrome Frame Sequence</text>
+      <text x="500" y="210" text-anchor="middle" fill="#8b949e" font-size="10">SPINNER_FRAMES = [...DEFAULT_CHARACTERS, ...[...DEFAULT_CHARACTERS].reverse()]</text>
+      <text x="500" y="228" text-anchor="middle" fill="#8b949e" font-size="9">Builds a back-and-forth sequence so the spinner naturally reverses — no abrupt jump from last frame to first.</text>
+    </svg>
+  </div>
+  <div class="why"><strong>Why viewport culling for animations?</strong> A conversation with 200 messages could have 200 active animation ticks per frame if every spinner ran regardless of visibility. Culling to the visible range + overscan keeps the animation budget O(screen height) rather than O(message count).</div>
+</section>
+
+<!-- THEME -->
+<section id="theme">
+  <div class="label">Chapter 9</div>
+  <h2 class="title">Theme System</h2>
+  <p class="desc">6 named palettes, 60+ semantic color slots, and an OSC 11 watcher for automatic light/dark detection.</p>
+  <div class="cards">
+    <div class="card">
+      <h3><span class="badge b-blue">6 Palettes</span> Named Themes</h3>
+      <ul>
+        <li><code>dark</code> / <code>light</code> — default</li>
+        <li><code>dark-daltonized</code> / <code>light-daltonized</code> — color blindness</li>
+        <li><code>dark-ansi</code> / <code>light-ansi</code> — 16-color terminals only</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3><span class="badge b-purple">Semantic Slots</span> 60+ Colors</h3>
+      <p>Named by purpose, not value: <code>claude</code>, <code>claudeShimmer</code>, <code>permission</code>, <code>planMode</code>, <code>diffAdded/diffRemoved/diffAddedWord/diffRemovedWord</code>, 8 subagent colors (<code>_FOR_SUBAGENTS_ONLY</code>), 7 rainbow colors + shimmers.</p>
+    </div>
+    <div class="card">
+      <h3><span class="badge b-cyan">Auto Detection</span> OSC 11 Watcher</h3>
+      <p><code>watchSystemTheme()</code> queries the terminal's actual background color via OSC 11. Seeds from <code>$COLORFGBG</code> initially, then corrects with the real value. Preview mode (<code>setPreviewTheme</code>) shows live previews without saving.</p>
+    </div>
+  </div>
+</section>
+
+<!-- SEARCH -->
+<section id="search">
+  <div class="label">Chapter 10</div>
+  <h2 class="title">Search &amp; Highlight</h2>
+  <p class="desc">Two-layer highlighting: all matches get inverted, the current match gets yellow+bold+underline — implemented at both the rendered-screen and off-screen-buffer levels.</p>
+  <div class="cards">
+    <div class="card">
+      <h3><span class="badge b-orange">Screen-Space</span> applySearchHighlight</h3>
+      <p>Post-render, walks every row of the 2D screen buffer. Builds <code>codeUnitToCell[]</code> map handling wide chars, SpacerTail/SpacerHead, <code>noSelect</code> gutters. Non-overlapping matches get <code>SGR 7</code> (inversion) via <code>stylePool.withInverse</code>.</p>
+    </div>
+    <div class="card">
+      <h3><span class="badge b-blue">Current Match</span> applyPositionedHighlight</h3>
+      <p>The focused match gets yellow+bold+underline via <code>applyPositionedHighlight</code>, writing on top of the inversion. Uses message-relative positions stored in <code>Ink.searchPositions</code>, adjusted by scroll offset.</p>
+    </div>
+    <div class="card">
+      <h3><span class="badge b-purple">Off-Screen Scan</span> renderToScreen</h3>
+      <p><code>renderToScreen(el, width)</code> renders a React element to an isolated Screen buffer (~1-3ms). <code>scanPositions()</code> finds all match positions in the buffer. Enables searching messages that aren't currently mounted in the virtual scroll.</p>
+    </div>
+  </div>
+</section>
+
+<!-- NOTIFICATIONS -->
+<section id="notify">
+  <div class="label">Chapter 11</div>
+  <h2 class="title">Notification System</h2>
+  <p class="desc">Terminal-native notifications via OSC escape sequences — different protocols for different terminal emulators.</p>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Method</th><th>Protocol</th><th>Format</th></tr></thead>
+      <tbody>
+        <tr><td>notifyITerm2</td><td>OSC 9</td><td><code>\x1b]9;title:\n\nmessage\x07</code></td></tr>
+        <tr><td>notifyKitty</td><td>OSC 99 (3-part)</td><td>title → body → action=focus, each with id=</td></tr>
+        <tr><td>notifyGhostty</td><td>OSC 777</td><td><code>\x1b]777;notify;title;message\x07</code></td></tr>
+        <tr><td>notifyBell</td><td>BEL (\x07)</td><td>Raw BEL — NOT multiplexer-wrapped (tmux must see it)</td></tr>
+        <tr><td>progress</td><td>OSC 9;4</td><td>running/error/indeterminate/completed + percentage</td></tr>
+        <tr><td>tabStatus</td><td>OSC 21337</td><td>indicator=#rrggbb;status=text;status-color=#rrggbb</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="why"><strong>Why NOT wrap BEL in multiplexer passthrough?</strong> tmux needs to see the raw BEL character to trigger its <code>bell-action</code> (which can flash the pane border, run a command, etc.). The OSC multiplexer wrapper (<code>DCS tmux; ... ST</code>) passes through OSC sequences but may swallow raw BEL. So BEL is sent unwrapped intentionally.</div>
+  <div class="cards">
+    <div class="card">
+      <h3><span class="badge b-cyan">Tab Status</span> OSC 21337</h3>
+      <p>Three presets: <span style="color:var(--green)">idle</span> (<code>rgb(0,215,95)</code> "Idle"), <span style="color:var(--orange)">busy</span> (<code>rgb(255,149,0)</code> "Working…"), <span style="color:var(--accent)">waiting</span> (<code>rgb(95,135,255)</code> "Waiting"). Currently Anthropic-internal rollout only.</p>
+    </div>
+    <div class="card">
+      <h3><span class="badge b-purple">Idle Notify</span> useNotifyAfterTimeout</h3>
+      <p>Sends desktop notification when user has been idle &gt;6s and a response completes. Uses a polling interval (not single setTimeout) to catch tasks completing after an already-idle user. Interaction tracked in <code>processKeysInBatch</code>.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ESCAPE CODES -->
+<section id="escapes">
+  <div class="label">Chapter 12</div>
+  <h2 class="title">Terminal Escape Code Reference</h2>
+  <p class="desc">All DEC private modes, CSI sequences, and OSC protocols used by the rendering engine.</p>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Code</th><th>DEC Number</th><th>Enable</th><th>Disable</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td>CURSOR_VISIBLE</td><td>25</td><td>SHOW_CURSOR</td><td>HIDE_CURSOR</td><td>Cursor visibility</td></tr>
+        <tr><td>ALT_SCREEN</td><td>47</td><td>ENTER_ALT_SCREEN</td><td>EXIT_ALT_SCREEN</td><td>Alternate screen buffer</td></tr>
+        <tr><td>ALT_SCREEN_CLEAR</td><td>1049</td><td>enter + clear</td><td>exit + restore</td><td>Clean alternate screen</td></tr>
+        <tr><td>MOUSE_NORMAL</td><td>1000</td><td>on</td><td>off</td><td>Button press/release/wheel</td></tr>
+        <tr><td>MOUSE_BUTTON</td><td>1002</td><td>on</td><td>off</td><td>Adds drag (button-motion)</td></tr>
+        <tr><td>MOUSE_ANY</td><td>1003</td><td>on</td><td>off</td><td>All-motion (hover)</td></tr>
+        <tr><td>MOUSE_SGR</td><td>1006</td><td>on</td><td>off</td><td>SGR format (col/row as numbers)</td></tr>
+        <tr><td>FOCUS_EVENTS</td><td>1004</td><td>on</td><td>off</td><td>Terminal focus/blur reporting</td></tr>
+        <tr><td>BRACKETED_PASTE</td><td>2004</td><td>on</td><td>off</td><td>Paste begin/end markers</td></tr>
+        <tr><td>SYNCHRONIZED_UPDATE</td><td>2026</td><td>BSU</td><td>ESU</td><td>Atomic frame paint</td></tr>
+        <tr><td>KITTY_KEYBOARD</td><td>CSI &gt; 1u</td><td>enable</td><td>disable</td><td>Enhanced keyboard protocol</td></tr>
+        <tr><td>MODIFY_OTHER_KEYS</td><td>CSI &gt; 4;2m</td><td>enable</td><td>disable</td><td>Modified key reporting</td></tr>
+        <tr><td>DECSTBM</td><td>CSI r</td><td>set region</td><td>reset</td><td>Hardware scroll region</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="why"><strong>Why enable all 4 mouse tracking modes simultaneously?</strong> Each mode adds capabilities: 1000 = clicks, 1002 = drag, 1003 = hover, 1006 = SGR format (supports terminals wider than 223 columns). Claude Code uses all four together to support the full range of mouse interactions across all terminal widths.</div>
+</section>
+
+<section style="text-align:center;padding:40px 0;border-bottom:none">
+  <p style="color:var(--muted);font-size:.88rem">Claude Code terminal UI engine analysis — from source exploration of ink/, components/, hooks/, vim/, and utils/ modules.</p>
+</section>
+</main>
+</body>
+</html>

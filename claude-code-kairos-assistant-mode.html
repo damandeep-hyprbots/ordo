@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Code — KAIROS Assistant Mode Deep Dive</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1c2333;
+    --border: #30363d;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --accent: #58a6ff;
+    --purple: #bc8cff;
+    --green: #3fb950;
+    --orange: #d29922;
+    --red: #f85149;
+    --pink: #f778ba;
+    --teal: #39d353;
+    --cyan: #76e4f7;
+    --yellow: #e3b341;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.65;
+  }
+
+  /* ---- Hero ---- */
+  .hero {
+    text-align: center; padding: 72px 20px 56px;
+    background: linear-gradient(180deg, #0d1117 0%, #111820 100%);
+    border-bottom: 1px solid var(--border);
+  }
+  .hero h1 {
+    font-size: 2.8rem; font-weight: 800;
+    background: linear-gradient(135deg, var(--orange), var(--pink));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .hero .sub { color: var(--muted); font-size: 1.1rem; max-width: 760px; margin: 12px auto 0; }
+  .toc { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 28px; }
+  .toc a {
+    background: var(--surface); border: 1px solid var(--border); color: var(--muted);
+    padding: 6px 14px; border-radius: 100px; text-decoration: none; font-size: .82rem;
+    transition: all .2s;
+  }
+  .toc a:hover { border-color: var(--orange); color: var(--orange); }
+
+  /* ---- Layout ---- */
+  .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+  section { padding: 56px 0; border-bottom: 1px solid var(--border); }
+  section:last-of-type { border-bottom: none; }
+  .label { font-size: .72rem; letter-spacing: 2px; text-transform: uppercase; color: var(--orange); margin-bottom: 6px; }
+  .title { font-size: 1.9rem; font-weight: 700; margin-bottom: 6px; }
+  .desc { color: var(--muted); max-width: 720px; margin-bottom: 32px; font-size: 1.02rem; }
+
+  /* ---- Diagram ---- */
+  .diagram {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 28px; overflow-x: auto; margin-bottom: 24px;
+  }
+  svg text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', monospace; }
+
+  /* ---- Cards ---- */
+  .cards { display: grid; grid-template-columns: repeat(auto-fit,minmax(280px,1fr)); gap: 18px; margin-top: 20px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 22px; transition: border-color .2s;
+  }
+  .card:hover { border-color: var(--orange); }
+  .card h3 { font-size: 1.05rem; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+  .card p, .card li { color: var(--muted); font-size: .9rem; }
+  .card ul { padding-left: 18px; margin-top: 6px; }
+  .badge {
+    display: inline-block; font-size: .68rem; padding: 2px 8px; border-radius: 100px;
+    font-weight: 600; text-transform: uppercase; letter-spacing: .5px;
+  }
+  .b-blue   { background: rgba(88,166,255,.15); color: var(--accent); }
+  .b-purple { background: rgba(188,140,255,.15); color: var(--purple); }
+  .b-green  { background: rgba(63,185,80,.15);  color: var(--green); }
+  .b-orange { background: rgba(210,153,34,.15); color: var(--orange); }
+  .b-pink   { background: rgba(247,120,186,.15);color: var(--pink); }
+  .b-teal   { background: rgba(57,211,83,.15);  color: var(--teal); }
+  .b-red    { background: rgba(248,81,73,.15);  color: var(--red); }
+  .b-cyan   { background: rgba(118,228,247,.15);color: var(--cyan); }
+
+  /* ---- Callout ---- */
+  .why {
+    background: rgba(210,153,34,.06); border-left: 3px solid var(--orange);
+    border-radius: 0 8px 8px 0; padding: 14px 18px; margin: 14px 0; font-size: .92rem;
+  }
+  .why strong { color: var(--orange); }
+  .warn {
+    background: rgba(248,81,73,.06); border-left: 3px solid var(--red);
+    border-radius: 0 8px 8px 0; padding: 14px 18px; margin: 14px 0; font-size: .92rem;
+  }
+  .warn strong { color: var(--red); }
+  .note {
+    background: rgba(88,166,255,.06); border-left: 3px solid var(--accent);
+    border-radius: 0 8px 8px 0; padding: 14px 18px; margin: 14px 0; font-size: .92rem;
+  }
+  .note strong { color: var(--accent); }
+
+  /* ---- Code ---- */
+  .code {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+    padding: 18px 22px; font-family: 'SF Mono','Fira Code','Cascadia Code',monospace;
+    font-size: .83rem; color: var(--muted); overflow-x: auto; white-space: pre; line-height: 1.7;
+    margin: 14px 0;
+  }
+  .code .kw { color: var(--purple); } .code .fn { color: var(--accent); }
+  .code .cm { color: #484f58; }       .code .st { color: var(--green); }
+  .code .ar { color: var(--orange); }  .code .hi { color: var(--pink); }
+
+  /* ---- Table ---- */
+  .tbl-wrap { overflow-x: auto; margin: 16px 0; }
+  table {
+    width: 100%; border-collapse: collapse; font-size: .88rem;
+    background: var(--surface); border-radius: 8px; overflow: hidden;
+  }
+  th { background: var(--surface2); color: var(--accent); text-align: left; padding: 10px 14px; font-weight: 600; font-size: .8rem; text-transform: uppercase; letter-spacing: .5px; }
+  td { padding: 10px 14px; border-top: 1px solid var(--border); color: var(--muted); }
+  tr:hover td { background: rgba(88,166,255,.04); }
+
+  /* ---- Footer ---- */
+  footer { text-align: center; padding: 40px 20px; color: var(--muted); font-size: .85rem; border-top: 1px solid var(--border); }
+
+  /* ---- Utility ---- */
+  .flex-row { display: flex; gap: 18px; flex-wrap: wrap; }
+  .flex-row > * { flex: 1; min-width: 280px; }
+  .mono { font-family: 'SF Mono','Fira Code',monospace; font-size: .85rem; color: var(--orange); }
+  .tag { display: inline-block; font-size: .7rem; padding: 1px 7px; border-radius: 4px; font-weight: 600; border: 1px solid; margin-right: 4px; }
+  .tag-flag { border-color: var(--purple); color: var(--purple); background: rgba(188,140,255,.08); }
+  .tag-gb { border-color: var(--orange); color: var(--orange); background: rgba(210,153,34,.08); }
+</style>
+</head>
+<body>
+
+<!-- ============================================================== -->
+<!--  HERO                                                          -->
+<!-- ============================================================== -->
+<div class="hero">
+  <h1>KAIROS: Assistant Mode</h1>
+  <p class="sub">Inside Claude Code's persistent, always-on AI agent system &mdash; codename <em>tengu</em>. Proactive agents, sleep economics, dream consolidation, voice input, cron scheduling, remote triggers, and the Brief output channel.</p>
+  <nav class="toc">
+    <a href="#overview">Overview</a>
+    <a href="#proactive">Proactive Mode</a>
+    <a href="#sleep">Sleep Tool</a>
+    <a href="#dream">Dream System</a>
+    <a href="#voice">Voice Mode</a>
+    <a href="#cron">Cron / Scheduling</a>
+    <a href="#triggers">Remote Triggers</a>
+    <a href="#brief">Brief Tool</a>
+  </nav>
+</div>
+
+<div class="container">
+
+<!-- ============================================================== -->
+<!--  1. KAIROS OVERVIEW                                            -->
+<!-- ============================================================== -->
+<section id="overview">
+  <div class="label">Section 1</div>
+  <h2 class="title">KAIROS Mode Overview</h2>
+  <p class="desc">A build-time feature flag that transforms Claude Code from a request-response CLI into a persistent, always-on AI agent. The internal codename is <em>tengu</em> &mdash; every GrowthBook flag is prefixed <code>tengu_</code>.</p>
+
+  <div class="diagram">
+    <svg viewBox="0 0 980 320" xmlns="http://www.w3.org/2000/svg" width="100%">
+      <!-- Background grid -->
+      <defs>
+        <marker id="ah" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#58a6ff"/></marker>
+        <marker id="ah-or" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#d29922"/></marker>
+        <marker id="ah-pk" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#f778ba"/></marker>
+      </defs>
+
+      <!-- Normal mode flow -->
+      <rect x="20" y="20" rx="8" width="180" height="56" fill="#1c2333" stroke="#30363d"/>
+      <text x="110" y="42" fill="#8b949e" text-anchor="middle" font-size="11">Normal Mode</text>
+      <text x="110" y="58" fill="#58a6ff" text-anchor="middle" font-size="12" font-weight="bold">User prompt -> Response</text>
+
+      <!-- Arrow down -->
+      <line x1="110" y1="76" x2="110" y2="110" stroke="#30363d" stroke-width="1.5" stroke-dasharray="5,3"/>
+      <text x="120" y="98" fill="#484f58" font-size="10">feature('KAIROS')</text>
+
+      <!-- KAIROS mode box -->
+      <rect x="20" y="110" rx="8" width="940" height="190" fill="none" stroke="#d29922" stroke-width="1.5" stroke-dasharray="6,3"/>
+      <text x="40" y="132" fill="#d29922" font-size="11" font-weight="bold">KAIROS MODE (always-on)</text>
+
+      <!-- Session scheduler -->
+      <rect x="40" y="145" rx="6" width="170" height="50" fill="#1c2333" stroke="#d29922"/>
+      <text x="125" y="167" fill="#d29922" text-anchor="middle" font-size="11" font-weight="bold">Session Scheduler</text>
+      <text x="125" y="183" fill="#8b949e" text-anchor="middle" font-size="10">Auto-starts, no user prompt</text>
+
+      <!-- Tick heartbeat -->
+      <rect x="240" y="145" rx="6" width="150" height="50" fill="#1c2333" stroke="#f778ba"/>
+      <text x="315" y="167" fill="#f778ba" text-anchor="middle" font-size="11" font-weight="bold">&lt;tick&gt; Heartbeat</text>
+      <text x="315" y="183" fill="#8b949e" text-anchor="middle" font-size="10">Synthetic user messages</text>
+
+      <line x1="210" y1="170" x2="237" y2="170" stroke="#d29922" stroke-width="1.5" marker-end="url(#ah-or)"/>
+
+      <!-- QueryEngine -->
+      <rect x="420" y="145" rx="6" width="150" height="50" fill="#1c2333" stroke="#58a6ff"/>
+      <text x="495" y="167" fill="#58a6ff" text-anchor="middle" font-size="11" font-weight="bold">QueryEngine</text>
+      <text x="495" y="183" fill="#8b949e" text-anchor="middle" font-size="10">Conversation lifecycle</text>
+
+      <line x1="390" y1="170" x2="417" y2="170" stroke="#f778ba" stroke-width="1.5" marker-end="url(#ah-pk)"/>
+
+      <!-- Tool System -->
+      <rect x="600" y="145" rx="6" width="150" height="50" fill="#1c2333" stroke="#3fb950"/>
+      <text x="675" y="167" fill="#3fb950" text-anchor="middle" font-size="11" font-weight="bold">Tool Execution</text>
+      <text x="675" y="183" fill="#8b949e" text-anchor="middle" font-size="10">Sleep / Brief / Cron / ...</text>
+
+      <line x1="570" y1="170" x2="597" y2="170" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#ah)"/>
+
+      <!-- Back loop -->
+      <rect x="780" y="145" rx="6" width="160" height="50" fill="#1c2333" stroke="#bc8cff"/>
+      <text x="860" y="167" fill="#bc8cff" text-anchor="middle" font-size="11" font-weight="bold">Next Tick / Sleep</text>
+      <text x="860" y="183" fill="#8b949e" text-anchor="middle" font-size="10">Loop continues forever</text>
+
+      <line x1="750" y1="170" x2="777" y2="170" stroke="#3fb950" stroke-width="1.5" marker-end="url(#ah)"/>
+
+      <!-- Loop-back arrow -->
+      <path d="M860,195 L860,220 Q860,235 845,235 L315,235 Q300,235 300,220 L300,198" fill="none" stroke="#bc8cff" stroke-width="1.5" marker-end="url(#ah-pk)" stroke-dasharray="5,3"/>
+      <text x="570" y="250" fill="#484f58" font-size="10" text-anchor="middle">tick loop (infinite)</text>
+
+      <!-- Sub-flags -->
+      <rect x="40" y="265" rx="4" width="120" height="24" fill="rgba(210,153,34,.12)" stroke="#d29922" stroke-width="1"/>
+      <text x="100" y="282" fill="#d29922" text-anchor="middle" font-size="10">KAIROS_BRIEF</text>
+
+      <rect x="170" y="265" rx="4" width="140" height="24" fill="rgba(210,153,34,.12)" stroke="#d29922" stroke-width="1"/>
+      <text x="240" y="282" fill="#d29922" text-anchor="middle" font-size="10">KAIROS_CHANNELS</text>
+
+      <rect x="320" y="265" rx="4" width="130" height="24" fill="rgba(210,153,34,.12)" stroke="#d29922" stroke-width="1"/>
+      <text x="385" y="282" fill="#d29922" text-anchor="middle" font-size="10">KAIROS_DREAM</text>
+
+      <rect x="460" y="265" rx="4" width="120" height="24" fill="rgba(210,153,34,.12)" stroke="#d29922" stroke-width="1"/>
+      <text x="520" y="282" fill="#d29922" text-anchor="middle" font-size="10">KAIROS_CRON</text>
+
+      <rect x="590" y="265" rx="4" width="120" height="24" fill="rgba(188,140,255,.12)" stroke="#bc8cff" stroke-width="1"/>
+      <text x="650" y="282" fill="#bc8cff" text-anchor="middle" font-size="10">PROACTIVE</text>
+
+      <rect x="720" y="265" rx="4" width="120" height="24" fill="rgba(188,140,255,.12)" stroke="#bc8cff" stroke-width="1"/>
+      <text x="780" y="282" fill="#bc8cff" text-anchor="middle" font-size="10">VOICE_MODE</text>
+
+      <rect x="850" y="265" rx="4" width="120" height="24" fill="rgba(188,140,255,.12)" stroke="#bc8cff" stroke-width="1"/>
+      <text x="910" y="282" fill="#bc8cff" text-anchor="middle" font-size="10">AGENT_TRIGGERS</text>
+    </svg>
+  </div>
+
+  <div class="why"><strong>Why "KAIROS"?</strong> In Greek, <em>kairos</em> means "the right moment." KAIROS mode is about the agent choosing when to act on its own &mdash; not waiting for a human to type a prompt. The tick loop gives the model continuous awareness of time passing, so it can decide the right moment to investigate, commit, push, or sleep.</div>
+
+  <div class="cards">
+    <div class="card">
+      <h3><span class="badge b-orange">BUILD-TIME</span> Feature Flag</h3>
+      <p><code>feature('KAIROS')</code> is a Bun build-time constant. When <code>false</code>, entire KAIROS subsystems (Sleep, Brief, proactive prompts, cron tools) are dead-code-eliminated from the bundle. External/public builds ship with <code>KAIROS = false</code>.</p>
+    </div>
+    <div class="card">
+      <h3><span class="badge b-pink">RUNTIME</span> GrowthBook Gates</h3>
+      <p>Even when bundled, each subsystem has its own <code>tengu_*</code> GrowthBook flag as a kill-switch. This allows fleet-wide emergency disablement without a new client build.</p>
+      <ul>
+        <li><code>tengu_kairos_brief</code> &mdash; Brief tool</li>
+        <li><code>tengu_onyx_plover</code> &mdash; Dream/autoDream</li>
+        <li><code>tengu_amber_quartz_disabled</code> &mdash; Voice kill-switch</li>
+        <li><code>tengu_surreal_dali</code> &mdash; Remote triggers</li>
+        <li><code>tengu_cobalt_frost</code> &mdash; Voice Nova 3 STT</li>
+        <li><code>tengu_kairos_cron_config</code> &mdash; Cron jitter tuning</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3><span class="badge b-teal">PERSISTENT</span> Always-On Agent</h3>
+      <p>Unlike normal mode (user asks, model answers, loop ends), KAIROS runs an infinite tick loop. The session scheduler auto-starts without waiting for a user prompt. The model receives periodic <code>&lt;tick&gt;</code> heartbeat messages as synthetic user turns and must either do useful work or call <code>Sleep</code>.</p>
+    </div>
+    <div class="card">
+      <h3><span class="badge b-purple">CODENAME</span> tengu</h3>
+      <p>Internal codename for the KAIROS project. All GrowthBook flags use the <code>tengu_</code> prefix. Analytics events use <code>tengu_</code> prefixes (e.g., <code>tengu_auto_dream_fired</code>, <code>tengu_brief_send</code>). The name appears throughout the codebase in flag identifiers.</p>
+    </div>
+  </div>
+
+  <div class="tbl-wrap">
+    <table>
+      <tr><th>Sub-Flag</th><th>Purpose</th><th>OR-Gated With</th></tr>
+      <tr><td class="mono">KAIROS_BRIEF</td><td>Brief tool (SendUserMessage output channel)</td><td>KAIROS alone bundles it</td></tr>
+      <tr><td class="mono">KAIROS_CHANNELS</td><td>Channel notifications and Channels UI notice</td><td>KAIROS</td></tr>
+      <tr><td class="mono">KAIROS_DREAM</td><td>Dream/memory consolidation subagent</td><td>KAIROS</td></tr>
+      <tr><td class="mono">KAIROS_CRON</td><td>Scheduled task creation tools</td><td>AGENT_TRIGGERS</td></tr>
+      <tr><td class="mono">PROACTIVE</td><td>Tick-based autonomous mode system prompt</td><td>KAIROS</td></tr>
+      <tr><td class="mono">VOICE_MODE</td><td>Push-to-talk speech input</td><td>Standalone</td></tr>
+      <tr><td class="mono">AGENT_TRIGGERS</td><td>Remote trigger tools (CronCreate, RemoteTrigger)</td><td>Standalone</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- ============================================================== -->
+<!--  2. PROACTIVE MODE                                             -->
+<!-- ============================================================== -->
+<section id="proactive">
+  <div class="label">Section 2</div>
+  <h2 class="title">Proactive Mode</h2>
+  <p class="desc">The autonomous work system prompt, gated behind <code>PROACTIVE || KAIROS</code>. Defines the behavioral contract for a model running in an infinite tick loop without human prompting.</p>
+
+  <div class="diagram">
+    <svg viewBox="0 0 920 340" xmlns="http://www.w3.org/2000/svg" width="100%">
+      <defs>
+        <marker id="pa" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#3fb950"/></marker>
+        <marker id="pa-r" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#f85149"/></marker>
+        <marker id="pa-b" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#58a6ff"/></marker>
+      </defs>
+
+      <!-- Tick arrives -->
+      <rect x="20" y="30" rx="8" width="160" height="50" fill="#1c2333" stroke="#f778ba"/>
+      <text x="100" y="52" fill="#f778ba" text-anchor="middle" font-size="12" font-weight="bold">&lt;tick&gt; arrives</text>
+      <text x="100" y="68" fill="#8b949e" text-anchor="middle" font-size="10">periodic heartbeat</text>
+
+      <!-- Decision diamond -->
+      <polygon points="340,55 420,20 500,55 420,90" fill="#1c2333" stroke="#d29922" stroke-width="1.5"/>
+      <text x="420" y="55" fill="#d29922" text-anchor="middle" font-size="11" font-weight="bold">Useful</text>
+      <text x="420" y="68" fill="#d29922" text-anchor="middle" font-size="11" font-weight="bold">work?</text>
+
+      <line x1="180" y1="55" x2="337" y2="55" stroke="#f778ba" stroke-width="1.5" marker-end="url(#pa-b)"/>
+
+      <!-- YES path -->
+      <rect x="560" y="10" rx="6" width="160" height="40" fill="#1c2333" stroke="#3fb950"/>
+      <text x="640" y="35" fill="#3fb950" text-anchor="middle" font-size="11" font-weight="bold">Do the work</text>
+      <line x1="500" y1="42" x2="557" y2="32" stroke="#3fb950" stroke-width="1.5" marker-end="url(#pa)"/>
+      <text x="522" y="30" fill="#3fb950" font-size="10">YES</text>
+
+      <!-- Work examples -->
+      <rect x="560" y="60" rx="4" width="160" height="26" fill="rgba(63,185,80,.08)" stroke="rgba(63,185,80,.3)"/>
+      <text x="640" y="78" fill="#3fb950" text-anchor="middle" font-size="10">Read files, run tests, commit</text>
+
+      <!-- NO path -->
+      <rect x="560" y="110" rx="6" width="160" height="40" fill="#1c2333" stroke="#58a6ff"/>
+      <text x="640" y="135" fill="#58a6ff" text-anchor="middle" font-size="11" font-weight="bold">Call Sleep(duration)</text>
+      <line x1="500" y1="68" x2="557" y2="125" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#pa-b)"/>
+      <text x="522" y="95" fill="#58a6ff" font-size="10">NO</text>
+
+      <!-- FORBIDDEN path -->
+      <rect x="560" y="175" rx="6" width="200" height="40" fill="rgba(248,81,73,.08)" stroke="#f85149"/>
+      <text x="660" y="195" fill="#f85149" text-anchor="middle" font-size="11" font-weight="bold">Output "still waiting..."</text>
+      <text x="660" y="208" fill="#f85149" text-anchor="middle" font-size="10">FORBIDDEN</text>
+
+      <!-- X mark -->
+      <line x1="535" y1="185" x2="555" y2="205" stroke="#f85149" stroke-width="2.5"/>
+      <line x1="555" y1="185" x2="535" y2="205" stroke="#f85149" stroke-width="2.5"/>
+
+      <!-- Terminal focus section -->
+      <rect x="20" y="140" rx="8" width="480" height="180" fill="none" stroke="#30363d" stroke-dasharray="5,3"/>
+      <text x="40" y="162" fill="#bc8cff" font-size="11" font-weight="bold">Terminal Focus Modulation</text>
+
+      <rect x="40" y="175" rx="6" width="200" height="58" fill="#1c2333" stroke="#3fb950"/>
+      <text x="140" y="195" fill="#3fb950" text-anchor="middle" font-size="11" font-weight="bold">terminalFocus: unfocused</text>
+      <text x="140" y="210" fill="#8b949e" text-anchor="middle" font-size="10">User is away</text>
+      <text x="140" y="222" fill="#8b949e" text-anchor="middle" font-size="10">Act autonomously, commit, push</text>
+
+      <rect x="270" y="175" rx="6" width="210" height="58" fill="#1c2333" stroke="#d29922"/>
+      <text x="375" y="195" fill="#d29922" text-anchor="middle" font-size="11" font-weight="bold">terminalFocus: focused</text>
+      <text x="375" y="210" fill="#8b949e" text-anchor="middle" font-size="10">User is watching</text>
+      <text x="375" y="222" fill="#8b949e" text-anchor="middle" font-size="10">Be collaborative, surface choices</text>
+
+      <!-- Anti-narration -->
+      <rect x="40" y="248" rx="6" width="440" height="55" fill="rgba(248,81,73,.05)" stroke="#f85149" stroke-dasharray="4,2"/>
+      <text x="260" y="268" fill="#f85149" text-anchor="middle" font-size="11" font-weight="bold">Anti-Narration Rule</text>
+      <text x="260" y="285" fill="#8b949e" text-anchor="middle" font-size="10">"Do not narrate each step, list every file you read, or explain routine actions."</text>
+      <text x="260" y="298" fill="#8b949e" text-anchor="middle" font-size="10">"If you can say it in one sentence, don't use three."</text>
+    </svg>
+  </div>
+
+  <div class="why"><strong>Why tick-based heartbeats?</strong> A persistent agent needs a way to "wake up" periodically even when no user input arrives. The <code>&lt;tick&gt;</code> messages arrive as synthetic user messages, giving the model awareness that time is passing. Each tick includes the user's local time so the model can reason about time-of-day without relying on external tool timestamps which may be in different timezones.</div>
+
+  <div class="cards">
+    <div class="card">
+      <h3><span class="badge b-green">RULE</span> Must Act or Sleep</h3>
+      <p>On every tick, the model must either perform useful work (read files, run tests, make changes) or call the Sleep tool. Idle text output like "still waiting" or "nothing to do" is <strong>explicitly prohibited</strong> as token waste. This is the core behavioral contract of proactive mode.</p>
+    </div>
+    <div class="card">
+      <h3><span class="badge b-blue">PACING</span> Cache-Aware Sleep</h3>
+      <p>The prompt cache expires after 5 minutes of inactivity. The model must balance sleep duration against cache economics: sleeping &lt;5 min preserves the cache (cheap wake-up), sleeping &gt;5 min forces a full re-prefill (expensive wake-up). This is explicitly noted in the system prompt.</p>
+    </div>
+    <div class="card">
+      <h3><span class="badge b-pink">BEHAVIOR</span> Focus-Gated Autonomy</h3>
+      <p>The <code>terminalFocus</code> field tells the model whether the user's terminal window is focused or not. When <strong>unfocused</strong>, the model acts with maximum autonomy &mdash; make decisions, explore, commit, push. When <strong>focused</strong>, it becomes collaborative &mdash; surface choices, ask before large changes.</p>
+    </div>
+    <div class="card">
+      <h3><span class="badge b-red">FORBIDDEN</span> Anti-Narration</h3>
+      <p>The prompt explicitly forbids step-by-step narration of tool calls. Text output is reserved for: decisions needing user input, high-level status at milestones ("PR created", "tests passing"), and errors/blockers. Everything else is noise the user can see in tool call output.</p>
+    </div>
+  </div>
+
+  <div class="code"><span class="cm">// System prompt excerpt (18_proactive_mode.md)</span>
+<span class="st">"You are running autonomously. You will receive &lt;tick&gt; prompts that</span>
+<span class="st"> keep you alive between turns -- just treat them as 'you're awake, what now?'"</span>
+
+<span class="st">"If you have nothing useful to do on a tick, you MUST call Sleep."</span>
+<span class="st">"Never respond with only a status message like 'still waiting' or</span>
+<span class="st"> 'nothing to do' -- that wastes a turn and burns tokens for no reason."</span></div>
+</section>
+
+<!-- ============================================================== -->
+<!--  3. SLEEP TOOL                                                 -->
+<!-- ============================================================== -->
+<section id="sleep">
+  <div class="label">Section 3</div>
+  <h2 class="title">Sleep Tool</h2>
+  <p class="desc">The model's mechanism to defer the next tick. Without it, the tick loop would force an API call every heartbeat &mdash; even when there is nothing to do. Sleep exists to make idling cheap.</p>
+
+  <div class="diagram">
+    <svg viewBox="0 0 920 280" xmlns="http://www.w3.org/2000/svg" width="100%">
+      <defs>
+        <marker id="sa" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#58a6ff"/></marker>
+        <marker id="sa-g" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#3fb950"/></marker>
+        <marker id="sa-r" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#f85149"/></marker>
+      </defs>
+
+      <!-- Timeline -->
+      <line x1="40" y1="80" x2="880" y2="80" stroke="#30363d" stroke-width="2"/>
+      <text x="460" y="25" fill="#8b949e" text-anchor="middle" font-size="11">Time ---></text>
+
+      <!-- Cache window -->
+      <rect x="40" y="32" rx="4" width="360" height="24" fill="rgba(63,185,80,.1)" stroke="#3fb950" stroke-dasharray="3,2"/>
+      <text x="220" y="49" fill="#3fb950" text-anchor="middle" font-size="10" font-weight="bold">Prompt Cache Valid (5 min)</text>
+
+      <!-- Cache expired zone -->
+      <rect x="400" y="32" rx="4" width="480" height="24" fill="rgba(248,81,73,.06)" stroke="#f85149" stroke-dasharray="3,2"/>
+      <text x="640" y="49" fill="#f85149" text-anchor="middle" font-size="10">Cache Expired -- Full Re-prefill Required</text>
+
+      <!-- T=0 tick -->
+      <circle cx="60" cy="80" r="6" fill="#f778ba"/>
+      <text x="60" y="105" fill="#f778ba" text-anchor="middle" font-size="10">tick</text>
+      <text x="60" y="118" fill="#484f58" text-anchor="middle" font-size="9">t=0</text>
+
+      <!-- Sleep(3min) - stays in cache -->
+      <rect x="100" y="68" rx="4" width="140" height="24" fill="rgba(58,166,255,.1)" stroke="#58a6ff"/>
+      <text x="170" y="85" fill="#58a6ff" text-anchor="middle" font-size="10">Sleep(180s)</text>
+      <circle cx="260" cy="80" r="6" fill="#3fb950"/>
+      <text x="260" y="105" fill="#3fb950" text-anchor="middle" font-size="10">wake</text>
+      <text x="260" y="118" fill="#3fb950" text-anchor="middle" font-size="9">CHEAP</text>
+
+      <!-- Sleep(8min) - outside cache -->
+      <rect x="300" y="130" rx="4" width="280" height="24" fill="rgba(248,81,73,.08)" stroke="#f85149"/>
+      <text x="440" y="147" fill="#f85149" text-anchor="middle" font-size="10">Sleep(480s) -- exceeds cache</text>
+      <circle cx="600" cy="143" r="6" fill="#f85149"/>
+      <text x="600" y="168" fill="#f85149" text-anchor="middle" font-size="10">wake</text>
+      <text x="600" y="181" fill="#f85149" text-anchor="middle" font-size="9">EXPENSIVE</text>
+
+      <!-- Annotations -->
+      <rect x="40" y="200" rx="6" width="250" height="60" fill="#1c2333" stroke="#3fb950"/>
+      <text x="165" y="220" fill="#3fb950" text-anchor="middle" font-size="11" font-weight="bold">Sleep &lt; 5 min</text>
+      <text x="165" y="236" fill="#8b949e" text-anchor="middle" font-size="10">Preserves prompt cache</text>
+      <text x="165" y="250" fill="#8b949e" text-anchor="middle" font-size="10">Next API call reads from cache</text>
+
+      <rect x="335" y="200" rx="6" width="250" height="60" fill="#1c2333" stroke="#f85149"/>
+      <text x="460" y="220" fill="#f85149" text-anchor="middle" font-size="11" font-weight="bold">Sleep &gt; 5 min</text>
+      <text x="460" y="236" fill="#8b949e" text-anchor="middle" font-size="10">Cache expires, full re-prefill</text>
+      <text x="460" y="250" fill="#8b949e" text-anchor="middle" font-size="10">Use for long idle periods</text>
+
+      <rect x="630" y="200" rx="6" width="250" height="60" fill="#1c2333" stroke="#d29922"/>
+      <text x="755" y="220" fill="#d29922" text-anchor="middle" font-size="11" font-weight="bold">caffeinate -i -t 300</text>
+      <text x="755" y="236" fill="#8b949e" text-anchor="middle" font-size="10">Prevents macOS idle sleep</text>
+      <text x="755" y="250" fill="#8b949e" text-anchor="middle" font-size="10">Restarted every 4 min (self-healing)</text>
+    </svg>
+  </div>
+
+  <div class="why"><strong>Why not just use <code>Bash(sleep ...)</code>?</strong> A shell sleep holds an open child process and wastes a Bash slot in the concurrent tool executor. The Sleep tool is process-lightweight &mdash; it's a Node.js timer that doesn't consume a shell. It can also run concurrently with other tools without interference.</div>
+
+  <div class="flex-row">
+    <div class="card">
+      <h3><span class="badge b-blue">API COST</span> Cache Economics</h3>
+      <p>Each wake-up is an API call. The Anthropic prompt cache has a 5-minute TTL. If the model sleeps under 5 minutes, the next call gets a cache hit (cheap, fast). Over 5 minutes, the entire system prompt and conversation history must be re-prefilled (expensive). The Sleep tool prompt explicitly instructs the model to "balance accordingly."</p>
+    </div>
+    <div class="card">
+      <h3><span class="badge b-orange">OS LEVEL</span> caffeinate Integration</h3>
+      <p>On macOS, the <code>preventSleep</code> service spawns <code>caffeinate -i -t 300</code> to create an idle-sleep power assertion. It uses reference counting: <code>startPreventSleep()</code> increments, <code>stopPreventSleep()</code> decrements. The process is <strong>restarted every 4 minutes</strong> as a self-healing mechanism &mdash; if Node is killed with SIGKILL, the orphaned caffeinate auto-exits after 5 minutes.</p>
+    </div>
+  </div>
+
+  <div class="code"><span class="cm">// tools/SleepTool/prompt.ts</span>
+<span class="kw">export const</span> <span class="fn">SLEEP_TOOL_PROMPT</span> = <span class="st">`Wait for a specified duration.
+The user can interrupt the sleep at any time.
+
+Use this when you have nothing to do, or when you're waiting for something.
+You may receive &lt;tick&gt; prompts -- these are periodic check-ins.
+Look for useful work to do before sleeping.
+
+Prefer this over Bash(sleep ...) -- it doesn't hold a shell process.
+
+Each wake-up costs an API call, but the prompt cache expires after
+5 minutes of inactivity -- balance accordingly.`</span></div>
+
+  <div class="code"><span class="cm">// services/preventSleep.ts</span>
+<span class="kw">const</span> <span class="ar">CAFFEINATE_TIMEOUT_SECONDS</span> = <span class="hi">300</span>  <span class="cm">// 5 minutes</span>
+<span class="kw">const</span> <span class="ar">RESTART_INTERVAL_MS</span> = <span class="hi">4 * 60 * 1000</span>  <span class="cm">// 4 min restart cycle</span>
+
+<span class="fn">spawn</span>(<span class="st">'caffeinate'</span>, [<span class="st">'-i'</span>, <span class="st">'-t'</span>, <span class="fn">String</span>(<span class="ar">CAFFEINATE_TIMEOUT_SECONDS</span>)], {
+  stdio: <span class="st">'ignore'</span>
+})
+<span class="cm">// -i: prevent idle sleep (least aggressive -- display can still sleep)</span>
+<span class="cm">// -t: auto-exit timeout (self-healing if Node is SIGKILL'd)</span></div>
+</section>
+
+<!-- ============================================================== -->
+<!--  4. DREAM SYSTEM                                               -->
+<!-- ============================================================== -->
+<section id="dream">
+  <div class="label">Section 4</div>
+  <h2 class="title">Dream System (autoDream)</h2>
+  <p class="desc">Background memory consolidation. A forked subagent runs a reflective pass over memory files, synthesizing recent session transcripts into durable, well-organized memories for future sessions.</p>
+
+  <div class="diagram">
+    <svg viewBox="0 0 920 420" xmlns="http://www.w3.org/2000/svg" width="100%">
+      <defs>
+        <marker id="da" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#bc8cff"/></marker>
+        <marker id="da-g" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#3fb950"/></marker>
+        <marker id="da-r" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#f85149"/></marker>
+      </defs>
+
+      <!-- Title -->
+      <text x="460" y="22" fill="#bc8cff" text-anchor="middle" font-size="13" font-weight="bold">Dream Gate Logic (cheapest checks first)</text>
+
+      <!-- Gate 1: Time -->
+      <rect x="20" y="40" rx="8" width="200" height="70" fill="#1c2333" stroke="#d29922"/>
+      <text x="120" y="62" fill="#d29922" text-anchor="middle" font-size="12" font-weight="bold">Gate 1: Time</text>
+      <text x="120" y="78" fill="#8b949e" text-anchor="middle" font-size="10">hours since lastConsolidatedAt</text>
+      <text x="120" y="92" fill="#8b949e" text-anchor="middle" font-size="10">>= minHours (default: 24h)</text>
+      <text x="120" y="105" fill="#484f58" text-anchor="middle" font-size="9">Cost: 1 stat() call</text>
+
+      <!-- Gate 2: Sessions -->
+      <rect x="260" y="40" rx="8" width="210" height="70" fill="#1c2333" stroke="#f778ba"/>
+      <text x="365" y="62" fill="#f778ba" text-anchor="middle" font-size="12" font-weight="bold">Gate 2: Sessions</text>
+      <text x="365" y="78" fill="#8b949e" text-anchor="middle" font-size="10">transcript count since last</text>
+      <text x="365" y="92" fill="#8b949e" text-anchor="middle" font-size="10">>= minSessions (default: 5)</text>
+      <text x="365" y="105" fill="#484f58" text-anchor="middle" font-size="9">Throttled: 10 min between scans</text>
+
+      <line x1="220" y1="75" x2="257" y2="75" stroke="#d29922" stroke-width="1.5" marker-end="url(#da)"/>
+
+      <!-- Gate 3: Lock -->
+      <rect x="510" y="40" rx="8" width="190" height="70" fill="#1c2333" stroke="#f85149"/>
+      <text x="605" y="62" fill="#f85149" text-anchor="middle" font-size="12" font-weight="bold">Gate 3: Lock</text>
+      <text x="605" y="78" fill="#8b949e" text-anchor="middle" font-size="10">No other process</text>
+      <text x="605" y="92" fill="#8b949e" text-anchor="middle" font-size="10">mid-consolidation</text>
+      <text x="605" y="105" fill="#484f58" text-anchor="middle" font-size="9">PID-based, stale after 1h</text>
+
+      <line x1="470" y1="75" x2="507" y2="75" stroke="#f778ba" stroke-width="1.5" marker-end="url(#da)"/>
+
+      <!-- Fire arrow -->
+      <rect x="740" y="40" rx="8" width="160" height="70" fill="rgba(63,185,80,.1)" stroke="#3fb950"/>
+      <text x="820" y="62" fill="#3fb950" text-anchor="middle" font-size="12" font-weight="bold">FIRE</text>
+      <text x="820" y="78" fill="#8b949e" text-anchor="middle" font-size="10">runForkedAgent()</text>
+      <text x="820" y="92" fill="#8b949e" text-anchor="middle" font-size="10">querySource: 'auto_dream'</text>
+
+      <line x1="700" y1="75" x2="737" y2="75" stroke="#f85149" stroke-width="1.5" marker-end="url(#da-g)"/>
+
+      <!-- Four Phases -->
+      <text x="460" y="150" fill="#bc8cff" text-anchor="middle" font-size="13" font-weight="bold">Four Consolidation Phases</text>
+
+      <!-- Phase 1 -->
+      <rect x="20" y="165" rx="8" width="200" height="105" fill="#1c2333" stroke="#58a6ff"/>
+      <text x="120" y="185" fill="#58a6ff" text-anchor="middle" font-size="12" font-weight="bold">Phase 1: Orient</text>
+      <text x="120" y="202" fill="#8b949e" text-anchor="middle" font-size="10">ls the memory directory</text>
+      <text x="120" y="216" fill="#8b949e" text-anchor="middle" font-size="10">Read entrypoint index</text>
+      <text x="120" y="230" fill="#8b949e" text-anchor="middle" font-size="10">Skim existing topic files</text>
+      <text x="120" y="244" fill="#8b949e" text-anchor="middle" font-size="10">Review logs/ if present</text>
+      <text x="120" y="262" fill="#484f58" text-anchor="middle" font-size="9">Avoid creating duplicates</text>
+
+      <!-- Phase 2 -->
+      <rect x="240" y="165" rx="8" width="210" height="105" fill="#1c2333" stroke="#d29922"/>
+      <text x="345" y="185" fill="#d29922" text-anchor="middle" font-size="12" font-weight="bold">Phase 2: Gather</text>
+      <text x="345" y="202" fill="#8b949e" text-anchor="middle" font-size="10">Daily logs (logs/YYYY/MM/)</text>
+      <text x="345" y="216" fill="#8b949e" text-anchor="middle" font-size="10">Drifted memories</text>
+      <text x="345" y="230" fill="#8b949e" text-anchor="middle" font-size="10">grep JSONL transcripts</text>
+      <text x="345" y="244" fill="#8b949e" text-anchor="middle" font-size="10">(narrow terms only)</text>
+      <text x="345" y="262" fill="#484f58" text-anchor="middle" font-size="9">Never read full transcripts</text>
+
+      <line x1="220" y1="218" x2="237" y2="218" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#da)"/>
+
+      <!-- Phase 3 -->
+      <rect x="470" y="165" rx="8" width="210" height="105" fill="#1c2333" stroke="#3fb950"/>
+      <text x="575" y="185" fill="#3fb950" text-anchor="middle" font-size="12" font-weight="bold">Phase 3: Consolidate</text>
+      <text x="575" y="202" fill="#8b949e" text-anchor="middle" font-size="10">Write/update memory files</text>
+      <text x="575" y="216" fill="#8b949e" text-anchor="middle" font-size="10">Merge into existing topics</text>
+      <text x="575" y="230" fill="#8b949e" text-anchor="middle" font-size="10">Convert relative dates</text>
+      <text x="575" y="244" fill="#8b949e" text-anchor="middle" font-size="10">Delete contradicted facts</text>
+      <text x="575" y="262" fill="#484f58" text-anchor="middle" font-size="9">Read-only Bash only (ls, grep, cat)</text>
+
+      <line x1="450" y1="218" x2="467" y2="218" stroke="#d29922" stroke-width="1.5" marker-end="url(#da)"/>
+
+      <!-- Phase 4 -->
+      <rect x="700" y="165" rx="8" width="200" height="105" fill="#1c2333" stroke="#f778ba"/>
+      <text x="800" y="185" fill="#f778ba" text-anchor="middle" font-size="12" font-weight="bold">Phase 4: Prune &amp; Index</text>
+      <text x="800" y="202" fill="#8b949e" text-anchor="middle" font-size="10">Update entrypoint index</text>
+      <text x="800" y="216" fill="#8b949e" text-anchor="middle" font-size="10">Keep under 25KB</text>
+      <text x="800" y="230" fill="#8b949e" text-anchor="middle" font-size="10">One-line entries (~150 chars)</text>
+      <text x="800" y="244" fill="#8b949e" text-anchor="middle" font-size="10">Remove stale pointers</text>
+      <text x="800" y="262" fill="#484f58" text-anchor="middle" font-size="9">Resolve contradictions</text>
+
+      <line x1="680" y1="218" x2="697" y2="218" stroke="#3fb950" stroke-width="1.5" marker-end="url(#da)"/>
+
+      <!-- Lock management -->
+      <rect x="20" y="300" rx="8" width="440" height="100" fill="#1c2333" stroke="#30363d"/>
+      <text x="240" y="322" fill="#f85149" text-anchor="middle" font-size="12" font-weight="bold">Lock Management (.consolidate-lock)</text>
+      <text x="240" y="342" fill="#8b949e" text-anchor="middle" font-size="10">Lock file body = holder's PID, mtime = lastConsolidatedAt</text>
+      <text x="240" y="358" fill="#8b949e" text-anchor="middle" font-size="10">Acquire: write PID -> mtime = now. Race: re-read to verify winner.</text>
+      <text x="240" y="374" fill="#8b949e" text-anchor="middle" font-size="10">Failure: rollback mtime to pre-acquire (rewind for retry).</text>
+      <text x="240" y="390" fill="#8b949e" text-anchor="middle" font-size="10">Stale after 1 hour even if PID is live (PID reuse guard).</text>
+
+      <!-- UI visibility -->
+      <rect x="490" y="300" rx="8" width="410" height="100" fill="#1c2333" stroke="#30363d"/>
+      <text x="695" y="322" fill="#bc8cff" text-anchor="middle" font-size="12" font-weight="bold">UI Visibility</text>
+      <text x="695" y="342" fill="#8b949e" text-anchor="middle" font-size="10">DreamTask registered in AppState.tasks</text>
+      <text x="695" y="358" fill="#8b949e" text-anchor="middle" font-size="10">Visible in footer pill and BackgroundTasksDialog</text>
+      <text x="695" y="374" fill="#8b949e" text-anchor="middle" font-size="10">User can kill from the dialog (abort + lock rollback)</text>
+      <text x="695" y="390" fill="#8b949e" text-anchor="middle" font-size="10">Completion summary: "Improved N memories" inline message</text>
+    </svg>
+  </div>
+
+  <div class="why"><strong>Why "Dream"?</strong> Like biological sleep, the dream system runs when the agent is not actively engaged with the user. It consolidates short-term session transcripts into long-term memory files &mdash; exactly the way sleep consolidates memories in the brain. The name is used throughout the codebase and in the user-facing UI ("DreamTask").</div>
+
+  <div class="why"><strong>Why gate order matters:</strong> The three gates run cheapest-first. Gate 1 (time) costs one <code>stat()</code> call. Gate 2 (sessions) scans the transcript directory and is throttled to once per 10 minutes. Gate 3 (lock) involves a write. If gate 1 fails (not enough hours), gates 2 and 3 never run. Per-turn cost when enabled: one GrowthBook cache read + one stat.</div>
+
+  <div class="code"><span class="cm">// services/autoDream/autoDream.ts - Gate constants</span>
+<span class="kw">const</span> <span class="ar">SESSION_SCAN_INTERVAL_MS</span> = <span class="hi">10 * 60 * 1000</span>  <span class="cm">// 10 min throttle</span>
+
+<span class="kw">const</span> <span class="ar">DEFAULTS</span> = {
+  <span class="fn">minHours</span>: <span class="hi">24</span>,       <span class="cm">// hours since last consolidation</span>
+  <span class="fn">minSessions</span>: <span class="hi">5</span>,    <span class="cm">// transcript count threshold</span>
+}
+
+<span class="cm">// Gate order (cheapest first):</span>
+<span class="cm">//   1. Time: hours since lastConsolidatedAt >= minHours (one stat)</span>
+<span class="cm">//   2. Sessions: transcript count with mtime > lastConsolidatedAt >= minSessions</span>
+<span class="cm">//   3. Lock: no other process mid-consolidation</span></div>
+
+  <div class="tbl-wrap">
+    <table>
+      <tr><th>Gate</th><th>Check</th><th>Cost</th><th>Throttle</th></tr>
+      <tr><td>1. Time</td><td><code>hoursSince >= cfg.minHours</code></td><td>1 stat()</td><td>None (every turn)</td></tr>
+      <tr><td>2. Sessions</td><td><code>sessionIds.length >= cfg.minSessions</code></td><td>Directory scan + parallel stat</td><td>10 min between scans</td></tr>
+      <tr><td>3. Lock</td><td><code>tryAcquireConsolidationLock()</code></td><td>Read + write + verify</td><td>N/A (gate 1+2 must pass)</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- ============================================================== -->
+<!--  5. VOICE MODE                                                 -->
+<!-- ============================================================== -->
+<section id="voice">
+  <div class="label">Section 5</div>
+  <h2 class="title">Voice Mode</h2>
+  <p class="desc">Push-to-talk speech-to-text via WebSocket streaming to Anthropic's voice_stream endpoint. Binary audio frames go up, <code>TranscriptText</code> and <code>TranscriptEndpoint</code> messages come down.</p>
+
+  <div class="diagram">
+    <svg viewBox="0 0 920 380" xmlns="http://www.w3.org/2000/svg" width="100%">
+      <defs>
+        <marker id="va" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#76e4f7"/></marker>
+        <marker id="va-p" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#f778ba"/></marker>
+        <marker id="va-g" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#3fb950"/></marker>
+      </defs>
+
+      <text x="460" y="22" fill="#76e4f7" text-anchor="middle" font-size="13" font-weight="bold">Voice WebSocket Protocol</text>
+
+      <!-- Client side -->
+      <rect x="20" y="40" rx="8" width="300" height="320" fill="none" stroke="#30363d" stroke-dasharray="5,3"/>
+      <text x="170" y="60" fill="#76e4f7" text-anchor="middle" font-size="11" font-weight="bold">CLIENT (Claude Code)</text>
+
+      <!-- Mic -->
+      <rect x="40" y="75" rx="6" width="120" height="40" fill="#1c2333" stroke="#3fb950"/>
+      <text x="100" y="95" fill="#3fb950" text-anchor="middle" font-size="10" font-weight="bold">Microphone</text>
+      <text x="100" y="108" fill="#484f58" text-anchor="middle" font-size="9">16kHz, 16-bit, mono</text>
+
+      <!-- Native audio -->
+      <rect x="180" y="75" rx="6" width="120" height="40" fill="#1c2333" stroke="#d29922"/>
+      <text x="240" y="95" fill="#d29922" text-anchor="middle" font-size="10" font-weight="bold">audio-capture</text>
+      <text x="240" y="108" fill="#484f58" text-anchor="middle" font-size="9">NAPI / SoX / arecord</text>
+
+      <!-- Key press -->
+      <rect x="40" y="130" rx="6" width="260" height="30" fill="rgba(247,120,186,.08)" stroke="#f778ba"/>
+      <text x="170" y="150" fill="#f778ba" text-anchor="middle" font-size="10">Hold SPACE = record, release = finalize</text>
+
+      <!-- Outgoing frames -->
+      <rect x="40" y="175" rx="6" width="260" height="30" fill="rgba(118,228,247,.08)" stroke="#76e4f7"/>
+      <text x="170" y="195" fill="#76e4f7" text-anchor="middle" font-size="10">Binary audio frames (raw PCM)</text>
+
+      <!-- Keepalive -->
+      <rect x="40" y="218" rx="6" width="260" height="26" fill="rgba(210,153,34,.08)" stroke="#d29922"/>
+      <text x="170" y="236" fill="#d29922" text-anchor="middle" font-size="10">KeepAlive every 8 seconds</text>
+
+      <!-- CloseStream -->
+      <rect x="40" y="258" rx="6" width="260" height="26" fill="rgba(248,81,73,.08)" stroke="#f85149"/>
+      <text x="170" y="276" fill="#f85149" text-anchor="middle" font-size="10">CloseStream on key release</text>
+
+      <!-- Finalize timers -->
+      <rect x="40" y="298" rx="6" width="260" height="50" fill="#1c2333" stroke="#30363d"/>
+      <text x="170" y="318" fill="#8b949e" text-anchor="middle" font-size="10">Finalize timers:</text>
+      <text x="170" y="334" fill="#3fb950" text-anchor="middle" font-size="10">noData: 1.5s | safety: 5s</text>
+
+      <!-- Server side -->
+      <rect x="600" y="40" rx="8" width="300" height="320" fill="none" stroke="#30363d" stroke-dasharray="5,3"/>
+      <text x="750" y="60" fill="#76e4f7" text-anchor="middle" font-size="11" font-weight="bold">SERVER (Anthropic)</text>
+
+      <!-- Endpoint -->
+      <rect x="620" y="75" rx="6" width="260" height="40" fill="#1c2333" stroke="#bc8cff"/>
+      <text x="750" y="95" fill="#bc8cff" text-anchor="middle" font-size="10" font-weight="bold">/api/ws/speech_to_text/voice_stream</text>
+      <text x="750" y="108" fill="#484f58" text-anchor="middle" font-size="9">conversation_engine + Deepgram</text>
+
+      <!-- TranscriptText -->
+      <rect x="620" y="130" rx="6" width="260" height="30" fill="rgba(63,185,80,.08)" stroke="#3fb950"/>
+      <text x="750" y="150" fill="#3fb950" text-anchor="middle" font-size="10">TranscriptText (interim + cumulative)</text>
+
+      <!-- TranscriptEndpoint -->
+      <rect x="620" y="175" rx="6" width="260" height="30" fill="rgba(188,140,255,.08)" stroke="#bc8cff"/>
+      <text x="750" y="195" fill="#bc8cff" text-anchor="middle" font-size="10">TranscriptEndpoint (utterance end)</text>
+
+      <!-- TranscriptError -->
+      <rect x="620" y="218" rx="6" width="260" height="26" fill="rgba(248,81,73,.08)" stroke="#f85149"/>
+      <text x="750" y="236" fill="#f85149" text-anchor="middle" font-size="10">TranscriptError / error</text>
+
+      <!-- Auth -->
+      <rect x="620" y="260" rx="6" width="260" height="42" fill="#1c2333" stroke="#d29922"/>
+      <text x="750" y="278" fill="#d29922" text-anchor="middle" font-size="10" font-weight="bold">OAuth Bearer Token</text>
+      <text x="750" y="293" fill="#8b949e" text-anchor="middle" font-size="10">API keys / Bedrock / Vertex FAIL</text>
+
+      <!-- Kill switch -->
+      <rect x="620" y="315" rx="6" width="260" height="30" fill="rgba(248,81,73,.08)" stroke="#f85149"/>
+      <text x="750" y="335" fill="#f85149" text-anchor="middle" font-size="10">Kill-switch: tengu_amber_quartz_disabled</text>
+
+      <!-- Arrows between client and server -->
+      <line x1="303" y1="190" x2="617" y2="90" stroke="#76e4f7" stroke-width="1.5" marker-end="url(#va)"/>
+      <line x1="617" y1="145" x2="303" y2="230" stroke="#3fb950" stroke-width="1.5" marker-end="url(#va-g)"/>
+      <line x1="617" y1="190" x2="303" y2="270" stroke="#bc8cff" stroke-width="1.5" marker-end="url(#va-p)"/>
+
+      <!-- Labels on arrows -->
+      <text x="460" y="130" fill="#76e4f7" text-anchor="middle" font-size="10" transform="rotate(-12,460,130)">audio up</text>
+      <text x="460" y="195" fill="#3fb950" text-anchor="middle" font-size="10" transform="rotate(12,460,195)">text down</text>
+    </svg>
+  </div>
+
+  <div class="why"><strong>Why OAuth only?</strong> The voice_stream endpoint lives on Anthropic's API infrastructure and uses the same OAuth credentials as Claude Code's claude.ai integration. API keys authenticate against a different auth plane and cannot access this WebSocket endpoint. Bedrock and Vertex use AWS/GCP auth respectively. The code explicitly checks <code>isAnthropicAuthEnabled()</code> and that <code>accessToken !== null</code>.</div>
+
+  <div class="cards">
+    <div class="card">
+      <h3><span class="badge b-cyan">INPUT</span> Push-to-Talk</h3>
+      <ul>
+        <li>Default keybinding: <strong>SPACE</strong></li>
+        <li>Hold to record, release to finalize</li>
+        <li>Auto-repeat key events reset a timer</li>
+        <li>No silence detection in push-to-talk mode &mdash; recording continues until key release</li>
+        <li>16 kHz, 16-bit signed, mono PCM</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3><span class="badge b-green">BACKEND</span> Audio Capture</h3>
+      <ul>
+        <li><strong>macOS:</strong> Native NAPI module (cpal/CoreAudio)</li>
+        <li><strong>Linux:</strong> NAPI -> arecord (ALSA) -> SoX fallback</li>
+        <li><strong>Windows:</strong> NAPI only (no fallback)</li>
+        <li>NAPI loaded lazily on first keypress (~1-8s)</li>
+        <li>WSL2+WSLg works via PulseAudio RDP pipes</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3><span class="badge b-purple">PROTOCOL</span> WebSocket Wire Format</h3>
+      <ul>
+        <li><strong>Up:</strong> Binary audio frames, <code>KeepAlive</code> JSON (8s), <code>CloseStream</code> JSON</li>
+        <li><strong>Down:</strong> <code>TranscriptText</code> (interim), <code>TranscriptEndpoint</code> (final), <code>TranscriptError</code></li>
+        <li>Fast path: post-CloseStream endpoint resolves in ~300ms</li>
+        <li>No-data timeout: 1.5s (server sent nothing)</li>
+        <li>Safety cap: 5s (last-resort if WS hangs)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3><span class="badge b-red">KILL SWITCH</span> tengu_amber_quartz_disabled</h3>
+      <ul>
+        <li>GrowthBook flag, default <code>false</code></li>
+        <li>When flipped to <code>true</code>, voice mode is disabled fleet-wide</li>
+        <li>Fresh installs default to "not killed" (no GrowthBook cache yet)</li>
+        <li>Gates command registration, config UI, and runtime availability</li>
+        <li>Nova 3 STT gated separately: <code>tengu_cobalt_frost</code></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="code"><span class="cm">// services/voiceStreamSTT.ts</span>
+<span class="kw">const</span> <span class="ar">VOICE_STREAM_PATH</span> = <span class="st">'/api/ws/speech_to_text/voice_stream'</span>
+<span class="kw">const</span> <span class="ar">KEEPALIVE_INTERVAL_MS</span> = <span class="hi">8_000</span>
+<span class="kw">export const</span> <span class="ar">FINALIZE_TIMEOUTS_MS</span> = {
+  <span class="fn">safety</span>: <span class="hi">5_000</span>,   <span class="cm">// last-resort cap if WS hangs</span>
+  <span class="fn">noData</span>: <span class="hi">1_500</span>,   <span class="cm">// fast path when server sends nothing</span>
+}
+
+<span class="cm">// voice/voiceModeEnabled.ts</span>
+<span class="kw">export function</span> <span class="fn">isVoiceModeEnabled</span>(): <span class="kw">boolean</span> {
+  <span class="kw">return</span> <span class="fn">hasVoiceAuth</span>() && <span class="fn">isVoiceGrowthBookEnabled</span>()
+  <span class="cm">// hasVoiceAuth: isAnthropicAuthEnabled() && tokens?.accessToken</span>
+  <span class="cm">// isVoiceGrowthBookEnabled: !tengu_amber_quartz_disabled</span>
+}</div>
+</section>
+
+<!-- ============================================================== -->
+<!--  6. CRON / SCHEDULED AGENTS                                    -->
+<!-- ============================================================== -->
+<section id="cron">
+  <div class="label">Section 6</div>
+  <h2 class="title">Cron / Scheduled Agents</h2>
+  <p class="desc">A two-mode scheduling system: durable tasks survive restarts (persisted to <code>.claude/scheduled_tasks.json</code>), session-only tasks die with the process. Recurring tasks re-fire; one-shots auto-delete.</p>
+
+  <div class="diagram">
+    <svg viewBox="0 0 920 350" xmlns="http://www.w3.org/2000/svg" width="100%">
+      <defs>
+        <marker id="ca" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#3fb950"/></marker>
+        <marker id="ca-o" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#d29922"/></marker>
+      </defs>
+
+      <text x="460" y="22" fill="#d29922" text-anchor="middle" font-size="13" font-weight="bold">Cron Scheduler Architecture</text>
+
+      <!-- File-backed tasks -->
+      <rect x="20" y="40" rx="8" width="250" height="120" fill="#1c2333" stroke="#3fb950"/>
+      <text x="145" y="62" fill="#3fb950" text-anchor="middle" font-size="12" font-weight="bold">Durable Tasks</text>
+      <text x="145" y="80" fill="#8b949e" text-anchor="middle" font-size="10">.claude/scheduled_tasks.json</text>
+      <text x="145" y="96" fill="#8b949e" text-anchor="middle" font-size="10">Survive process restarts</text>
+      <text x="145" y="112" fill="#8b949e" text-anchor="middle" font-size="10">Written by CronCreate tool</text>
+      <text x="145" y="128" fill="#8b949e" text-anchor="middle" font-size="10">Watched via chokidar FSWatcher</text>
+      <text x="145" y="150" fill="#484f58" text-anchor="middle" font-size="9">{ id, cron, prompt, createdAt, lastFiredAt?, recurring?, permanent? }</text>
+
+      <!-- Session-only tasks -->
+      <rect x="290" y="40" rx="8" width="250" height="120" fill="#1c2333" stroke="#f778ba"/>
+      <text x="415" y="62" fill="#f778ba" text-anchor="middle" font-size="12" font-weight="bold">Session-Only Tasks</text>
+      <text x="415" y="80" fill="#8b949e" text-anchor="middle" font-size="10">bootstrap/state.ts memory store</text>
+      <text x="415" y="96" fill="#8b949e" text-anchor="middle" font-size="10">Die with the process</text>
+      <text x="415" y="112" fill="#8b949e" text-anchor="middle" font-size="10">Never written to disk</text>
+      <text x="415" y="128" fill="#8b949e" text-anchor="middle" font-size="10">durable: false flag</text>
+      <text x="415" y="150" fill="#484f58" text-anchor="middle" font-size="9">Can target teammate queues via agentId</text>
+
+      <!-- Scheduler -->
+      <rect x="580" y="40" rx="8" width="320" height="120" fill="#1c2333" stroke="#d29922"/>
+      <text x="740" y="62" fill="#d29922" text-anchor="middle" font-size="12" font-weight="bold">cronScheduler.ts</text>
+      <text x="740" y="80" fill="#8b949e" text-anchor="middle" font-size="10">1-second check interval</text>
+      <text x="740" y="96" fill="#8b949e" text-anchor="middle" font-size="10">Merges file + session tasks</text>
+      <text x="740" y="112" fill="#8b949e" text-anchor="middle" font-size="10">Per-project lock (tryAcquireSchedulerLock)</text>
+      <text x="740" y="128" fill="#8b949e" text-anchor="middle" font-size="10">Lock probe every 5s for crashed owners</text>
+      <text x="740" y="150" fill="#484f58" text-anchor="middle" font-size="9">300ms file stability delay before reload</text>
+
+      <line x1="270" y1="100" x2="577" y2="100" stroke="#3fb950" stroke-width="1.5" marker-end="url(#ca)"/>
+      <line x1="540" y1="100" x2="577" y2="100" stroke="#f778ba" stroke-width="1.5" marker-end="url(#ca-o)"/>
+
+      <!-- Jitter system -->
+      <rect x="20" y="190" rx="8" width="440" height="140" fill="#1c2333" stroke="#58a6ff"/>
+      <text x="240" y="212" fill="#58a6ff" text-anchor="middle" font-size="12" font-weight="bold">Thundering Herd Prevention (Jitter)</text>
+
+      <text x="40" y="236" fill="#8b949e" font-size="10">Recurring tasks: forward delay = fraction of interval between fires</text>
+      <text x="40" y="254" fill="#8b949e" font-size="10">  recurringFrac: 0.1, recurringCapMs: 15min</text>
+      <text x="40" y="272" fill="#8b949e" font-size="10">  Hourly task spreads across [:00, :06)</text>
+      <text x="40" y="296" fill="#8b949e" font-size="10">One-shot tasks: backward lead on round minutes (mod 30)</text>
+      <text x="40" y="314" fill="#8b949e" font-size="10">  oneShotMaxMs: 90s, oneShotFloorMs: 0, oneShotMinuteMod: 30</text>
+      <text x="40" y="322" fill="#484f58" font-size="9">  Deterministic per-task jitter via taskId hash -> [0,1) fraction</text>
+
+      <!-- Missed task recovery -->
+      <rect x="480" y="190" rx="8" width="420" height="140" fill="#1c2333" stroke="#f85149"/>
+      <text x="690" y="212" fill="#f85149" text-anchor="middle" font-size="12" font-weight="bold">Missed Task Recovery</text>
+
+      <text x="500" y="236" fill="#8b949e" font-size="10">On startup: findMissedTasks() scans for overdue tasks</text>
+      <text x="500" y="254" fill="#8b949e" font-size="10">One-shots missed -> injected as notification on next turn</text>
+      <text x="500" y="272" fill="#8b949e" font-size="10">Prompt-injection-safe: fired through onFire() not raw inject</text>
+      <text x="500" y="296" fill="#8b949e" font-size="10">Recurring auto-expire: recurringMaxAgeMs = 7 days (default)</text>
+      <text x="500" y="314" fill="#8b949e" font-size="10">Permanent tasks (assistant mode built-ins) never expire</text>
+    </svg>
+  </div>
+
+  <div class="why"><strong>Why per-project locks?</strong> Multiple Claude Code sessions can be open in the same project. Without a lock, the same cron task would fire in every session simultaneously. The lock file uses a session ID + PID scheme: the first session to acquire becomes the scheduler owner. If the owner crashes (dead PID), other sessions re-probe every 5 seconds and reclaim the lock.</div>
+
+  <div class="why"><strong>Why jitter on :00 and :30?</strong> Humans round to half-hours when scheduling. "Check my PRs every hour" becomes <code>0 * * * *</code>, and "remind me at 3pm" becomes <code>0 15 * * *</code>. Without jitter, thousands of agents across the fleet would hit inference at the exact same second. The jitter system applies deterministic per-task hash-based delay: recurring tasks get forward delay (fire after the mark), one-shots get backward lead (fire before the mark, so they still feel "on time").</div>
+
+  <div class="tbl-wrap">
+    <table>
+      <tr><th>Config Key</th><th>Default</th><th>Purpose</th></tr>
+      <tr><td class="mono">recurringFrac</td><td>0.1</td><td>Forward delay as fraction of inter-fire interval</td></tr>
+      <tr><td class="mono">recurringCapMs</td><td>15 min</td><td>Upper bound on recurring delay</td></tr>
+      <tr><td class="mono">oneShotMaxMs</td><td>90s</td><td>One-shot backward lead (max early fire)</td></tr>
+      <tr><td class="mono">oneShotFloorMs</td><td>0</td><td>Minimum early fire (raise to guarantee nobody lands on :00)</td></tr>
+      <tr><td class="mono">oneShotMinuteMod</td><td>30</td><td>Which minutes get jitter (30 = :00 and :30)</td></tr>
+      <tr><td class="mono">recurringMaxAgeMs</td><td>7 days</td><td>Auto-expire recurring tasks (0 = unlimited)</td></tr>
+    </table>
+  </div>
+
+  <div class="note"><strong>Ops escape hatch:</strong> During an incident, ops can push <code>tengu_kairos_cron_config</code> with e.g. <code>{oneShotMinuteMod: 15, oneShotMaxMs: 300000, oneShotFloorMs: 30000}</code> to spread :00/:15/:30/:45 fires across a [t-5min, t-30s] window. Every task gets at least 30s of lead, so nobody lands on the exact wall-clock mark.</div>
+</section>
+
+<!-- ============================================================== -->
+<!--  7. REMOTE TRIGGERS                                            -->
+<!-- ============================================================== -->
+<section id="triggers">
+  <div class="label">Section 7</div>
+  <h2 class="title">Remote Triggers</h2>
+  <p class="desc">Server-side trigger system via the claude.ai CCR API. Enables scheduled remote Claude Code agents that run on Anthropic's infrastructure, independent of the user's local machine.</p>
+
+  <div class="diagram">
+    <svg viewBox="0 0 920 220" xmlns="http://www.w3.org/2000/svg" width="100%">
+      <defs>
+        <marker id="ta" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#58a6ff"/></marker>
+        <marker id="ta-g" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#3fb950"/></marker>
+      </defs>
+
+      <!-- Client tool -->
+      <rect x="20" y="40" rx="8" width="220" height="80" fill="#1c2333" stroke="#bc8cff"/>
+      <text x="130" y="62" fill="#bc8cff" text-anchor="middle" font-size="12" font-weight="bold">RemoteTrigger Tool</text>
+      <text x="130" y="80" fill="#8b949e" text-anchor="middle" font-size="10">CRUD + immediate /run</text>
+      <text x="130" y="96" fill="#8b949e" text-anchor="middle" font-size="10">OAuth token injected in-process</text>
+      <text x="130" y="110" fill="#f85149" text-anchor="middle" font-size="9">Token never reaches the shell</text>
+
+      <!-- API -->
+      <rect x="300" y="40" rx="8" width="260" height="80" fill="#1c2333" stroke="#58a6ff"/>
+      <text x="430" y="62" fill="#58a6ff" text-anchor="middle" font-size="12" font-weight="bold">/v1/code/triggers API</text>
+      <text x="430" y="80" fill="#8b949e" text-anchor="middle" font-size="10">list | get | create | update | run</text>
+      <text x="430" y="96" fill="#8b949e" text-anchor="middle" font-size="10">Beta: ccr-triggers-2026-01-30</text>
+      <text x="430" y="110" fill="#484f58" text-anchor="middle" font-size="9">Raw JSON response passthrough</text>
+
+      <line x1="240" y1="80" x2="297" y2="80" stroke="#bc8cff" stroke-width="1.5" marker-end="url(#ta)"/>
+
+      <!-- Gates -->
+      <rect x="620" y="40" rx="8" width="280" height="80" fill="#1c2333" stroke="#f85149"/>
+      <text x="760" y="62" fill="#f85149" text-anchor="middle" font-size="12" font-weight="bold">Access Gates</text>
+      <text x="760" y="80" fill="#8b949e" text-anchor="middle" font-size="10">GrowthBook: tengu_surreal_dali = true</text>
+      <text x="760" y="96" fill="#8b949e" text-anchor="middle" font-size="10">Policy: allow_remote_sessions = true</text>
+      <text x="760" y="110" fill="#8b949e" text-anchor="middle" font-size="10">Auth: OAuth (same as voice)</text>
+
+      <line x1="560" y1="80" x2="617" y2="80" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#ta)"/>
+
+      <!-- Actions detail -->
+      <rect x="20" y="145" rx="6" width="880" height="55" fill="#1c2333" stroke="#30363d"/>
+      <text x="40" y="168" fill="#d29922" font-size="11" font-weight="bold">API Actions:</text>
+      <text x="40" y="186" fill="#8b949e" font-size="10">list: GET /v1/code/triggers  |  get: GET /v1/code/triggers/{id}  |  create: POST /v1/code/triggers  |  update: POST /v1/code/triggers/{id}  |  run: POST /v1/code/triggers/{id}/run</text>
+    </svg>
+  </div>
+
+  <div class="why"><strong>Why in-process OAuth injection?</strong> The RemoteTrigger tool calls the API directly via axios with the OAuth bearer token added in-process. This is a deliberate security design: the token never appears in a shell command (unlike <code>curl -H "Authorization: ..."</code>), so it cannot be leaked through process listings, shell history, or tool call logs visible to the model.</div>
+
+  <div class="warn"><strong>Double gate:</strong> Remote triggers require <em>both</em> the <code>tengu_surreal_dali</code> GrowthBook flag AND the <code>allow_remote_sessions</code> organization policy. This means even if a user's GrowthBook enrollment is active, their organization admin must explicitly allow remote sessions. The tool's <code>isEnabled()</code> checks both at runtime.</div>
+
+  <div class="code"><span class="cm">// tools/RemoteTriggerTool/RemoteTriggerTool.ts</span>
+<span class="fn">isEnabled</span>() {
+  <span class="kw">return</span> (
+    <span class="fn">getFeatureValue_CACHED_MAY_BE_STALE</span>(<span class="st">'tengu_surreal_dali'</span>, <span class="hi">false</span>) &&
+    <span class="fn">isPolicyAllowed</span>(<span class="st">'allow_remote_sessions'</span>)
+  )
+}
+
+<span class="kw">const</span> <span class="ar">TRIGGERS_BETA</span> = <span class="st">'ccr-triggers-2026-01-30'</span></div>
+</section>
+
+<!-- ============================================================== -->
+<!--  8. BRIEF TOOL                                                 -->
+<!-- ============================================================== -->
+<section id="brief">
+  <div class="label">Section 8</div>
+  <h2 class="title">Brief Tool (SendUserMessage)</h2>
+  <p class="desc">The model's primary output channel in KAIROS chat mode. Instead of writing assistant text directly, the model calls <code>SendUserMessage(message, attachments, status)</code>. The model never sees its own message back &mdash; just gets a "Message delivered" acknowledgment.</p>
+
+  <div class="diagram">
+    <svg viewBox="0 0 920 260" xmlns="http://www.w3.org/2000/svg" width="100%">
+      <defs>
+        <marker id="ba" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#f778ba"/></marker>
+        <marker id="ba-b" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#58a6ff"/></marker>
+      </defs>
+
+      <!-- Model -->
+      <rect x="20" y="40" rx="8" width="200" height="70" fill="#1c2333" stroke="#bc8cff"/>
+      <text x="120" y="65" fill="#bc8cff" text-anchor="middle" font-size="12" font-weight="bold">Claude Model</text>
+      <text x="120" y="82" fill="#8b949e" text-anchor="middle" font-size="10">Calls SendUserMessage()</text>
+      <text x="120" y="98" fill="#8b949e" text-anchor="middle" font-size="10">with message, attachments, status</text>
+
+      <!-- Brief Tool -->
+      <rect x="280" y="40" rx="8" width="200" height="70" fill="#1c2333" stroke="#f778ba"/>
+      <text x="380" y="65" fill="#f778ba" text-anchor="middle" font-size="12" font-weight="bold">BriefTool.call()</text>
+      <text x="380" y="82" fill="#8b949e" text-anchor="middle" font-size="10">Resolves attachments</text>
+      <text x="380" y="98" fill="#8b949e" text-anchor="middle" font-size="10">Adds sentAt timestamp</text>
+
+      <line x1="220" y1="75" x2="277" y2="75" stroke="#bc8cff" stroke-width="1.5" marker-end="url(#ba)"/>
+
+      <!-- User sees -->
+      <rect x="540" y="40" rx="8" width="180" height="70" fill="#1c2333" stroke="#3fb950"/>
+      <text x="630" y="65" fill="#3fb950" text-anchor="middle" font-size="12" font-weight="bold">User Sees Message</text>
+      <text x="630" y="82" fill="#8b949e" text-anchor="middle" font-size="10">Rendered in chat UI</text>
+      <text x="630" y="98" fill="#8b949e" text-anchor="middle" font-size="10">With any attachments</text>
+
+      <line x1="480" y1="75" x2="537" y2="75" stroke="#f778ba" stroke-width="1.5" marker-end="url(#ba)"/>
+
+      <!-- Model gets ack -->
+      <rect x="760" y="40" rx="8" width="140" height="70" fill="#1c2333" stroke="#58a6ff"/>
+      <text x="830" y="65" fill="#58a6ff" text-anchor="middle" font-size="12" font-weight="bold">ACK</text>
+      <text x="830" y="82" fill="#8b949e" text-anchor="middle" font-size="10">"Message delivered</text>
+      <text x="830" y="98" fill="#8b949e" text-anchor="middle" font-size="10"> to user."</text>
+
+      <line x1="720" y1="75" x2="757" y2="75" stroke="#3fb950" stroke-width="1.5" marker-end="url(#ba-b)"/>
+
+      <!-- Back to model -->
+      <path d="M830,110 L830,135 Q830,145 820,145 L130,145 Q120,145 120,135 L120,113" fill="none" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#ba-b)" stroke-dasharray="5,3"/>
+      <text x="475" y="140" fill="#484f58" text-anchor="middle" font-size="10">Model never sees its own message back</text>
+
+      <!-- Status types -->
+      <rect x="20" y="170" rx="6" width="430" height="70" fill="#1c2333" stroke="#d29922"/>
+      <text x="235" y="192" fill="#d29922" text-anchor="middle" font-size="12" font-weight="bold">Status Field</text>
+      <text x="235" y="212" fill="#3fb950" text-anchor="middle" font-size="10">'normal' -- replying to something the user said</text>
+      <text x="235" y="230" fill="#f778ba" text-anchor="middle" font-size="10">'proactive' -- unsolicited update (task done, blocker hit)</text>
+
+      <!-- Activation -->
+      <rect x="470" y="170" rx="6" width="430" height="70" fill="#1c2333" stroke="#30363d"/>
+      <text x="685" y="192" fill="#bc8cff" text-anchor="middle" font-size="12" font-weight="bold">Activation Paths</text>
+      <text x="685" y="210" fill="#8b949e" text-anchor="middle" font-size="10">--brief CLI flag | defaultView: 'chat' | /brief slash command</text>
+      <text x="685" y="228" fill="#8b949e" text-anchor="middle" font-size="10">KAIROS mode auto-activates (system prompt mandates it)</text>
+    </svg>
+  </div>
+
+  <div class="why"><strong>Why a tool instead of plain text?</strong> In KAIROS mode, the model runs autonomously and most of its output is tool calls (file reads, bash commands, etc.). Plain text output gets mixed in with tool call chatter. By routing user-facing messages through a dedicated tool, the UI can cleanly separate "messages for the user" from "model working." The <code>mapToolResultToToolResultBlockParam</code> returns "Message delivered to user" &mdash; the model never sees its own message text echoed back, reducing token waste.</div>
+
+  <div class="cards">
+    <div class="card">
+      <h3><span class="badge b-pink">OUTPUT</span> Message Schema</h3>
+      <ul>
+        <li><strong>message:</strong> String with markdown support</li>
+        <li><strong>attachments:</strong> Optional file paths (photos, screenshots, diffs, logs)</li>
+        <li><strong>status:</strong> <code>'normal'</code> (reply) or <code>'proactive'</code> (unsolicited)</li>
+      </ul>
+      <p style="margin-top:8px">Attachments are resolved server-side: path, size, isImage, optional file_uuid for bridge uploads.</p>
+    </div>
+    <div class="card">
+      <h3><span class="badge b-blue">GATING</span> Entitlement vs Activation</h3>
+      <ul>
+        <li><strong>Entitlement</strong> (<code>isBriefEntitled</code>): Is the user <em>allowed</em> to use Brief? Checks KAIROS active, CLAUDE_CODE_BRIEF env, or <code>tengu_kairos_brief</code> GB flag.</li>
+        <li><strong>Activation</strong> (<code>isBriefEnabled</code>): Is the tool <em>active this session</em>? Requires entitlement AND explicit opt-in (--brief, defaultView, /brief, or KAIROS mode).</li>
+      </ul>
+      <p style="margin-top:8px">The GB gate doubles as a kill-switch: flipping <code>tengu_kairos_brief</code> off disables the tool on the next 5-min refresh even for opted-in sessions.</p>
+    </div>
+    <div class="card">
+      <h3><span class="badge b-green">ACK</span> Token-Efficient Response</h3>
+      <p>The tool result sent back to the model is just:</p>
+      <p style="font-family:monospace; color:var(--green); margin-top:4px">"Message delivered to user. (N attachments included)"</p>
+      <p style="margin-top:8px">This prevents the model from seeing its own verbose output in the context window, saving tokens in long-running KAIROS sessions.</p>
+    </div>
+    <div class="card">
+      <h3><span class="badge b-orange">LEGACY</span> Alias Support</h3>
+      <p>The tool has an alias array for backward compatibility. Old transcripts may reference the legacy tool name. The <code>aliases</code> field on the tool definition ensures replayed sessions don't break when the UI encounters old tool_use blocks.</p>
+    </div>
+  </div>
+
+  <div class="code"><span class="cm">// tools/BriefTool/BriefTool.ts</span>
+<span class="fn">mapToolResultToToolResultBlockParam</span>(output, toolUseID) {
+  <span class="kw">const</span> n = output.attachments?.length ?? <span class="hi">0</span>
+  <span class="kw">const</span> suffix = n === <span class="hi">0</span> ? <span class="st">''</span> : <span class="st">` (${n} attachment(s) included)`</span>
+  <span class="kw">return</span> {
+    tool_use_id: toolUseID,
+    type: <span class="st">'tool_result'</span>,
+    content: <span class="st">`Message delivered to user.${suffix}`</span>,
+  }
+}
+
+<span class="cm">// Entitlement (build-time DCE + runtime GB)</span>
+<span class="kw">export function</span> <span class="fn">isBriefEntitled</span>(): <span class="kw">boolean</span> {
+  <span class="kw">return</span> <span class="fn">feature</span>(<span class="st">'KAIROS'</span>) || <span class="fn">feature</span>(<span class="st">'KAIROS_BRIEF'</span>)
+    ? <span class="fn">getKairosActive</span>() ||
+        <span class="fn">isEnvTruthy</span>(process.env.<span class="ar">CLAUDE_CODE_BRIEF</span>) ||
+        <span class="fn">getFeatureValue_CACHED_WITH_REFRESH</span>(<span class="st">'tengu_kairos_brief'</span>, <span class="hi">false</span>, <span class="hi">5 * 60 * 1000</span>)
+    : <span class="hi">false</span>
+}</div>
+</section>
+
+</div><!-- /.container -->
+
+<!-- ============================================================== -->
+<!--  FOOTER                                                        -->
+<!-- ============================================================== -->
+<footer>
+  <p>Claude Code KAIROS / Assistant Mode &mdash; Internal Architecture Reference</p>
+  <p style="margin-top:8px; font-size:.78rem;">Derived from source analysis of the Claude Code <code>src/</code> directory. Feature flags, GrowthBook gates, and system prompt excerpts reflect the codebase as documented.</p>
+</footer>
+
+</body>
+</html>

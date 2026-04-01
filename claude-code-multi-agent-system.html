@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Code — Multi-Agent Architecture Deep Dive</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1c2333;
+    --border: #30363d;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --accent: #58a6ff;
+    --purple: #bc8cff;
+    --green: #3fb950;
+    --orange: #d29922;
+    --red: #f85149;
+    --pink: #f778ba;
+    --teal: #39d353;
+    --cyan: #76e4f7;
+    --yellow: #e3b341;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.65;
+  }
+
+  /* ---- Hero ---- */
+  .hero {
+    text-align: center; padding: 72px 20px 56px;
+    background: linear-gradient(180deg, #0d1117 0%, #111820 100%);
+    border-bottom: 1px solid var(--border);
+  }
+  .hero h1 {
+    font-size: 2.8rem; font-weight: 800;
+    background: linear-gradient(135deg, var(--accent), var(--cyan));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .hero .sub { color: var(--muted); font-size: 1.1rem; max-width: 720px; margin: 12px auto 0; }
+  .toc { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 28px; }
+  .toc a {
+    background: var(--surface); border: 1px solid var(--border); color: var(--muted);
+    padding: 6px 14px; border-radius: 100px; text-decoration: none; font-size: .82rem;
+    transition: all .2s;
+  }
+  .toc a:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ---- Layout ---- */
+  .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+  section { padding: 56px 0; border-bottom: 1px solid var(--border); }
+  section:last-of-type { border-bottom: none; }
+  .label { font-size: .72rem; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); margin-bottom: 6px; }
+  .title { font-size: 1.9rem; font-weight: 700; margin-bottom: 6px; }
+  .desc { color: var(--muted); max-width: 720px; margin-bottom: 32px; font-size: 1.02rem; }
+
+  /* ---- Diagram ---- */
+  .diagram {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 28px; overflow-x: auto; margin-bottom: 24px;
+  }
+  svg text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', monospace; }
+
+  /* ---- Cards ---- */
+  .cards { display: grid; grid-template-columns: repeat(auto-fit,minmax(280px,1fr)); gap: 18px; margin-top: 20px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 22px; transition: border-color .2s;
+  }
+  .card:hover { border-color: var(--accent); }
+  .card h3 { font-size: 1.05rem; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+  .card p, .card li { color: var(--muted); font-size: .9rem; }
+  .card ul { padding-left: 18px; margin-top: 6px; }
+  .badge {
+    display: inline-block; font-size: .68rem; padding: 2px 8px; border-radius: 100px;
+    font-weight: 600; text-transform: uppercase; letter-spacing: .5px;
+  }
+  .b-blue   { background: rgba(88,166,255,.15); color: var(--accent); }
+  .b-purple { background: rgba(188,140,255,.15); color: var(--purple); }
+  .b-green  { background: rgba(63,185,80,.15);  color: var(--green); }
+  .b-orange { background: rgba(210,153,34,.15); color: var(--orange); }
+  .b-pink   { background: rgba(247,120,186,.15);color: var(--pink); }
+  .b-teal   { background: rgba(57,211,83,.15);  color: var(--teal); }
+  .b-red    { background: rgba(248,81,73,.15);  color: var(--red); }
+  .b-cyan   { background: rgba(118,228,247,.15);color: var(--cyan); }
+
+  /* ---- Callout ---- */
+  .why {
+    background: rgba(188,140,255,.06); border-left: 3px solid var(--purple);
+    border-radius: 0 8px 8px 0; padding: 14px 18px; margin: 14px 0; font-size: .92rem;
+  }
+  .why strong { color: var(--purple); }
+  .warn {
+    background: rgba(248,81,73,.06); border-left: 3px solid var(--red);
+    border-radius: 0 8px 8px 0; padding: 14px 18px; margin: 14px 0; font-size: .92rem;
+  }
+  .warn strong { color: var(--red); }
+  .info {
+    background: rgba(88,166,255,.06); border-left: 3px solid var(--accent);
+    border-radius: 0 8px 8px 0; padding: 14px 18px; margin: 14px 0; font-size: .92rem;
+  }
+  .info strong { color: var(--accent); }
+
+  /* ---- Code ---- */
+  .code {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+    padding: 18px 22px; font-family: 'SF Mono','Fira Code','Cascadia Code',monospace;
+    font-size: .83rem; color: var(--muted); overflow-x: auto; white-space: pre; line-height: 1.7;
+    margin: 14px 0;
+  }
+  .code .kw { color: var(--purple); } .code .fn { color: var(--accent); }
+  .code .cm { color: #484f58; }       .code .st { color: var(--green); }
+  .code .ar { color: var(--orange); }  .code .hi { color: var(--pink); }
+
+  /* ---- Table ---- */
+  .tbl-wrap { overflow-x: auto; margin: 16px 0; }
+  table {
+    width: 100%; border-collapse: collapse; font-size: .88rem;
+    background: var(--surface); border-radius: 8px; overflow: hidden;
+  }
+  th { background: var(--surface2); color: var(--accent); text-align: left; padding: 10px 14px; font-weight: 600; font-size: .8rem; text-transform: uppercase; letter-spacing: .5px; }
+  td { padding: 10px 14px; border-top: 1px solid var(--border); color: var(--muted); }
+  tr:hover td { background: rgba(88,166,255,.04); }
+
+  @media (max-width: 768px) {
+    .hero h1 { font-size: 2rem; }
+    .cards { grid-template-columns: 1fr; }
+    .diagram { padding: 14px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <h1>Multi-Agent Architecture</h1>
+  <p class="sub">How Claude Code orchestrates parallel workers, swarm teams, forked agents, and isolated worktrees -- from coordinator mode down to the color system and lifecycle hooks.</p>
+  <nav class="toc">
+    <a href="#coordinator">Coordinator Mode</a>
+    <a href="#swarm">Swarm System</a>
+    <a href="#fork">Fork Agents</a>
+    <a href="#worktrees">Agent Worktrees</a>
+    <a href="#state">State Sharing</a>
+    <a href="#colors">Color System</a>
+    <a href="#hooks">Subagent Hooks</a>
+  </nav>
+</header>
+
+<main class="container">
+
+<!-- ===== 1. COORDINATOR MODE ===== -->
+<section id="coordinator">
+  <div class="label">Chapter 1</div>
+  <h2 class="title">Coordinator Mode</h2>
+  <p class="desc">A pure orchestration mode where the coordinator cannot execute code directly. It delegates all work to async worker agents, keeping itself focused on synthesis, task planning, and communication with the user.</p>
+
+  <div class="diagram">
+    <svg viewBox="0 0 1060 580" width="100%" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="a1" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#58a6ff"/></marker>
+        <marker id="a1g" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#3fb950"/></marker>
+        <marker id="a1p" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#bc8cff"/></marker>
+        <marker id="a1o" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#d29922"/></marker>
+        <marker id="a1r" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#f85149"/></marker>
+      </defs>
+
+      <!-- User -->
+      <rect x="20" y="20" width="160" height="60" rx="10" fill="#1c2333" stroke="#8b949e" stroke-width="1.5"/>
+      <text x="100" y="48" text-anchor="middle" fill="#e6edf3" font-size="12" font-weight="700">User</text>
+      <text x="100" y="66" text-anchor="middle" fill="#8b949e" font-size="9">Interactive terminal</text>
+
+      <!-- Coordinator -->
+      <rect x="260" y="10" width="280" height="80" rx="10" fill="rgba(88,166,255,.08)" stroke="#58a6ff" stroke-width="2"/>
+      <text x="400" y="38" text-anchor="middle" fill="#58a6ff" font-size="14" font-weight="700">Coordinator</text>
+      <text x="400" y="58" text-anchor="middle" fill="#8b949e" font-size="9">CLAUDE_CODE_COORDINATOR_MODE=1</text>
+      <text x="400" y="74" text-anchor="middle" fill="#8b949e" font-size="9">4 tools only: Agent, TaskStop, SendMessage, SyntheticOutput</text>
+
+      <!-- Arrow user -> coordinator -->
+      <line x1="180" y1="50" x2="258" y2="50" stroke="#8b949e" stroke-width="1.5" marker-end="url(#a1)"/>
+
+      <!-- Phases -->
+      <rect x="620" y="10" width="420" height="80" rx="10" fill="rgba(210,153,34,.06)" stroke="#d29922" stroke-width="1.5"/>
+      <text x="830" y="36" text-anchor="middle" fill="#d29922" font-size="12" font-weight="700">Task Workflow Phases</text>
+      <rect x="636" y="50" width="90" height="26" rx="5" fill="#1c2333" stroke="#3fb950"/>
+      <text x="681" y="67" text-anchor="middle" fill="#3fb950" font-size="9" font-weight="600">1. Research</text>
+      <rect x="736" y="50" width="90" height="26" rx="5" fill="#1c2333" stroke="#58a6ff"/>
+      <text x="781" y="67" text-anchor="middle" fill="#58a6ff" font-size="9" font-weight="600">2. Synthesis</text>
+      <rect x="836" y="50" width="96" height="26" rx="5" fill="#1c2333" stroke="#bc8cff"/>
+      <text x="884" y="67" text-anchor="middle" fill="#bc8cff" font-size="9" font-weight="600">3. Implement</text>
+      <rect x="940" y="50" width="88" height="26" rx="5" fill="#1c2333" stroke="#d29922"/>
+      <text x="984" y="67" text-anchor="middle" fill="#d29922" font-size="9" font-weight="600">4. Verify</text>
+
+      <!-- Arrow coordinator -> phases -->
+      <line x1="540" y1="50" x2="618" y2="50" stroke="#d29922" stroke-width="1.5" marker-end="url(#a1o)"/>
+
+      <!-- Workers (parallel fan-out) -->
+      <rect x="140" y="160" width="200" height="70" rx="8" fill="rgba(63,185,80,.08)" stroke="#3fb950" stroke-width="1.5"/>
+      <text x="240" y="188" text-anchor="middle" fill="#3fb950" font-size="11" font-weight="700">Worker A (Research)</text>
+      <text x="240" y="206" text-anchor="middle" fill="#8b949e" font-size="9">Bash, Read, Edit, Grep, Glob...</text>
+      <text x="240" y="220" text-anchor="middle" fill="#8b949e" font-size="9">MCP tools, Skill tool</text>
+
+      <rect x="400" y="160" width="200" height="70" rx="8" fill="rgba(188,140,255,.08)" stroke="#bc8cff" stroke-width="1.5"/>
+      <text x="500" y="188" text-anchor="middle" fill="#bc8cff" font-size="11" font-weight="700">Worker B (Research)</text>
+      <text x="500" y="206" text-anchor="middle" fill="#8b949e" font-size="9">Full tool access</text>
+      <text x="500" y="220" text-anchor="middle" fill="#8b949e" font-size="9">Runs in parallel</text>
+
+      <rect x="660" y="160" width="200" height="70" rx="8" fill="rgba(210,153,34,.08)" stroke="#d29922" stroke-width="1.5"/>
+      <text x="760" y="188" text-anchor="middle" fill="#d29922" font-size="11" font-weight="700">Worker C (Verify)</text>
+      <text x="760" y="206" text-anchor="middle" fill="#8b949e" font-size="9">Tests, typechecks</text>
+      <text x="760" y="220" text-anchor="middle" fill="#8b949e" font-size="9">Independent verification</text>
+
+      <!-- Fan-out arrows from coordinator to workers -->
+      <line x1="330" y1="90" x2="240" y2="158" stroke="#3fb950" stroke-width="1.5" marker-end="url(#a1g)"/>
+      <text x="270" y="120" fill="#3fb950" font-size="8">Agent()</text>
+      <line x1="400" y1="90" x2="500" y2="158" stroke="#bc8cff" stroke-width="1.5" marker-end="url(#a1p)"/>
+      <text x="440" y="120" fill="#bc8cff" font-size="8">Agent()</text>
+      <line x1="470" y1="90" x2="760" y2="158" stroke="#d29922" stroke-width="1.5" marker-end="url(#a1o)"/>
+      <text x="620" y="110" fill="#d29922" font-size="8">Agent()</text>
+
+      <!-- Task notifications back -->
+      <line x1="240" y1="230" x2="350" y2="290" stroke="#3fb950" stroke-width="1" stroke-dasharray="4" marker-end="url(#a1g)"/>
+      <line x1="500" y1="230" x2="420" y2="290" stroke="#bc8cff" stroke-width="1" stroke-dasharray="4" marker-end="url(#a1p)"/>
+      <line x1="760" y1="230" x2="460" y2="290" stroke="#d29922" stroke-width="1" stroke-dasharray="4" marker-end="url(#a1o)"/>
+
+      <!-- task-notification box -->
+      <rect x="320" y="290" width="180" height="50" rx="8" fill="#1c2333" stroke="#8b949e" stroke-width="1"/>
+      <text x="410" y="312" text-anchor="middle" fill="#e6edf3" font-size="10" font-weight="600">&lt;task-notification&gt;</text>
+      <text x="410" y="330" text-anchor="middle" fill="#8b949e" font-size="9">XML in user-role messages</text>
+
+      <!-- Permission flow -->
+      <rect x="100" y="380" width="860" height="180" rx="10" fill="rgba(248,81,73,.04)" stroke="#f85149" stroke-width="1.5"/>
+      <text x="530" y="408" text-anchor="middle" fill="#f85149" font-size="12" font-weight="700">Worker Permission Flow (coordinatorHandler.ts)</text>
+
+      <rect x="140" y="430" width="150" height="46" rx="6" fill="#1c2333" stroke="#3fb950"/>
+      <text x="215" y="452" text-anchor="middle" fill="#3fb950" font-size="10" font-weight="600">1. Run Hooks</text>
+      <text x="215" y="468" text-anchor="middle" fill="#8b949e" font-size="8">Local, fast rules</text>
+
+      <line x1="290" y1="453" x2="350" y2="453" stroke="#8b949e" stroke-width="1.5" marker-end="url(#a1)"/>
+      <text x="320" y="445" text-anchor="middle" fill="#8b949e" font-size="7">unresolved?</text>
+
+      <rect x="350" y="430" width="160" height="46" rx="6" fill="#1c2333" stroke="#d29922"/>
+      <text x="430" y="452" text-anchor="middle" fill="#d29922" font-size="10" font-weight="600">2. Bash Classifier</text>
+      <text x="430" y="468" text-anchor="middle" fill="#8b949e" font-size="8">Inference-based, slow</text>
+
+      <line x1="510" y1="453" x2="570" y2="453" stroke="#8b949e" stroke-width="1.5" marker-end="url(#a1)"/>
+      <text x="540" y="445" text-anchor="middle" fill="#8b949e" font-size="7">unresolved?</text>
+
+      <rect x="570" y="430" width="170" height="46" rx="6" fill="#1c2333" stroke="#f85149"/>
+      <text x="655" y="452" text-anchor="middle" fill="#f85149" font-size="10" font-weight="600">3. Interactive Dialog</text>
+      <text x="655" y="468" text-anchor="middle" fill="#8b949e" font-size="8">User decides manually</text>
+
+      <rect x="790" y="430" width="140" height="46" rx="6" fill="#1c2333" stroke="#58a6ff"/>
+      <text x="860" y="452" text-anchor="middle" fill="#58a6ff" font-size="10" font-weight="600">Decision</text>
+      <text x="860" y="468" text-anchor="middle" fill="#8b949e" font-size="8">approve | reject</text>
+
+      <line x1="740" y1="453" x2="788" y2="453" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#a1)"/>
+
+      <text x="530" y="545" text-anchor="middle" fill="#8b949e" font-size="9">Hooks and classifier are awaited sequentially before falling through to the interactive dialog.</text>
+    </svg>
+  </div>
+
+  <div class="why">
+    <strong>Why a pure orchestrator?</strong> By restricting the coordinator to only 4 delegation tools (Agent, TaskStop, SendMessage, SyntheticOutput), it is forced to think at the planning and synthesis level rather than getting lost in implementation details. Workers execute; the coordinator understands. This separation produces better task decomposition and prevents the coordinator from becoming a bottleneck by serializing tool calls through itself.
+  </div>
+
+  <div class="cards">
+    <div class="card">
+      <h3><span class="badge b-blue">Config</span> Enabling Coordinator Mode</h3>
+      <p>Gated behind the <code>COORDINATOR_MODE</code> feature flag at build time, then activated at runtime via the environment variable:</p>
+      <div class="code"><span class="kw">export</span> CLAUDE_CODE_COORDINATOR_MODE=<span class="st">1</span></div>
+      <p>The function <code>isCoordinatorMode()</code> in <code>coordinatorMode.ts</code> checks both. Session resume calls <code>matchSessionMode()</code> to flip the env var so a resumed coordinator session stays in coordinator mode.</p>
+    </div>
+    <div class="card">
+      <h3><span class="badge b-green">Prompt</span> System Prompt Structure</h3>
+      <ul>
+        <li>Defines coordinator as an orchestrator, not an executor</li>
+        <li>Documents the 4 available tools and their semantics</li>
+        <li>Explains <code>&lt;task-notification&gt;</code> XML format for worker results</li>
+        <li>Enforces parallelism: "Launch independent workers concurrently"</li>
+        <li>Synthesis rule: "Never write 'based on your findings'"</li>
+        <li>Continue vs spawn decision matrix based on context overlap</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3><span class="badge b-orange">Context</span> Worker Tool Context</h3>
+      <p><code>getCoordinatorUserContext()</code> builds a user context block that lists which tools workers have access to. In simple mode: Bash, Read, Edit. In full mode: the full <code>ASYNC_AGENT_ALLOWED_TOOLS</code> set minus internal-only tools (TeamCreate, TeamDelete, SendMessage, SyntheticOutput). Also advertises MCP servers and the scratchpad directory if enabled.</p>
+    </div>
+    <div class="card">
+      <h3><span class="badge b-purple">Phases</span> The 4-Phase Workflow</h3>
+      <ul>
+        <li><strong>Research</strong> -- Workers investigate (parallel, read-only)</li>
+        <li><strong>Synthesis</strong> -- Coordinator reads findings, crafts implementation specs with file paths and line numbers</li>
+        <li><strong>Implementation</strong> -- Workers make targeted changes per spec, commit</li>
+        <li><strong>Verification</strong> -- Workers prove code works (not just "tests pass")</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+
+<!-- ===== 2. SWARM SYSTEM ===== -->
+<section id="swarm">
+  <div class="label">Chapter 2</div>
+  <h2 class="title">Swarm System (Leader / Worker)</h2>
+  <p class="desc">A multi-process team architecture where a leader and multiple workers run as separate Claude Code instances, coordinating through a file-based mailbox protocol for permission requests and message passing.</p>
+
+  <div class="diagram">
+    <svg viewBox="0 0 1060 620" width="100%" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="a2" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#58a6ff"/></marker>
+        <marker id="a2g" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#3fb950"/></marker>
+        <marker id="a2p" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#bc8cff"/></marker>
+        <marker id="a2r" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#f85149"/></marker>
+        <marker id="a2o" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#d29922"/></marker>
+      </defs>
+
+      <!-- TeamFile -->
+      <rect x="20" y="20" width="280" height="200" rx="10" fill="rgba(210,153,34,.06)" stroke="#d29922" stroke-width="1.5"/>
+      <text x="160" y="48" text-anchor="middle" fill="#d29922" font-size="13" font-weight="700">TeamFile</text>
+      <text x="160" y="68" text-anchor="middle" fill="#8b949e" font-size="9">~/.claude/teams/{teamName}/team.json</text>
+
+      <rect x="40" y="82" width="240" height="22" rx="4" fill="#1c2333" stroke="#58a6ff"/>
+      <text x="160" y="97" text-anchor="middle" fill="#58a6ff" font-size="9">name, description, createdAt</text>
+      <rect x="40" y="110" width="240" height="22" rx="4" fill="#1c2333" stroke="#3fb950"/>
+      <text x="160" y="125" text-anchor="middle" fill="#3fb950" font-size="9">leadAgentId, leadSessionId</text>
+      <rect x="40" y="138" width="240" height="22" rx="4" fill="#1c2333" stroke="#bc8cff"/>
+      <text x="160" y="153" text-anchor="middle" fill="#bc8cff" font-size="9">members[]: agentId, name, color, model</text>
+      <rect x="40" y="166" width="240" height="22" rx="4" fill="#1c2333" stroke="#d29922"/>
+      <text x="160" y="181" text-anchor="middle" fill="#d29922" font-size="9">teamAllowedPaths[], hiddenPaneIds[]</text>
+      <rect x="40" y="194" width="240" height="18" rx="4" fill="#1c2333" stroke="#8b949e"/>
+      <text x="160" y="207" text-anchor="middle" fill="#8b949e" font-size="8">Each member: agentType, prompt, planModeRequired</text>
+
+      <!-- Backends -->
+      <rect x="360" y="20" width="320" height="120" rx="10" fill="rgba(118,228,247,.06)" stroke="#76e4f7" stroke-width="1.5"/>
+      <text x="520" y="48" text-anchor="middle" fill="#76e4f7" font-size="13" font-weight="700">Three Backends</text>
+
+      <rect x="380" y="62" width="90" height="36" rx="6" fill="#1c2333" stroke="#3fb950"/>
+      <text x="425" y="78" text-anchor="middle" fill="#3fb950" font-size="9" font-weight="600">Tmux</text>
+      <text x="425" y="92" text-anchor="middle" fill="#8b949e" font-size="7">Terminal panes</text>
+
+      <rect x="480" y="62" width="90" height="36" rx="6" fill="#1c2333" stroke="#bc8cff"/>
+      <text x="525" y="78" text-anchor="middle" fill="#bc8cff" font-size="9" font-weight="600">iTerm</text>
+      <text x="525" y="92" text-anchor="middle" fill="#8b949e" font-size="7">Native tabs</text>
+
+      <rect x="580" y="62" width="90" height="36" rx="6" fill="#1c2333" stroke="#d29922"/>
+      <text x="625" y="78" text-anchor="middle" fill="#d29922" font-size="9" font-weight="600">InProcess</text>
+      <text x="625" y="92" text-anchor="middle" fill="#8b949e" font-size="7">Same process</text>
+
+      <text x="520" y="126" text-anchor="middle" fill="#8b949e" font-size="9">registry.ts selects backend based on environment</text>
+
+      <!-- Leader -->
+      <rect x="360" y="180" width="200" height="80" rx="10" fill="rgba(88,166,255,.08)" stroke="#58a6ff" stroke-width="2"/>
+      <text x="460" y="210" text-anchor="middle" fill="#58a6ff" font-size="13" font-weight="700">Leader</text>
+      <text x="460" y="228" text-anchor="middle" fill="#8b949e" font-size="9">!CLAUDE_CODE_AGENT_ID</text>
+      <text x="460" y="244" text-anchor="middle" fill="#8b949e" font-size="9">or agentId === 'team-lead'</text>
+
+      <!-- Workers -->
+      <rect x="100" y="340" width="170" height="60" rx="8" fill="rgba(248,81,73,.08)" stroke="#f85149" stroke-width="1.5"/>
+      <text x="185" y="366" text-anchor="middle" fill="#f85149" font-size="11" font-weight="700">Worker (red)</text>
+      <text x="185" y="382" text-anchor="middle" fill="#8b949e" font-size="8">CLAUDE_CODE_AGENT_ID set</text>
+
+      <rect x="320" y="340" width="170" height="60" rx="8" fill="rgba(88,166,255,.08)" stroke="#58a6ff" stroke-width="1.5"/>
+      <text x="405" y="366" text-anchor="middle" fill="#58a6ff" font-size="11" font-weight="700">Worker (blue)</text>
+      <text x="405" y="382" text-anchor="middle" fill="#8b949e" font-size="8">CLAUDE_CODE_AGENT_COLOR</text>
+
+      <rect x="540" y="340" width="170" height="60" rx="8" fill="rgba(63,185,80,.08)" stroke="#3fb950" stroke-width="1.5"/>
+      <text x="625" y="366" text-anchor="middle" fill="#3fb950" font-size="11" font-weight="700">Worker (green)</text>
+      <text x="625" y="382" text-anchor="middle" fill="#8b949e" font-size="8">CLAUDE_CODE_AGENT_NAME</text>
+
+      <!-- Arrows leader -> workers -->
+      <line x1="400" y1="260" x2="185" y2="338" stroke="#f85149" stroke-width="1.5" marker-end="url(#a2r)"/>
+      <line x1="460" y1="260" x2="405" y2="338" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#a2)"/>
+      <line x1="510" y1="260" x2="625" y2="338" stroke="#3fb950" stroke-width="1.5" marker-end="url(#a2g)"/>
+
+      <!-- Mailbox Permission Flow -->
+      <rect x="60" y="440" width="680" height="160" rx="10" fill="rgba(188,140,255,.04)" stroke="#bc8cff" stroke-width="1.5"/>
+      <text x="400" y="468" text-anchor="middle" fill="#bc8cff" font-size="12" font-weight="700">File-Based Mailbox Permission Protocol</text>
+
+      <rect x="90" y="486" width="140" height="40" rx="6" fill="#1c2333" stroke="#3fb950"/>
+      <text x="160" y="504" text-anchor="middle" fill="#3fb950" font-size="9" font-weight="600">1. Try Classifier</text>
+      <text x="160" y="518" text-anchor="middle" fill="#8b949e" font-size="7">bash auto-approval</text>
+
+      <line x1="230" y1="506" x2="268" y2="506" stroke="#8b949e" stroke-width="1" marker-end="url(#a2)"/>
+      <text x="250" y="498" text-anchor="middle" fill="#8b949e" font-size="7">no?</text>
+
+      <rect x="270" y="486" width="160" height="40" rx="6" fill="#1c2333" stroke="#d29922"/>
+      <text x="350" y="504" text-anchor="middle" fill="#d29922" font-size="9" font-weight="600">2. Write pending/</text>
+      <text x="350" y="518" text-anchor="middle" fill="#8b949e" font-size="7">{requestId}.json to leader</text>
+
+      <line x1="430" y1="506" x2="468" y2="506" stroke="#8b949e" stroke-width="1" marker-end="url(#a2)"/>
+
+      <rect x="470" y="486" width="130" height="40" rx="6" fill="#1c2333" stroke="#58a6ff"/>
+      <text x="535" y="504" text-anchor="middle" fill="#58a6ff" font-size="9" font-weight="600">3. Leader Resolves</text>
+      <text x="535" y="518" text-anchor="middle" fill="#8b949e" font-size="7">moves to resolved/</text>
+
+      <line x1="600" y1="506" x2="625" y2="506" stroke="#8b949e" stroke-width="1" marker-end="url(#a2)"/>
+
+      <rect x="627" y="486" width="100" height="40" rx="6" fill="#1c2333" stroke="#3fb950"/>
+      <text x="677" y="504" text-anchor="middle" fill="#3fb950" font-size="9" font-weight="600">4. Worker Polls</text>
+      <text x="677" y="518" text-anchor="middle" fill="#8b949e" font-size="7">every ~500ms</text>
+
+      <text x="400" y="576" text-anchor="middle" fill="#8b949e" font-size="9">SwarmPermissionRequest includes: toolName, input, description, workerColor, permissionSuggestions</text>
+    </svg>
+  </div>
+
+  <div class="why">
+    <strong>Why file-based mailbox?</strong> Each swarm member runs as an independent OS process (possibly in a different tmux pane or iTerm tab). There is no shared memory. The filesystem serves as a naturally persistent, lockable IPC channel. Workers write <code>pending/{requestId}.json</code>, the leader atomically resolves by moving it to <code>resolved/</code>, and workers poll the resolved directory. This avoids complex socket infrastructure while remaining robust across terminal restarts and reconnections.
+  </div>
+
+  <div class="cards">
+    <div class="card">
+      <h3><span class="badge b-red">Identity</span> Leader Detection</h3>
+      <p>The <code>isTeamLeader()</code> function checks two conditions:</p>
+      <div class="code"><span class="kw">const</span> agentId = <span class="fn">getAgentId</span>()
+<span class="kw">return</span> !agentId || agentId === <span class="st">'team-lead'</span></div>
+      <p>If <code>CLAUDE_CODE_AGENT_ID</code> is unset or equals <code>'team-lead'</code>, the process is the leader. Workers always have a distinct agent ID set.</p>
+    </div>
+    <div class="card">
+      <h3><span class="badge b-cyan">Backends</span> Three Execution Modes</h3>
+      <ul>
+        <li><strong>TmuxBackend</strong> -- Spawns workers in tmux panes (cross-platform terminal multiplexer)</li>
+        <li><strong>ITermBackend</strong> -- Uses native iTerm2 tabs (macOS, detected via <code>isInITerm2()</code>)</li>
+        <li><strong>InProcessBackend</strong> -- Workers run in the same Node process (no separate terminal, uses in-memory mailbox routing)</li>
+      </ul>
+      <p>The <code>registry.ts</code> selects the appropriate backend based on environment detection.</p>
+    </div>
+    <div class="card">
+      <h3><span class="badge b-orange">Permission</span> swarmWorkerHandler.ts</h3>
+      <p>The worker permission flow in <code>handleSwarmWorkerPermission()</code>:</p>
+      <ul>
+        <li>Check <code>isAgentSwarmsEnabled() && isSwarmWorker()</code></li>
+        <li>Try bash classifier auto-approval first</li>
+        <li>If unresolved, create <code>SwarmPermissionRequest</code> with tool details</li>
+        <li>Register callback BEFORE sending (avoids race condition)</li>
+        <li>Send request to leader via <code>writeToMailbox()</code></li>
+        <li>Show visual <code>pendingWorkerRequest</code> indicator while waiting</li>
+        <li>Listen for abort signal to prevent hanging</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3><span class="badge b-green">Cleanup</span> Resolution Lifecycle</h3>
+      <p>Resolved permissions follow a strict lifecycle:</p>
+      <ul>
+        <li>Pending files live in <code>~/.claude/teams/{team}/permissions/pending/</code></li>
+        <li>Resolved files move to <code>.../permissions/resolved/</code></li>
+        <li>Workers poll with <code>readResolvedPermission()</code></li>
+        <li>Old resolved files cleaned up after 1 hour via <code>cleanupOldResolutions()</code></li>
+        <li>File operations use <code>lockfile.lock()</code> for atomic writes</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+
+<!-- ===== 3. FORK AGENTS ===== -->
+<section id="fork">
+  <div class="label">Chapter 3</div>
+  <h2 class="title">Fork Agents (runForkedAgent vs runAgent)</h2>
+  <p class="desc">Two fundamentally different agent spawning strategies: <code>runAgent</code> creates a full-lifecycle independent agent, while <code>runForkedAgent</code> creates a lightweight child that shares the parent's prompt cache for near-zero startup cost.</p>
+
+  <div class="diagram">
+    <svg viewBox="0 0 1060 500" width="100%" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="a3" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#58a6ff"/></marker>
+        <marker id="a3g" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#3fb950"/></marker>
+        <marker id="a3p" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#bc8cff"/></marker>
+      </defs>
+
+      <!-- runAgent side -->
+      <rect x="30" y="20" width="460" height="260" rx="12" fill="rgba(88,166,255,.05)" stroke="#58a6ff" stroke-width="2"/>
+      <text x="260" y="50" text-anchor="middle" fill="#58a6ff" font-size="15" font-weight="700">runAgent (Full Lifecycle)</text>
+
+      <rect x="60" y="70" width="190" height="32" rx="5" fill="#1c2333" stroke="#58a6ff"/>
+      <text x="155" y="90" text-anchor="middle" fill="#58a6ff" font-size="9" font-weight="600">1. Build system prompt</text>
+
+      <rect x="260" y="70" width="190" height="32" rx="5" fill="#1c2333" stroke="#3fb950"/>
+      <text x="355" y="90" text-anchor="middle" fill="#3fb950" font-size="9" font-weight="600">2. Initialize MCP servers</text>
+
+      <rect x="60" y="112" width="190" height="32" rx="5" fill="#1c2333" stroke="#bc8cff"/>
+      <text x="155" y="132" text-anchor="middle" fill="#bc8cff" font-size="9" font-weight="600">3. SubagentStart hooks</text>
+
+      <rect x="260" y="112" width="190" height="32" rx="5" fill="#1c2333" stroke="#d29922"/>
+      <text x="355" y="132" text-anchor="middle" fill="#d29922" font-size="9" font-weight="600">4. Preload skills</text>
+
+      <rect x="60" y="154" width="190" height="32" rx="5" fill="#1c2333" stroke="#f778ba"/>
+      <text x="155" y="174" text-anchor="middle" fill="#f778ba" font-size="9" font-weight="600">5. Create ToolUseContext</text>
+
+      <rect x="260" y="154" width="190" height="32" rx="5" fill="#1c2333" stroke="#76e4f7"/>
+      <text x="355" y="174" text-anchor="middle" fill="#76e4f7" font-size="9" font-weight="600">6. Register frontmatter hooks</text>
+
+      <rect x="60" y="196" width="390" height="32" rx="5" fill="#1c2333" stroke="#e3b341"/>
+      <text x="255" y="216" text-anchor="middle" fill="#e3b341" font-size="9" font-weight="600">7. Full query() loop with all features (compact, sidechain transcript, etc.)</text>
+
+      <rect x="60" y="240" width="390" height="26" rx="5" fill="#1c2333" stroke="#f85149"/>
+      <text x="255" y="258" text-anchor="middle" fill="#f85149" font-size="9" font-weight="600">8. Cleanup: kill shell tasks, disconnect MCP, clear hooks, clear file cache</text>
+
+      <!-- runForkedAgent side -->
+      <rect x="540" y="20" width="490" height="260" rx="12" fill="rgba(188,140,255,.05)" stroke="#bc8cff" stroke-width="2"/>
+      <text x="785" y="50" text-anchor="middle" fill="#bc8cff" font-size="15" font-weight="700">runForkedAgent (Lightweight Fork)</text>
+
+      <rect x="570" y="70" width="430" height="32" rx="5" fill="#1c2333" stroke="#bc8cff"/>
+      <text x="785" y="90" text-anchor="middle" fill="#bc8cff" font-size="9" font-weight="600">1. Receive CacheSafeParams (systemPrompt, tools, model, messages, thinkingConfig)</text>
+
+      <rect x="570" y="112" width="430" height="32" rx="5" fill="#1c2333" stroke="#3fb950"/>
+      <text x="785" y="132" text-anchor="middle" fill="#3fb950" font-size="9" font-weight="600">2. createSubagentContext() -- clone readFileState, new AbortController, no-op setAppState</text>
+
+      <rect x="570" y="154" width="430" height="32" rx="5" fill="#1c2333" stroke="#d29922"/>
+      <text x="785" y="174" text-anchor="middle" fill="#d29922" font-size="9" font-weight="600">3. query() with parent's forkContextMessages prepended (cache-identical prefix)</text>
+
+      <rect x="570" y="196" width="430" height="32" rx="5" fill="#1c2333" stroke="#58a6ff"/>
+      <text x="785" y="216" text-anchor="middle" fill="#58a6ff" font-size="9" font-weight="600">4. Accumulate usage metrics (input, output, cache_read, cache_creation tokens)</text>
+
+      <rect x="570" y="240" width="430" height="26" rx="5" fill="#1c2333" stroke="#8b949e"/>
+      <text x="785" y="258" text-anchor="middle" fill="#8b949e" font-size="9" font-weight="600">No MCP init, no hooks, no skill preload, no system prompt rebuild</text>
+
+      <!-- Comparison arrow -->
+      <text x="530" y="310" text-anchor="middle" fill="#8b949e" font-size="10" font-weight="600" transform="rotate(90 530 310)">vs</text>
+
+      <!-- Fork use cases -->
+      <rect x="30" y="310" width="1000" height="170" rx="10" fill="rgba(63,185,80,.04)" stroke="#3fb950" stroke-width="1.5"/>
+      <text x="530" y="338" text-anchor="middle" fill="#3fb950" font-size="12" font-weight="700">Fork Use Cases and Recursion Prevention</text>
+
+      <rect x="60" y="355" width="200" height="40" rx="6" fill="#1c2333" stroke="#bc8cff"/>
+      <text x="160" y="373" text-anchor="middle" fill="#bc8cff" font-size="9" font-weight="600">Session Memory Extraction</text>
+      <text x="160" y="387" text-anchor="middle" fill="#8b949e" font-size="7">Post-turn background task</text>
+
+      <rect x="280" y="355" width="200" height="40" rx="6" fill="#1c2333" stroke="#d29922"/>
+      <text x="380" y="373" text-anchor="middle" fill="#d29922" font-size="9" font-weight="600">Background Summarization</text>
+      <text x="380" y="387" text-anchor="middle" fill="#8b949e" font-size="7">Compact/summary generation</text>
+
+      <rect x="500" y="355" width="200" height="40" rx="6" fill="#1c2333" stroke="#58a6ff"/>
+      <text x="600" y="373" text-anchor="middle" fill="#58a6ff" font-size="9" font-weight="600">Speculation</text>
+      <text x="600" y="387" text-anchor="middle" fill="#8b949e" font-size="7">Preemptive parallel work</text>
+
+      <rect x="720" y="355" width="280" height="40" rx="6" fill="#1c2333" stroke="#3fb950"/>
+      <text x="860" y="373" text-anchor="middle" fill="#3fb950" font-size="9" font-weight="600">Post-Turn Skill Forks (/btw)</text>
+      <text x="860" y="387" text-anchor="middle" fill="#8b949e" font-size="7">Forked command/skill execution</text>
+
+      <rect x="60" y="410" width="940" height="50" rx="6" fill="rgba(248,81,73,.06)" stroke="#f85149"/>
+      <text x="530" y="432" text-anchor="middle" fill="#f85149" font-size="11" font-weight="600">Recursion Prevention: FORK_BOILERPLATE_TAG</text>
+      <text x="530" y="450" text-anchor="middle" fill="#8b949e" font-size="9">isInForkChild() scans messages for &lt;fork-boilerplate&gt; tag -- if found, Agent tool rejects the fork attempt. No depth limit needed.</text>
+    </svg>
+  </div>
+
+  <div class="why">
+    <strong>Why fork instead of spawning a full agent?</strong> The Anthropic API caches request prefixes. When a fork child shares byte-identical system prompt, tools, model, and conversation history with its parent, the API serves the response from cache -- dramatically reducing latency and cost. The fork builds <code>buildForkedMessages()</code> with identical placeholder tool_result blocks for all tool_use calls, so only the per-child directive text block differs. This maximizes cache hit surface.
+  </div>
+
+  <div class="why">
+    <strong>Why tag-based recursion prevention instead of a depth limit?</strong> Depth limits are fragile (what is the right number?) and require threading a counter through every call path. Instead, every fork child receives a message containing <code>&lt;fork-boilerplate&gt;</code> with strict execution rules. <code>isInForkChild()</code> simply scans the conversation for this tag. If present, the Agent tool refuses to fork again. This is binary, deterministic, and requires zero configuration.
+  </div>
+
+  <div class="code"><span class="cm">// CacheSafeParams -- must be byte-identical between parent and fork for cache hits</span>
+<span class="kw">type</span> <span class="fn">CacheSafeParams</span> = {
+  <span class="ar">systemPrompt</span>: SystemPrompt          <span class="cm">// Must match parent</span>
+  <span class="ar">userContext</span>: { [k: string]: string }  <span class="cm">// Prepended to messages</span>
+  <span class="ar">systemContext</span>: { [k: string]: string }<span class="cm">// Appended to system prompt</span>
+  <span class="ar">toolUseContext</span>: ToolUseContext         <span class="cm">// Contains tools, model, options</span>
+  <span class="ar">forkContextMessages</span>: Message[]        <span class="cm">// Parent conversation prefix</span>
+}</div>
+</section>
+
+
+<!-- ===== 4. AGENT WORKTREES ===== -->
+<section id="worktrees">
+  <div class="label">Chapter 4</div>
+  <h2 class="title">Agent Isolation (Worktrees)</h2>
+  <p class="desc">Agents that modify files can operate in isolated git worktrees -- separate working copies of the same repository that prevent file conflicts between concurrent workers.</p>
+
+  <div class="diagram">
+    <svg viewBox="0 0 1060 420" width="100%" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="a4" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#58a6ff"/></marker>
+        <marker id="a4g" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#3fb950"/></marker>
+        <marker id="a4r" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#f85149"/></marker>
+      </defs>
+
+      <!-- Main repo -->
+      <rect x="30" y="30" width="220" height="140" rx="10" fill="rgba(88,166,255,.08)" stroke="#58a6ff" stroke-width="2"/>
+      <text x="140" y="58" text-anchor="middle" fill="#58a6ff" font-size="13" font-weight="700">Main Repository</text>
+      <text x="140" y="78" text-anchor="middle" fill="#8b949e" font-size="9">/path/to/project/</text>
+      <rect x="50" y="90" width="180" height="20" rx="4" fill="#1c2333" stroke="#3fb950"/>
+      <text x="140" y="104" text-anchor="middle" fill="#3fb950" font-size="8">src/, tests/, configs...</text>
+      <rect x="50" y="116" width="180" height="20" rx="4" fill="#1c2333" stroke="#d29922"/>
+      <text x="140" y="130" text-anchor="middle" fill="#d29922" font-size="8">node_modules/ (heavy)</text>
+      <rect x="50" y="142" width="180" height="20" rx="4" fill="#1c2333" stroke="#bc8cff"/>
+      <text x="140" y="156" text-anchor="middle" fill="#bc8cff" font-size="8">.claude/worktrees/</text>
+
+      <!-- Worktree creation -->
+      <line x1="250" y1="100" x2="340" y2="60" stroke="#3fb950" stroke-width="1.5" marker-end="url(#a4g)"/>
+      <line x1="250" y1="100" x2="340" y2="180" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#a4)"/>
+
+      <!-- Worktree A -->
+      <rect x="340" y="20" width="320" height="120" rx="10" fill="rgba(63,185,80,.06)" stroke="#3fb950" stroke-width="1.5"/>
+      <text x="500" y="48" text-anchor="middle" fill="#3fb950" font-size="12" font-weight="700">Worktree A</text>
+      <text x="500" y="68" text-anchor="middle" fill="#8b949e" font-size="9">.claude/worktrees/{slug}/</text>
+      <text x="500" y="84" text-anchor="middle" fill="#8b949e" font-size="8">branch: worktree-{slug}</text>
+
+      <rect x="360" y="96" width="130" height="18" rx="4" fill="#1c2333" stroke="#3fb950"/>
+      <text x="425" y="109" text-anchor="middle" fill="#3fb950" font-size="7">src/ (own copy)</text>
+      <rect x="500" y="96" width="140" height="18" rx="4" fill="#1c2333" stroke="#d29922"/>
+      <text x="570" y="109" text-anchor="middle" fill="#d29922" font-size="7">node_modules -> symlink</text>
+      <text x="500" y="132" text-anchor="middle" fill="#8b949e" font-size="8">Validated: VALID_WORKTREE_SLUG_SEGMENT = /^[a-zA-Z0-9._-]+$/</text>
+
+      <!-- Worktree B -->
+      <rect x="340" y="160" width="320" height="100" rx="10" fill="rgba(88,166,255,.06)" stroke="#58a6ff" stroke-width="1.5"/>
+      <text x="500" y="188" text-anchor="middle" fill="#58a6ff" font-size="12" font-weight="700">Worktree B</text>
+      <text x="500" y="208" text-anchor="middle" fill="#8b949e" font-size="9">.claude/worktrees/{other-slug}/</text>
+      <text x="500" y="224" text-anchor="middle" fill="#8b949e" font-size="8">branch: worktree-{other-slug}</text>
+      <text x="500" y="250" text-anchor="middle" fill="#8b949e" font-size="8">Nested slugs (user/feature) flattened to user+feature</text>
+
+      <!-- Lifecycle -->
+      <rect x="720" y="20" width="310" height="240" rx="10" fill="rgba(210,153,34,.06)" stroke="#d29922" stroke-width="1.5"/>
+      <text x="875" y="48" text-anchor="middle" fill="#d29922" font-size="12" font-weight="700">Worktree Lifecycle</text>
+
+      <rect x="740" y="64" width="270" height="28" rx="5" fill="#1c2333" stroke="#3fb950"/>
+      <text x="875" y="82" text-anchor="middle" fill="#3fb950" font-size="9">1. createAgentWorktree(slug)</text>
+
+      <rect x="740" y="100" width="270" height="28" rx="5" fill="#1c2333" stroke="#58a6ff"/>
+      <text x="875" y="118" text-anchor="middle" fill="#58a6ff" font-size="9">2. symlinkDirectories (node_modules)</text>
+
+      <rect x="740" y="136" width="270" height="28" rx="5" fill="#1c2333" stroke="#bc8cff"/>
+      <text x="875" y="154" text-anchor="middle" fill="#bc8cff" font-size="9">3. buildWorktreeNotice (path translation)</text>
+
+      <rect x="740" y="172" width="270" height="28" rx="5" fill="#1c2333" stroke="#d29922"/>
+      <text x="875" y="190" text-anchor="middle" fill="#d29922" font-size="9">4. Agent runs, makes commits</text>
+
+      <rect x="740" y="208" width="270" height="28" rx="5" fill="#1c2333" stroke="#f85149"/>
+      <text x="875" y="226" text-anchor="middle" fill="#f85149" font-size="9">5. hasWorktreeChanges() -> auto-cleanup if none</text>
+
+      <!-- Cleanup detail -->
+      <rect x="30" y="300" width="1000" height="100" rx="10" fill="rgba(248,81,73,.04)" stroke="#f85149" stroke-width="1"/>
+      <text x="530" y="325" text-anchor="middle" fill="#f85149" font-size="11" font-weight="700">Post-Completion Cleanup (AgentTool.tsx)</text>
+      <text x="530" y="348" text-anchor="middle" fill="#8b949e" font-size="9">hasWorktreeChanges(worktreePath, headCommit) checks:</text>
+      <text x="530" y="366" text-anchor="middle" fill="#8b949e" font-size="9">1. git status --porcelain (uncommitted changes?) 2. git log headCommit..HEAD (new commits?)</text>
+      <text x="530" y="384" text-anchor="middle" fill="#8b949e" font-size="9">If no changes detected: removeAgentWorktree(path, branch, gitRoot) -- cleans up branch and directory</text>
+    </svg>
+  </div>
+
+  <div class="why">
+    <strong>Why symlink node_modules?</strong> A full copy of <code>node_modules</code> can be hundreds of megabytes or even gigabytes. Since worktrees share the same repository contents at the git level, symlinking large directories avoids disk bloat while keeping the worktree functional. The symlink is created in <code>symlinkDirectories()</code> which handles ENOENT (source does not exist yet) and EEXIST (already linked) gracefully.
+  </div>
+
+  <div class="why">
+    <strong>Why inject a worktree notice?</strong> Fork children inherit the parent's conversation context, which contains file paths pointing to the parent's working directory. <code>buildWorktreeNotice()</code> tells the child agent: "You are in an isolated worktree at {path}. Translate paths from the inherited context. Re-read files before editing." This prevents stale-read bugs and path confusion.
+  </div>
+
+  <div class="code"><span class="cm">// Worktree notice injected into fork children operating in a worktree</span>
+<span class="fn">buildWorktreeNotice</span>(parentCwd, worktreeCwd):
+<span class="st">"You've inherited the conversation context above from a parent agent
+ working in ${parentCwd}. You are operating in an isolated git worktree
+ at ${worktreeCwd} -- same repository, same relative file structure,
+ separate working copy. Paths in the inherited context refer to the
+ parent's working directory; translate them to your worktree root.
+ Re-read files before editing if the parent may have modified them."</span></div>
+</section>
+
+
+<!-- ===== 5. STATE SHARING TABLE ===== -->
+<section id="state">
+  <div class="label">Chapter 5</div>
+  <h2 class="title">Agent State Sharing</h2>
+  <p class="desc">How <code>createSubagentContext()</code> in <code>forkedAgent.ts</code> isolates mutable state while selectively sharing what is needed. Every field has explicit isolation semantics documented below.</p>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>State Field</th>
+          <th>Default Behavior</th>
+          <th>Async Agent</th>
+          <th>Sync / Interactive</th>
+          <th>Rationale</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>readFileState</strong></td>
+          <td>Cloned from parent</td>
+          <td>Cloned (overridable)</td>
+          <td>Cloned (overridable)</td>
+          <td>Prevents stale reads while preserving cache warm-start</td>
+        </tr>
+        <tr>
+          <td><strong>abortController</strong></td>
+          <td>New child linked to parent</td>
+          <td>New child (parent abort propagates)</td>
+          <td><code>shareAbortController: true</code> shares parent's</td>
+          <td>Linked controller ensures parent abort kills child; shared for interactive agents that need UI</td>
+        </tr>
+        <tr>
+          <td><strong>setAppState</strong></td>
+          <td>No-op</td>
+          <td>No-op (isolated)</td>
+          <td><code>shareSetAppState: true</code> shares parent's</td>
+          <td>Prevents async agents from corrupting parent state; interactive agents opt-in to shared updates</td>
+        </tr>
+        <tr>
+          <td><strong>getAppState</strong></td>
+          <td>Wrapped with <code>shouldAvoidPermissionPrompts: true</code></td>
+          <td>Wrapped (avoids UI prompts)</td>
+          <td>Parent's original (if sharing abortController)</td>
+          <td>Background agents must not show permission UI; interactive agents can</td>
+        </tr>
+        <tr>
+          <td><strong>messages</strong></td>
+          <td>Parent messages (overridable)</td>
+          <td>Override with initial messages</td>
+          <td>Override with initial messages</td>
+          <td>Each agent builds its own conversation from its prompt</td>
+        </tr>
+        <tr>
+          <td><strong>contentReplacementState</strong></td>
+          <td>Cloned from parent</td>
+          <td>Cloned (cache-safe)</td>
+          <td>Cloned</td>
+          <td>Clone preserves parent's tool_use_id replacement decisions for cache-identical wire prefix</td>
+        </tr>
+        <tr>
+          <td><strong>queryTracking.depth</strong></td>
+          <td>parent + 1</td>
+          <td>parent + 1</td>
+          <td>parent + 1</td>
+          <td>Analytics only -- NOT enforced as a recursion limit. New chainId per subagent.</td>
+        </tr>
+        <tr>
+          <td><strong>localDenialTracking</strong></td>
+          <td>New instance</td>
+          <td>New (accumulates across retries)</td>
+          <td>Parent's (if sharing setAppState)</td>
+          <td>Isolated denial counters for async agents whose setAppState is no-op</td>
+        </tr>
+        <tr>
+          <td><strong>agentId</strong></td>
+          <td><code>createAgentId()</code></td>
+          <td>Overridable</td>
+          <td>Overridable</td>
+          <td>Each subagent gets a unique ID for transcript tracking and cleanup</td>
+        </tr>
+        <tr>
+          <td><strong>setAppStateForTasks</strong></td>
+          <td>Parent's (always shared)</td>
+          <td>Always reaches root store</td>
+          <td>Always reaches root store</td>
+          <td>Task registration/kill must reach root even when setAppState is no-op, preventing zombie shell tasks</td>
+        </tr>
+        <tr>
+          <td><strong>UI callbacks</strong></td>
+          <td><code>undefined</code></td>
+          <td><code>undefined</code></td>
+          <td><code>undefined</code></td>
+          <td>Subagents cannot control parent UI (setToolJSX, setStreamMode, addNotification, etc.)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="why">
+    <strong>Why clone contentReplacementState instead of creating fresh?</strong> Cache-sharing forks process parent messages that contain parent <code>tool_use_id</code>s. A fresh replacement state would see them as unseen and make divergent replacement decisions, causing the wire prefix to differ and busting the prompt cache. A clone makes identical decisions, preserving the cache hit.
+  </div>
+
+  <div class="why">
+    <strong>Why does setAppStateForTasks always reach the root store?</strong> Even when <code>setAppState</code> is a no-op for async agents, task registration and kill signals must still reach the global store. Otherwise, background shell processes spawned by async agents are never registered and never killed -- they become orphaned zombie processes (PPID=1). This is why <code>setAppStateForTasks</code> is separated from <code>setAppState</code>.
+  </div>
+</section>
+
+
+<!-- ===== 6. COLOR SYSTEM ===== -->
+<section id="colors">
+  <div class="label">Chapter 6</div>
+  <h2 class="title">Agent Color System</h2>
+  <p class="desc">Each agent type gets assigned a unique color for visual differentiation in the terminal UI. The color system uses namespaced theme keys to prevent accidental cross-use between the main UI and subagent displays.</p>
+
+  <div class="diagram">
+    <svg viewBox="0 0 1060 240" width="100%" xmlns="http://www.w3.org/2000/svg">
+      <!-- Color palette -->
+      <rect x="30" y="20" width="1000" height="200" rx="10" fill="rgba(118,228,247,.04)" stroke="#76e4f7" stroke-width="1.5"/>
+      <text x="530" y="48" text-anchor="middle" fill="#76e4f7" font-size="14" font-weight="700">AGENT_COLORS: 8 Named Colors</text>
+
+      <!-- Color swatches -->
+      <rect x="60" y="70" width="100" height="50" rx="8" fill="rgba(248,81,73,.2)" stroke="#f85149" stroke-width="2"/>
+      <text x="110" y="92" text-anchor="middle" fill="#f85149" font-size="11" font-weight="700">red</text>
+      <text x="110" y="110" text-anchor="middle" fill="#8b949e" font-size="7">red_FOR_SUBAGENTS_ONLY</text>
+
+      <rect x="180" y="70" width="100" height="50" rx="8" fill="rgba(88,166,255,.2)" stroke="#58a6ff" stroke-width="2"/>
+      <text x="230" y="92" text-anchor="middle" fill="#58a6ff" font-size="11" font-weight="700">blue</text>
+      <text x="230" y="110" text-anchor="middle" fill="#8b949e" font-size="7">blue_FOR_SUBAGENTS_ONLY</text>
+
+      <rect x="300" y="70" width="100" height="50" rx="8" fill="rgba(63,185,80,.2)" stroke="#3fb950" stroke-width="2"/>
+      <text x="350" y="92" text-anchor="middle" fill="#3fb950" font-size="11" font-weight="700">green</text>
+      <text x="350" y="110" text-anchor="middle" fill="#8b949e" font-size="7">green_FOR_SUBAGENTS_ONLY</text>
+
+      <rect x="420" y="70" width="100" height="50" rx="8" fill="rgba(227,179,65,.2)" stroke="#e3b341" stroke-width="2"/>
+      <text x="470" y="92" text-anchor="middle" fill="#e3b341" font-size="11" font-weight="700">yellow</text>
+      <text x="470" y="110" text-anchor="middle" fill="#8b949e" font-size="7">yellow_FOR_SUBAGENTS_ONLY</text>
+
+      <rect x="540" y="70" width="100" height="50" rx="8" fill="rgba(188,140,255,.2)" stroke="#bc8cff" stroke-width="2"/>
+      <text x="590" y="92" text-anchor="middle" fill="#bc8cff" font-size="11" font-weight="700">purple</text>
+      <text x="590" y="110" text-anchor="middle" fill="#8b949e" font-size="7">purple_FOR_SUBAGENTS_ONLY</text>
+
+      <rect x="660" y="70" width="100" height="50" rx="8" fill="rgba(210,153,34,.2)" stroke="#d29922" stroke-width="2"/>
+      <text x="710" y="92" text-anchor="middle" fill="#d29922" font-size="11" font-weight="700">orange</text>
+      <text x="710" y="110" text-anchor="middle" fill="#8b949e" font-size="7">orange_FOR_SUBAGENTS_ONLY</text>
+
+      <rect x="780" y="70" width="100" height="50" rx="8" fill="rgba(247,120,186,.2)" stroke="#f778ba" stroke-width="2"/>
+      <text x="830" y="92" text-anchor="middle" fill="#f778ba" font-size="11" font-weight="700">pink</text>
+      <text x="830" y="110" text-anchor="middle" fill="#8b949e" font-size="7">pink_FOR_SUBAGENTS_ONLY</text>
+
+      <rect x="900" y="70" width="100" height="50" rx="8" fill="rgba(118,228,247,.2)" stroke="#76e4f7" stroke-width="2"/>
+      <text x="950" y="92" text-anchor="middle" fill="#76e4f7" font-size="11" font-weight="700">cyan</text>
+      <text x="950" y="110" text-anchor="middle" fill="#8b949e" font-size="7">cyan_FOR_SUBAGENTS_ONLY</text>
+
+      <!-- Notes -->
+      <text x="530" y="150" text-anchor="middle" fill="#8b949e" font-size="10">Colors are assigned per agent type via getAgentColorMap() and stored in bootstrap state.</text>
+      <text x="530" y="170" text-anchor="middle" fill="#8b949e" font-size="10">general-purpose agents return <tspan fill="#f85149">undefined</tspan> (no color assigned).</text>
+      <text x="530" y="190" text-anchor="middle" fill="#8b949e" font-size="10">Swarm workers carry their color via CLAUDE_CODE_AGENT_COLOR for cross-process consistency.</text>
+      <text x="530" y="210" text-anchor="middle" fill="#8b949e" font-size="10">Theme key suffix <tspan fill="#bc8cff">_FOR_SUBAGENTS_ONLY</tspan> prevents accidental use in main UI components.</text>
+    </svg>
+  </div>
+
+  <div class="why">
+    <strong>Why the <code>_FOR_SUBAGENTS_ONLY</code> suffix?</strong> The theme system is shared across the entire UI. Without namespacing, a developer might accidentally use <code>theme.red</code> (meant for error states) to color a subagent's output, or vice versa. The explicit suffix <code>red_FOR_SUBAGENTS_ONLY</code> makes it a type error to use agent colors outside the agent display system, and prevents main UI colors from leaking into agent rendering.
+  </div>
+
+  <div class="code"><span class="cm">// agentColorManager.ts</span>
+<span class="kw">export const</span> <span class="fn">AGENT_COLOR_TO_THEME_COLOR</span> = {
+  red:    <span class="st">'red_FOR_SUBAGENTS_ONLY'</span>,
+  blue:   <span class="st">'blue_FOR_SUBAGENTS_ONLY'</span>,
+  green:  <span class="st">'green_FOR_SUBAGENTS_ONLY'</span>,
+  yellow: <span class="st">'yellow_FOR_SUBAGENTS_ONLY'</span>,
+  purple: <span class="st">'purple_FOR_SUBAGENTS_ONLY'</span>,
+  orange: <span class="st">'orange_FOR_SUBAGENTS_ONLY'</span>,
+  pink:   <span class="st">'pink_FOR_SUBAGENTS_ONLY'</span>,
+  cyan:   <span class="st">'cyan_FOR_SUBAGENTS_ONLY'</span>,
+} <span class="kw">as const satisfies</span> Record&lt;AgentColorName, <span class="kw">keyof</span> Theme&gt;
+
+<span class="cm">// getAgentColor() returns undefined for 'general-purpose' agents</span>
+<span class="kw">export function</span> <span class="fn">getAgentColor</span>(agentType: <span class="kw">string</span>): <span class="kw">keyof</span> Theme | <span class="kw">undefined</span> {
+  <span class="kw">if</span> (agentType === <span class="st">'general-purpose'</span>) <span class="kw">return undefined</span>
+  <span class="kw">const</span> existing = <span class="fn">getAgentColorMap</span>().<span class="fn">get</span>(agentType)
+  <span class="kw">return</span> existing ? AGENT_COLOR_TO_THEME_COLOR[existing] : <span class="kw">undefined</span>
+}</div>
+</section>
+
+
+<!-- ===== 7. SUBAGENT HOOKS ===== -->
+<section id="hooks">
+  <div class="label">Chapter 7</div>
+  <h2 class="title">SubagentStart / SubagentStop Hooks</h2>
+  <p class="desc">Lifecycle hooks that fire before and after subagent query loops, enabling plugins and user-defined hooks to inject context, log activity, or perform cleanup when agents spawn and terminate.</p>
+
+  <div class="diagram">
+    <svg viewBox="0 0 1060 420" width="100%" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="a7" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#58a6ff"/></marker>
+        <marker id="a7g" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#3fb950"/></marker>
+        <marker id="a7p" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#bc8cff"/></marker>
+        <marker id="a7o" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#d29922"/></marker>
+      </defs>
+
+      <!-- Timeline -->
+      <line x1="530" y1="30" x2="530" y2="400" stroke="#30363d" stroke-width="2"/>
+      <text x="530" y="20" text-anchor="middle" fill="#8b949e" font-size="10" font-weight="600">Agent Lifecycle Timeline</text>
+
+      <!-- SubagentStart -->
+      <rect x="100" y="50" width="380" height="130" rx="10" fill="rgba(63,185,80,.06)" stroke="#3fb950" stroke-width="1.5"/>
+      <text x="290" y="78" text-anchor="middle" fill="#3fb950" font-size="14" font-weight="700">SubagentStart Hook</text>
+      <text x="290" y="98" text-anchor="middle" fill="#8b949e" font-size="10">Fires BEFORE the query loop begins</text>
+
+      <rect x="120" y="112" width="340" height="24" rx="4" fill="#1c2333" stroke="#3fb950"/>
+      <text x="290" y="128" text-anchor="middle" fill="#3fb950" font-size="9">Input: hook_event_name, agent_id, agent_type</text>
+
+      <rect x="120" y="144" width="340" height="24" rx="4" fill="#1c2333" stroke="#58a6ff"/>
+      <text x="290" y="160" text-anchor="middle" fill="#58a6ff" font-size="9">Output: additionalContexts (injected into agent's first turn)</text>
+
+      <!-- Arrow to timeline -->
+      <line x1="480" y1="115" x2="525" y2="115" stroke="#3fb950" stroke-width="1.5" marker-end="url(#a7g)"/>
+      <circle cx="530" cy="115" r="6" fill="#3fb950"/>
+
+      <!-- Query loop -->
+      <rect x="560" y="110" width="440" height="60" rx="8" fill="rgba(88,166,255,.06)" stroke="#58a6ff" stroke-width="1.5"/>
+      <text x="780" y="136" text-anchor="middle" fill="#58a6ff" font-size="12" font-weight="700">Agent Query Loop (query() async generator)</text>
+      <text x="780" y="156" text-anchor="middle" fill="#8b949e" font-size="9">Full agent execution: API calls, tool use, streaming, compact</text>
+
+      <!-- SubagentStop -->
+      <rect x="100" y="220" width="380" height="180" rx="10" fill="rgba(210,153,34,.06)" stroke="#d29922" stroke-width="1.5"/>
+      <text x="290" y="248" text-anchor="middle" fill="#d29922" font-size="14" font-weight="700">SubagentStop Hook</text>
+      <text x="290" y="268" text-anchor="middle" fill="#8b949e" font-size="10">Fires AFTER the query loop completes</text>
+
+      <rect x="120" y="282" width="340" height="24" rx="4" fill="#1c2333" stroke="#d29922"/>
+      <text x="290" y="298" text-anchor="middle" fill="#d29922" font-size="9">Input: agent_id, agent_type, agent_transcript_path</text>
+
+      <rect x="120" y="314" width="340" height="24" rx="4" fill="#1c2333" stroke="#bc8cff"/>
+      <text x="290" y="330" text-anchor="middle" fill="#bc8cff" font-size="9">Input: last_assistant_message, stop_hook_active</text>
+
+      <rect x="120" y="346" width="340" height="42" rx="4" fill="rgba(248,81,73,.06)" stroke="#f85149"/>
+      <text x="290" y="362" text-anchor="middle" fill="#f85149" font-size="9" font-weight="600">Auto-Conversion Rule:</text>
+      <text x="290" y="380" text-anchor="middle" fill="#8b949e" font-size="8">Stop hooks are auto-converted to SubagentStop when isAgent=true</text>
+
+      <!-- Arrow to timeline -->
+      <line x1="480" y1="310" x2="525" y2="310" stroke="#d29922" stroke-width="1.5" marker-end="url(#a7o)"/>
+      <circle cx="530" cy="310" r="6" fill="#d29922"/>
+
+      <!-- Post-stop -->
+      <rect x="560" y="230" width="440" height="90" rx="8" fill="rgba(188,140,255,.06)" stroke="#bc8cff" stroke-width="1.5"/>
+      <text x="780" y="258" text-anchor="middle" fill="#bc8cff" font-size="12" font-weight="700">Post-Stop Processing</text>
+      <text x="780" y="278" text-anchor="middle" fill="#8b949e" font-size="9">Transcript path: getAgentTranscriptPath(subagentId)</text>
+      <text x="780" y="298" text-anchor="middle" fill="#8b949e" font-size="9">Hook can read transcript, log metrics, trigger follow-ups</text>
+      <text x="780" y="314" text-anchor="middle" fill="#8b949e" font-size="9">Timeout: TOOL_HOOK_EXECUTION_TIMEOUT_MS</text>
+
+      <!-- Hook registration note -->
+      <rect x="560" y="340" width="440" height="60" rx="8" fill="rgba(63,185,80,.04)" stroke="#3fb950" stroke-width="1"/>
+      <text x="780" y="362" text-anchor="middle" fill="#3fb950" font-size="10" font-weight="600">Match Pattern</text>
+      <text x="780" y="380" text-anchor="middle" fill="#8b949e" font-size="9">SubagentStart matches on: agent_type</text>
+      <text x="780" y="394" text-anchor="middle" fill="#8b949e" font-size="9">SubagentStop matches on: agent_type</text>
+    </svg>
+  </div>
+
+  <div class="why">
+    <strong>Why auto-convert Stop to SubagentStop?</strong> Many existing hooks are configured for the <code>Stop</code> event. When these hooks fire within a subagent context (<code>isAgent=true</code>), the system automatically converts them to <code>SubagentStop</code>. This means <code>SubagentStop</code> hooks receive richer context (agent_id, transcript_path, last_assistant_message) without requiring every hook author to register for both event types. The conversion happens in <code>stopHooks.ts</code> where the hook event name is set to <code>'SubagentStop'</code> when a <code>subagentId</code> is present.
+  </div>
+
+  <div class="why">
+    <strong>Why provide the transcript path?</strong> The <code>agent_transcript_path</code> field in <code>SubagentStop</code> gives hook consumers access to the full sidechain transcript recorded during the agent's execution. This enables post-hoc analysis: a hook can read the transcript to extract metrics, verify quality, check for policy violations, or trigger follow-up actions -- all without needing to be wired into the agent's streaming pipeline.
+  </div>
+
+  <div class="cards">
+    <div class="card">
+      <h3><span class="badge b-green">Start</span> executeSubagentStartHooks()</h3>
+      <div class="code"><span class="kw">const</span> hookInput: <span class="fn">SubagentStartHookInput</span> = {
+  ...<span class="fn">createBaseHookInput</span>(<span class="kw">undefined</span>),
+  <span class="ar">hook_event_name</span>: <span class="st">'SubagentStart'</span>,
+  <span class="ar">agent_id</span>: agentId,
+  <span class="ar">agent_type</span>: agentType,
+}</div>
+      <p>Yields <code>AggregatedHookResult</code> with optional <code>additionalContext</code> that gets injected into the agent's context before its first API call.</p>
+    </div>
+    <div class="card">
+      <h3><span class="badge b-orange">Stop</span> SubagentStop in stopHooks</h3>
+      <div class="code"><span class="cm">// stopHooks.ts - auto-conversion</span>
+<span class="kw">const</span> hookEvent = subagentId
+  ? <span class="st">'SubagentStop'</span>
+  : <span class="st">'Stop'</span>
+
+<span class="kw">const</span> hookInput = {
+  <span class="ar">hook_event_name</span>: <span class="st">'SubagentStop'</span>,
+  <span class="ar">stop_hook_active</span>: stopHookActive,
+  <span class="ar">agent_id</span>: subagentId,
+  <span class="ar">agent_transcript_path</span>: <span class="fn">getAgentTranscriptPath</span>(subagentId),
+  <span class="ar">agent_type</span>: agentType ?? <span class="st">''</span>,
+  <span class="ar">last_assistant_message</span>: lastAssistantText,
+}</div>
+      <p>The <code>SubagentStop</code> hook includes the full transcript path and the last assistant message text, enabling external tools to analyze the agent's complete execution.</p>
+    </div>
+    <div class="card">
+      <h3><span class="badge b-red">Safety</span> Trust Check</h3>
+      <p><code>shouldSkipHookDueToTrust()</code> prevents hooks from executing before the user has accepted the trust dialog. Historical vulnerability: SubagentStop hooks could execute when a subagent completed before the user decided whether to trust the workspace.</p>
+      <ul>
+        <li>In non-interactive mode (SDK), trust is implicit -- always execute</li>
+        <li>In interactive mode, hooks are skipped until trust is established</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3><span class="badge b-purple">Config</span> Hook Registration</h3>
+      <p>Hooks are registered via <code>settings.json</code> with event matchers:</p>
+      <ul>
+        <li><code>SubagentStart</code> -- matchQuery is <code>hookInput.agent_type</code></li>
+        <li><code>SubagentStop</code> -- matchQuery is <code>hookInput.agent_type</code></li>
+        <li>Hooks run with <code>TOOL_HOOK_EXECUTION_TIMEOUT_MS</code> timeout</li>
+        <li>Plugin hooks loaded via <code>loadPluginHooks.ts</code></li>
+        <li>Frontmatter hooks registered via <code>registerFrontmatterHooks.ts</code></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- Footer -->
+<footer style="text-align:center; padding:40px 20px; border-top:1px solid var(--border); color:var(--muted); font-size:.85rem;">
+  Claude Code Multi-Agent Architecture -- Generated from source analysis of the Claude Code CLI tool.
+  <br>Source files: coordinator/coordinatorMode.ts, tools/AgentTool/*, utils/forkedAgent.ts, utils/worktree.ts, utils/swarm/permissionSync.ts, agentColorManager.ts
+</footer>
+
+</body>
+</html>

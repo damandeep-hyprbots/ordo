@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Code — Bridge / Remote Control System</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1c2333;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text-muted: #8b949e;
+    --accent: #58a6ff;
+    --accent2: #bc8cff;
+    --green: #3fb950;
+    --orange: #d29922;
+    --red: #f85149;
+    --pink: #f778ba;
+    --teal: #39d353;
+    --cyan: #76e4f7;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* Hero */
+  .hero {
+    text-align: center;
+    padding: 80px 20px 60px;
+    background: linear-gradient(180deg, #0d1117 0%, #111820 100%);
+    border-bottom: 1px solid var(--border);
+  }
+  .hero h1 {
+    font-size: 3rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 12px;
+  }
+  .hero p { color: var(--text-muted); font-size: 1.15rem; max-width: 750px; margin: 0 auto; }
+
+  /* Layout */
+  .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+  /* Section */
+  section { padding: 64px 0; border-bottom: 1px solid var(--border); }
+  section:last-child { border-bottom: none; }
+  .section-label {
+    font-size: .75rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+  .section-title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .section-desc {
+    color: var(--text-muted);
+    max-width: 720px;
+    margin-bottom: 36px;
+    font-size: 1.05rem;
+  }
+
+  /* Diagram boxes */
+  .diagram {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 32px;
+    overflow-x: auto;
+    margin-bottom: 28px;
+  }
+
+  /* SVG diagrams */
+  svg text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', monospace; }
+
+  /* Explanation cards */
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 24px; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    transition: border-color .2s;
+  }
+  .card:hover { border-color: var(--accent); }
+  .card h3 { font-size: 1.1rem; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+  .card p, .card ul { color: var(--text-muted); font-size: .92rem; }
+  .card ul { padding-left: 18px; margin-top: 6px; }
+  .card ul li { margin-bottom: 4px; }
+  .badge {
+    display: inline-block;
+    font-size: .7rem;
+    padding: 2px 8px;
+    border-radius: 100px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+  }
+  .badge-blue { background: rgba(88,166,255,.15); color: var(--accent); }
+  .badge-purple { background: rgba(188,140,255,.15); color: var(--accent2); }
+  .badge-green { background: rgba(63,185,80,.15); color: var(--green); }
+  .badge-orange { background: rgba(210,153,34,.15); color: var(--orange); }
+  .badge-pink { background: rgba(247,120,186,.15); color: var(--pink); }
+  .badge-teal { background: rgba(57,211,83,.15); color: var(--teal); }
+  .badge-red { background: rgba(248,81,73,.15); color: var(--red); }
+  .badge-cyan { background: rgba(118,228,247,.15); color: var(--cyan); }
+
+  /* Code block */
+  .code-block {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 24px;
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    font-size: .85rem;
+    color: var(--text-muted);
+    overflow-x: auto;
+    white-space: pre;
+    line-height: 1.7;
+    margin: 16px 0;
+  }
+  .code-block .kw { color: var(--accent2); }
+  .code-block .fn { color: var(--accent); }
+  .code-block .cm { color: #484f58; }
+  .code-block .st { color: var(--green); }
+  .code-block .ar { color: var(--orange); }
+  .code-block .num { color: var(--cyan); }
+
+  /* Reason callout (Why?) */
+  .reason {
+    background: rgba(88,166,255,.06);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    padding: 16px 20px;
+    margin: 16px 0;
+    font-size: .93rem;
+  }
+  .reason strong { color: var(--accent); }
+
+  /* Warning callout */
+  .warning {
+    background: rgba(248,81,73,.06);
+    border-left: 3px solid var(--red);
+    border-radius: 0 8px 8px 0;
+    padding: 16px 20px;
+    margin: 16px 0;
+    font-size: .93rem;
+  }
+  .warning strong { color: var(--red); }
+
+  /* TOC */
+  .toc {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 32px;
+  }
+  .toc a {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    padding: 8px 16px;
+    border-radius: 100px;
+    text-decoration: none;
+    font-size: .85rem;
+    transition: all .2s;
+  }
+  .toc a:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Inline code */
+  code {
+    background: var(--surface2);
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: .88em;
+    color: var(--cyan);
+  }
+
+  /* Sub-section titles */
+  .sub-title {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin: 32px 0 12px;
+    color: var(--text);
+  }
+
+  /* Protocol table */
+  .proto-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: .9rem;
+  }
+  .proto-table th,
+  .proto-table td {
+    border: 1px solid var(--border);
+    padding: 12px 16px;
+    text-align: left;
+  }
+  .proto-table th {
+    background: var(--surface2);
+    color: var(--accent);
+    font-weight: 600;
+    font-size: .8rem;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+  }
+  .proto-table td { color: var(--text-muted); }
+  .proto-table tr:hover td { background: rgba(88,166,255,.03); }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .hero h1 { font-size: 2rem; }
+    .diagram { padding: 16px; }
+    .cards { grid-template-columns: 1fr; }
+    .proto-table { font-size: .8rem; }
+    .proto-table th, .proto-table td { padding: 8px 10px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ======================= HERO ======================= -->
+<header class="hero">
+  <h1>Claude Code — Bridge / Remote Control</h1>
+  <p>A deep dive into the system that connects a local Claude Code CLI to Anthropic's CCR (Claude Code Remote) infrastructure, enabling claude.ai to dispatch prompts to your machine and stream responses back in real time.</p>
+  <nav class="toc">
+    <a href="#overview">Overview</a>
+    <a href="#architecture">Architecture</a>
+    <a href="#transport">Transport Layer</a>
+    <a href="#sessions-ws">SessionsWebSocket</a>
+    <a href="#protocols">Protocols Summary</a>
+    <a href="#dce">Dead Code Elimination</a>
+  </nav>
+</header>
+
+<main class="container">
+
+<!-- ======================= 1. BRIDGE MODE OVERVIEW ======================= -->
+<section id="overview">
+  <div class="section-label">Section 1</div>
+  <h2 class="section-title">Bridge Mode Overview</h2>
+  <p class="section-desc">Bridge Mode (marketed as "Remote Control") lets a user's claude.ai browser session dispatch prompts to a local Claude Code CLI running on their development machine. The local CLI executes tools, reads files, runs commands, and streams results back to the web UI.</p>
+
+  <div class="diagram">
+    <svg viewBox="0 0 960 340" xmlns="http://www.w3.org/2000/svg" width="100%">
+      <!-- Browser -->
+      <rect x="30" y="40" width="200" height="90" rx="10" fill="#1c2333" stroke="#58a6ff" stroke-width="1.5"/>
+      <text x="130" y="72" fill="#58a6ff" text-anchor="middle" font-size="13" font-weight="600">claude.ai</text>
+      <text x="130" y="95" fill="#8b949e" text-anchor="middle" font-size="11">Browser Session</text>
+      <text x="130" y="115" fill="#8b949e" text-anchor="middle" font-size="10">(OAuth token)</text>
+
+      <!-- CCR -->
+      <rect x="370" y="20" width="220" height="130" rx="10" fill="#1c2333" stroke="#bc8cff" stroke-width="1.5"/>
+      <text x="480" y="52" fill="#bc8cff" text-anchor="middle" font-size="13" font-weight="600">CCR Infrastructure</text>
+      <text x="480" y="75" fill="#8b949e" text-anchor="middle" font-size="11">Claude Code Remote</text>
+      <text x="480" y="95" fill="#8b949e" text-anchor="middle" font-size="10">Session management</text>
+      <text x="480" y="112" fill="#8b949e" text-anchor="middle" font-size="10">Work dispatch + JWT auth</text>
+      <text x="480" y="129" fill="#8b949e" text-anchor="middle" font-size="10">Event relay + heartbeat</text>
+
+      <!-- Local CLI -->
+      <rect x="730" y="40" width="200" height="90" rx="10" fill="#1c2333" stroke="#3fb950" stroke-width="1.5"/>
+      <text x="830" y="72" fill="#3fb950" text-anchor="middle" font-size="13" font-weight="600">Local Claude Code</text>
+      <text x="830" y="95" fill="#8b949e" text-anchor="middle" font-size="11">bridgeMain.ts daemon</text>
+      <text x="830" y="115" fill="#8b949e" text-anchor="middle" font-size="10">Tool execution + FS</text>
+
+      <!-- Arrows -->
+      <defs>
+        <marker id="arrowR" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#58a6ff"/></marker>
+        <marker id="arrowL" markerWidth="8" markerHeight="6" refX="0" refY="3" orient="auto"><path d="M8,0 L0,3 L8,6" fill="#3fb950"/></marker>
+        <marker id="arrowR2" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#bc8cff"/></marker>
+        <marker id="arrowL2" markerWidth="8" markerHeight="6" refX="0" refY="3" orient="auto"><path d="M8,0 L0,3 L8,6" fill="#d29922"/></marker>
+      </defs>
+
+      <!-- Browser -> CCR -->
+      <line x1="230" y1="70" x2="365" y2="70" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arrowR)"/>
+      <text x="298" y="62" fill="#58a6ff" text-anchor="middle" font-size="9">Prompts</text>
+
+      <!-- CCR -> Browser -->
+      <line x1="365" y1="95" x2="230" y2="95" stroke="#3fb950" stroke-width="1.5" marker-end="url(#arrowL)"/>
+      <text x="298" y="112" fill="#3fb950" text-anchor="middle" font-size="9">Streamed responses</text>
+
+      <!-- CCR -> Local -->
+      <line x1="590" y1="70" x2="725" y2="70" stroke="#bc8cff" stroke-width="1.5" marker-end="url(#arrowR2)"/>
+      <text x="658" y="62" fill="#bc8cff" text-anchor="middle" font-size="9">Work dispatch</text>
+
+      <!-- Local -> CCR -->
+      <line x1="725" y1="95" x2="590" y2="95" stroke="#d29922" stroke-width="1.5" marker-end="url(#arrowL2)"/>
+      <text x="658" y="112" fill="#d29922" text-anchor="middle" font-size="9">Events + heartbeats</text>
+
+      <!-- Auth box -->
+      <rect x="320" y="200" width="320" height="110" rx="8" fill="rgba(88,166,255,.06)" stroke="#30363d" stroke-width="1"/>
+      <text x="480" y="225" fill="#58a6ff" text-anchor="middle" font-size="12" font-weight="600">Authentication Requirements</text>
+      <text x="480" y="248" fill="#8b949e" text-anchor="middle" font-size="11">claude.ai OAuth token (required)</text>
+      <text x="480" y="268" fill="#f85149" text-anchor="middle" font-size="10">API keys NOT accepted</text>
+      <text x="480" y="286" fill="#f85149" text-anchor="middle" font-size="10">Bedrock / Vertex / Foundry NOT accepted</text>
+      <text x="480" y="304" fill="#f85149" text-anchor="middle" font-size="10">Console API logins NOT accepted</text>
+    </svg>
+  </div>
+
+  <div class="reason">
+    <strong>Why OAuth only?</strong> The bridge authenticates to CCR using the claude.ai OAuth token. This excludes Bedrock, Vertex, Foundry, API keys, and Console API logins because none of those credentials carry the OAuth token that CCR requires. The function <code>isClaudeAISubscriber()</code> enforces this gate at runtime.
+  </div>
+
+  <div class="cards">
+    <div class="card">
+      <h3><span class="badge badge-blue">Core</span> What Bridge Does</h3>
+      <p>Connects your local Claude Code to Anthropic's cloud so that a claude.ai web session can send prompts to your machine and receive tool outputs, file reads, and command results streamed back in real time.</p>
+    </div>
+    <div class="card">
+      <h3><span class="badge badge-purple">Build</span> DCE Gating</h3>
+      <p><code>feature('BRIDGE_MODE')</code> is a Bun bundler dead-code elimination gate. In external builds, the entire bridge module tree is tree-shaken out -- no code, no string literals, no GrowthBook flag names remain in the bundle.</p>
+    </div>
+    <div class="card">
+      <h3><span class="badge badge-green">Gate</span> GrowthBook Flag</h3>
+      <p>At runtime, <code>tengu_ccr_bridge</code> controls whether bridge is enabled for a given organization. The blocking variant <code>checkGate_CACHED_OR_BLOCKING</code> ensures stale disk-cache misses don't unfairly deny access.</p>
+    </div>
+  </div>
+</section>
+
+
+<!-- ======================= 2. BRIDGE ARCHITECTURE ======================= -->
+<section id="architecture">
+  <div class="section-label">Section 2</div>
+  <h2 class="section-title">Bridge Architecture</h2>
+  <p class="section-desc"><code>bridgeMain.ts</code> is a full polling/spawning daemon. It polls CCR for work, spawns child sessions to handle prompts, manages heartbeats and token refresh, and coordinates up to 32 concurrent sessions per environment.</p>
+
+  <div class="diagram">
+    <svg viewBox="0 0 960 520" xmlns="http://www.w3.org/2000/svg" width="100%">
+      <!-- Main daemon box -->
+      <rect x="280" y="20" width="400" height="60" rx="10" fill="#1c2333" stroke="#bc8cff" stroke-width="2"/>
+      <text x="480" y="45" fill="#bc8cff" text-anchor="middle" font-size="14" font-weight="700">bridgeMain.ts &mdash; runBridgeLoop()</text>
+      <text x="480" y="65" fill="#8b949e" text-anchor="middle" font-size="10">Polling daemon &bull; Up to 32 concurrent sessions</text>
+
+      <!-- Poll CCR -->
+      <rect x="60" y="130" width="180" height="60" rx="8" fill="#1c2333" stroke="#58a6ff" stroke-width="1.5"/>
+      <text x="150" y="155" fill="#58a6ff" text-anchor="middle" font-size="12" font-weight="600">Poll CCR /bridge</text>
+      <text x="150" y="173" fill="#8b949e" text-anchor="middle" font-size="10">GET work items</text>
+
+      <!-- Spawn sessions -->
+      <rect x="290" y="130" width="180" height="60" rx="8" fill="#1c2333" stroke="#3fb950" stroke-width="1.5"/>
+      <text x="380" y="155" fill="#3fb950" text-anchor="middle" font-size="12" font-weight="600">Session Spawner</text>
+      <text x="380" y="173" fill="#8b949e" text-anchor="middle" font-size="10">createSessionSpawner()</text>
+
+      <!-- Heartbeat -->
+      <rect x="520" y="130" width="180" height="60" rx="8" fill="#1c2333" stroke="#d29922" stroke-width="1.5"/>
+      <text x="610" y="155" fill="#d29922" text-anchor="middle" font-size="12" font-weight="600">Heartbeat Loop</text>
+      <text x="610" y="173" fill="#8b949e" text-anchor="middle" font-size="10">heartbeatActiveWorkItems()</text>
+
+      <!-- Token refresh -->
+      <rect x="750" y="130" width="180" height="60" rx="8" fill="#1c2333" stroke="#f778ba" stroke-width="1.5"/>
+      <text x="840" y="155" fill="#f778ba" text-anchor="middle" font-size="12" font-weight="600">Token Refresh</text>
+      <text x="840" y="173" fill="#8b949e" text-anchor="middle" font-size="10">createTokenRefreshScheduler</text>
+
+      <!-- Arrows from daemon -->
+      <line x1="380" y1="80" x2="150" y2="125" stroke="#58a6ff" stroke-width="1" marker-end="url(#arrowR)"/>
+      <line x1="430" y1="80" x2="380" y2="125" stroke="#3fb950" stroke-width="1" marker-end="url(#arrowR)"/>
+      <line x1="530" y1="80" x2="610" y2="125" stroke="#d29922" stroke-width="1" marker-end="url(#arrowR)"/>
+      <line x1="580" y1="80" x2="840" y2="125" stroke="#f778ba" stroke-width="1" marker-end="url(#arrowR)"/>
+
+      <!-- Session grid -->
+      <rect x="120" y="240" width="720" height="130" rx="10" fill="rgba(63,185,80,.04)" stroke="#30363d" stroke-width="1"/>
+      <text x="480" y="265" fill="#3fb950" text-anchor="middle" font-size="12" font-weight="600">Active Sessions (Map&lt;sessionId, SessionHandle&gt;)</text>
+
+      <!-- Session boxes -->
+      <rect x="150" y="285" width="130" height="55" rx="6" fill="#1c2333" stroke="#3fb950" stroke-width="1"/>
+      <text x="215" y="305" fill="#3fb950" text-anchor="middle" font-size="10" font-weight="600">Session 1</text>
+      <text x="215" y="325" fill="#8b949e" text-anchor="middle" font-size="9">child process</text>
+
+      <rect x="310" y="285" width="130" height="55" rx="6" fill="#1c2333" stroke="#3fb950" stroke-width="1"/>
+      <text x="375" y="305" fill="#3fb950" text-anchor="middle" font-size="10" font-weight="600">Session 2</text>
+      <text x="375" y="325" fill="#8b949e" text-anchor="middle" font-size="9">child process</text>
+
+      <rect x="470" y="285" width="130" height="55" rx="6" fill="#1c2333" stroke="#30363d" stroke-width="1" stroke-dasharray="4,3"/>
+      <text x="535" y="310" fill="#8b949e" text-anchor="middle" font-size="10">...</text>
+
+      <rect x="630" y="285" width="130" height="55" rx="6" fill="#1c2333" stroke="#3fb950" stroke-width="1"/>
+      <text x="695" y="305" fill="#3fb950" text-anchor="middle" font-size="10" font-weight="600">Session 32</text>
+      <text x="695" y="325" fill="#8b949e" text-anchor="middle" font-size="9">child process</text>
+
+      <!-- Feature flags -->
+      <rect x="60" y="415" width="260" height="90" rx="8" fill="rgba(188,140,255,.06)" stroke="#30363d" stroke-width="1"/>
+      <text x="190" y="440" fill="#bc8cff" text-anchor="middle" font-size="11" font-weight="600">CCR_AUTO_CONNECT</text>
+      <text x="190" y="460" fill="#8b949e" text-anchor="middle" font-size="10">All sessions connect by default</text>
+      <text x="190" y="478" fill="#8b949e" text-anchor="middle" font-size="10">tengu_cobalt_harbor GrowthBook gate</text>
+      <text x="190" y="496" fill="#8b949e" text-anchor="middle" font-size="10">User can opt out via config</text>
+
+      <rect x="350" y="415" width="260" height="90" rx="8" fill="rgba(247,120,186,.06)" stroke="#30363d" stroke-width="1"/>
+      <text x="480" y="440" fill="#f778ba" text-anchor="middle" font-size="11" font-weight="600">CCR_MIRROR</text>
+      <text x="480" y="460" fill="#8b949e" text-anchor="middle" font-size="10">Outbound-only shadow sessions</text>
+      <text x="480" y="478" fill="#8b949e" text-anchor="middle" font-size="10">tengu_ccr_mirror GrowthBook gate</text>
+      <text x="480" y="496" fill="#8b949e" text-anchor="middle" font-size="10">Event forwarding only, no inbound</text>
+
+      <rect x="640" y="415" width="260" height="90" rx="8" fill="rgba(57,211,83,.06)" stroke="#30363d" stroke-width="1"/>
+      <text x="770" y="440" fill="#teal" text-anchor="middle" font-size="11" font-weight="600">tengu_bridge_repl_v2</text>
+      <text x="770" y="460" fill="#8b949e" text-anchor="middle" font-size="10">Env-less bridge path</text>
+      <text x="770" y="478" fill="#8b949e" text-anchor="middle" font-size="10">SSETransport + CCRClient</text>
+      <text x="770" y="496" fill="#8b949e" text-anchor="middle" font-size="10">Replaces HybridTransport (v1)</text>
+    </svg>
+  </div>
+
+  <div class="reason">
+    <strong>Why 32 concurrent sessions?</strong> <code>SPAWN_SESSIONS_DEFAULT = 32</code> bounds the number of active child processes the daemon manages. Each session is a separate Claude Code process with its own conversation, tool execution, and working directory. The limit prevents runaway resource consumption while allowing meaningful parallelism for power users working across multiple contexts.
+  </div>
+
+  <div class="cards">
+    <div class="card">
+      <h3><span class="badge badge-blue">Poll</span> Work Dispatch</h3>
+      <p>The bridge daemon continuously polls <code>GET /bridge</code> for new work items. Each work item contains a session ID, an ingress JWT, and optional metadata. Backoff config: 2s initial, 2min cap, 10min give-up.</p>
+    </div>
+    <div class="card">
+      <h3><span class="badge badge-green">Spawn</span> Session Management</h3>
+      <p>Work items are handed to <code>createSessionSpawner()</code> which forks child <code>claude</code> processes. Each child gets an <code>--sdk-url</code> pointing to the session's transport endpoint and the ingress JWT for authentication.</p>
+    </div>
+    <div class="card">
+      <h3><span class="badge badge-orange">Health</span> Heartbeat + Token Refresh</h3>
+      <p>Active work items are heartbeated to CCR. 401/403 responses trigger <code>reconnectSession</code> (re-queues the work for fresh JWT delivery). A separate scheduler handles OAuth token refresh before expiry.</p>
+    </div>
+    <div class="card">
+      <h3><span class="badge badge-purple">v1 vs v2</span> Transport Split</h3>
+      <ul>
+        <li><strong>v1:</strong> <code>HybridTransport</code> (WebSocket reads + HTTP POST writes to Session-Ingress)</li>
+        <li><strong>v2:</strong> <code>SSETransport</code> (reads) + <code>CCRClient</code> (writes to <code>/worker/*</code>)</li>
+        <li>Gated by <code>tengu_bridge_repl_v2</code> GrowthBook flag</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3><span class="badge badge-pink">Mirror</span> CCR_MIRROR Mode</h3>
+      <p>When enabled, every local session spawns an outbound-only shadow session. The shadow forwards events to CCR but never receives inbound prompts. The <code>outboundOnly</code> flag on v2 transport skips SSE stream entirely.</p>
+    </div>
+    <div class="card">
+      <h3><span class="badge badge-teal">Auto</span> CCR_AUTO_CONNECT</h3>
+      <p>Makes all sessions connect to CCR by default (opt-out rollout). Controlled by <code>tengu_cobalt_harbor</code> GrowthBook gate. Users can explicitly set <code>remoteControlAtStartup=false</code> in config to opt out.</p>
+    </div>
+  </div>
+</section>
+
+
+<!-- ======================= 3. TRANSPORT LAYER ======================= -->
+<section id="transport">
+  <div class="section-label">Section 3</div>
+  <h2 class="section-title">Transport Layer (HybridTransport)</h2>
+  <p class="section-desc">The primary bridge transport combines a WebSocket (or SSE stream) for receiving data with HTTP POST for sending. The v2 path separates these concerns further with SSETransport + CCRClient, while both versions share the same <code>ReplBridgeTransport</code> interface.</p>
+
+  <div class="diagram">
+    <svg viewBox="0 0 960 480" xmlns="http://www.w3.org/2000/svg" width="100%">
+      <defs>
+        <marker id="aRight" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#58a6ff"/></marker>
+        <marker id="aDown" markerWidth="6" markerHeight="8" refX="3" refY="8" orient="auto"><path d="M0,0 L3,8 L6,0" fill="#d29922"/></marker>
+        <marker id="aUp" markerWidth="6" markerHeight="8" refX="3" refY="0" orient="auto"><path d="M0,8 L3,0 L6,8" fill="#3fb950"/></marker>
+      </defs>
+
+      <!-- Title: v1 -->
+      <text x="240" y="30" fill="#bc8cff" text-anchor="middle" font-size="14" font-weight="700">v1: HybridTransport</text>
+
+      <!-- WS Read -->
+      <rect x="50" y="50" width="180" height="55" rx="8" fill="#1c2333" stroke="#58a6ff" stroke-width="1.5"/>
+      <text x="140" y="72" fill="#58a6ff" text-anchor="middle" font-size="11" font-weight="600">WebSocket (Read)</text>
+      <text x="140" y="90" fill="#8b949e" text-anchor="middle" font-size="10">extends WebSocketTransport</text>
+
+      <!-- POST Write -->
+      <rect x="260" y="50" width="180" height="55" rx="8" fill="#1c2333" stroke="#d29922" stroke-width="1.5"/>
+      <text x="350" y="72" fill="#d29922" text-anchor="middle" font-size="11" font-weight="600">HTTP POST (Write)</text>
+      <text x="350" y="90" fill="#8b949e" text-anchor="middle" font-size="10">SerialBatchEventUploader</text>
+
+      <!-- Batch buffer -->
+      <rect x="100" y="135" width="300" height="45" rx="6" fill="rgba(210,153,34,.08)" stroke="#30363d" stroke-width="1"/>
+      <text x="250" y="155" fill="#d29922" text-anchor="middle" font-size="10">write() &#8594; 100ms buffer &#8594; enqueue() &#8594; serial POST</text>
+      <text x="250" y="170" fill="#8b949e" text-anchor="middle" font-size="9">batch up to 500 events &bull; retry with exp backoff &bull; 15s timeout</text>
+
+      <!-- Arrows -->
+      <line x1="140" y1="105" x2="140" y2="130" stroke="#58a6ff" stroke-width="1" marker-end="url(#aDown)"/>
+      <line x1="350" y1="105" x2="350" y2="130" stroke="#d29922" stroke-width="1" marker-end="url(#aDown)"/>
+
+      <!-- Divider -->
+      <line x1="480" y1="40" x2="480" y2="200" stroke="#30363d" stroke-width="1" stroke-dasharray="6,4"/>
+
+      <!-- Title: v2 -->
+      <text x="720" y="30" fill="#3fb950" text-anchor="middle" font-size="14" font-weight="700">v2: SSETransport + CCRClient</text>
+
+      <!-- SSE Read -->
+      <rect x="530" y="50" width="180" height="55" rx="8" fill="#1c2333" stroke="#3fb950" stroke-width="1.5"/>
+      <text x="620" y="72" fill="#3fb950" text-anchor="middle" font-size="11" font-weight="600">SSETransport (Read)</text>
+      <text x="620" y="90" fill="#8b949e" text-anchor="middle" font-size="10">/worker/events/stream</text>
+
+      <!-- CCRClient Write -->
+      <rect x="740" y="50" width="180" height="55" rx="8" fill="#1c2333" stroke="#d29922" stroke-width="1.5"/>
+      <text x="830" y="72" fill="#d29922" text-anchor="middle" font-size="11" font-weight="600">CCRClient (Write)</text>
+      <text x="830" y="90" fill="#8b949e" text-anchor="middle" font-size="10">POST /worker/events</text>
+
+      <!-- v2 details -->
+      <rect x="530" y="135" width="390" height="45" rx="6" fill="rgba(63,185,80,.08)" stroke="#30363d" stroke-width="1"/>
+      <text x="725" y="155" fill="#3fb950" text-anchor="middle" font-size="10">registerWorker() &#8594; epoch &#8594; heartbeat + writeEvent() + reportDelivery()</text>
+      <text x="725" y="170" fill="#8b949e" text-anchor="middle" font-size="9">JWT auth (not OAuth) &bull; delivery: received &#8594; processed &bull; 20s heartbeat</text>
+
+      <!-- SSE Frame Parser -->
+      <rect x="120" y="230" width="720" height="100" rx="10" fill="#1c2333" stroke="#58a6ff" stroke-width="1.5"/>
+      <text x="480" y="255" fill="#58a6ff" text-anchor="middle" font-size="13" font-weight="600">SSE Frame Parser &mdash; parseSSEFrames()</text>
+      <text x="480" y="278" fill="#8b949e" text-anchor="middle" font-size="11">Incremental parser: buffer &#8594; split on double-newline &#8594; extract event/id/data fields</text>
+      <text x="480" y="298" fill="#8b949e" text-anchor="middle" font-size="11">Handles multi-line data: fields, SSE comments (:keepalive), and partial buffers</text>
+      <text x="480" y="318" fill="#d29922" text-anchor="middle" font-size="10">45-second liveness timeout &bull; Server keepalives every 15 seconds</text>
+
+      <!-- ReplBridgeTransport interface -->
+      <rect x="170" y="370" width="620" height="90" rx="10" fill="rgba(188,140,255,.06)" stroke="#bc8cff" stroke-width="1.5"/>
+      <text x="480" y="395" fill="#bc8cff" text-anchor="middle" font-size="13" font-weight="600">ReplBridgeTransport Interface</text>
+      <text x="480" y="418" fill="#8b949e" text-anchor="middle" font-size="10">write() &bull; writeBatch() &bull; close() &bull; isConnectedStatus() &bull; connect()</text>
+      <text x="480" y="436" fill="#8b949e" text-anchor="middle" font-size="10">setOnData() &bull; setOnClose() &bull; setOnConnect() &bull; getLastSequenceNum()</text>
+      <text x="480" y="454" fill="#8b949e" text-anchor="middle" font-size="10">reportState() &bull; reportMetadata() &bull; reportDelivery() &bull; flush()</text>
+
+      <!-- Arrows to interface -->
+      <line x1="250" y1="180" x2="350" y2="365" stroke="#bc8cff" stroke-width="1" stroke-dasharray="4,3"/>
+      <line x1="725" y1="180" x2="600" y2="365" stroke="#bc8cff" stroke-width="1" stroke-dasharray="4,3"/>
+
+      <text x="260" y="290" fill="#bc8cff" font-size="9" transform="rotate(-30, 260, 290)">createV1ReplTransport</text>
+      <text x="690" y="290" fill="#bc8cff" font-size="9" transform="rotate(25, 690, 290)">createV2ReplTransport</text>
+    </svg>
+  </div>
+
+  <div class="reason">
+    <strong>Why serialize writes?</strong> Bridge mode fires writes via <code>void transport.write()</code> (fire-and-forget). Without serialization, concurrent POSTs cause concurrent Firestore writes to the same document, leading to collisions, retry storms, and pages to the on-call team. The <code>SerialBatchEventUploader</code> ensures at most one POST is in-flight at any time.
+  </div>
+
+  <div class="reason">
+    <strong>Why a 45-second liveness timeout?</strong> The server sends keepalive comments (<code>:keepalive</code>) every 15 seconds. If no SSE frame arrives within 3x that interval (45 seconds), the connection is presumed dead. This avoids waiting indefinitely on a silently-broken TCP connection while giving enough headroom for normal network jitter.
+  </div>
+
+  <div class="code-block"><span class="cm">// SSETransport configuration constants</span>
+<span class="kw">const</span> <span class="fn">RECONNECT_BASE_DELAY_MS</span> = <span class="num">1000</span>
+<span class="kw">const</span> <span class="fn">RECONNECT_MAX_DELAY_MS</span>  = <span class="num">30_000</span>
+<span class="kw">const</span> <span class="fn">RECONNECT_GIVE_UP_MS</span>   = <span class="num">600_000</span>  <span class="cm">// 10 minutes</span>
+<span class="kw">const</span> <span class="fn">LIVENESS_TIMEOUT_MS</span>    = <span class="num">45_000</span>   <span class="cm">// 3x keepalive interval</span>
+
+<span class="cm">// HybridTransport POST configuration</span>
+<span class="kw">const</span> <span class="fn">BATCH_FLUSH_INTERVAL_MS</span> = <span class="num">100</span>     <span class="cm">// buffer stream events 100ms</span>
+<span class="kw">const</span> <span class="fn">POST_TIMEOUT_MS</span>         = <span class="num">15_000</span>  <span class="cm">// per-attempt timeout</span>
+<span class="kw">const</span> <span class="fn">CLOSE_GRACE_MS</span>          = <span class="num">3000</span>   <span class="cm">// drain queue on close</span></div>
+
+  <div class="cards">
+    <div class="card">
+      <h3><span class="badge badge-blue">Read</span> WebSocket / SSE</h3>
+      <p>v1 uses a WebSocket for receiving inbound events; v2 uses an SSE stream at <code>/worker/events/stream</code>. Both handle reconnection with exponential backoff. SSE carries sequence numbers for resume-from-last.</p>
+    </div>
+    <div class="card">
+      <h3><span class="badge badge-orange">Write</span> Serialized POST</h3>
+      <p>Both versions serialize writes through a batch uploader. Stream events accumulate for 100ms before flushing. At most one HTTP POST is in-flight. Failed POSTs retry with exponential backoff (500ms base, 8s cap, 1s jitter).</p>
+    </div>
+    <div class="card">
+      <h3><span class="badge badge-green">Swap</span> Transport Hot-Swap</h3>
+      <p>When swapping transports, <code>getLastSequenceNum()</code> captures the SSE high-water mark so the new transport resumes from where the old one left off. Without this, the server replays the entire session history from sequence 0.</p>
+    </div>
+  </div>
+</section>
+
+
+<!-- ======================= 4. SESSIONS WEBSOCKET ======================= -->
+<section id="sessions-ws">
+  <div class="section-label">Section 4</div>
+  <h2 class="section-title">SessionsWebSocket</h2>
+  <p class="section-desc">A dedicated WebSocket client for subscribing to CCR session streams. Used by the claude.ai frontend (and remote session manager) to receive real-time SDK messages from active sessions.</p>
+
+  <div class="diagram">
+    <svg viewBox="0 0 960 420" xmlns="http://www.w3.org/2000/svg" width="100%">
+      <defs>
+        <marker id="seqArr" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#58a6ff"/></marker>
+        <marker id="seqArrG" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#3fb950"/></marker>
+        <marker id="seqArrO" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#d29922"/></marker>
+        <marker id="seqArrR" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#f85149"/></marker>
+      </defs>
+
+      <!-- Sequence diagram -->
+      <text x="480" y="25" fill="#bc8cff" text-anchor="middle" font-size="14" font-weight="700">WebSocket Auth &amp; Message Flow</text>
+
+      <!-- Client -->
+      <rect x="100" y="45" width="120" height="35" rx="6" fill="#1c2333" stroke="#58a6ff" stroke-width="1.5"/>
+      <text x="160" y="67" fill="#58a6ff" text-anchor="middle" font-size="11" font-weight="600">Client</text>
+      <line x1="160" y1="80" x2="160" y2="400" stroke="#30363d" stroke-width="1"/>
+
+      <!-- Server -->
+      <rect x="700" y="45" width="160" height="35" rx="6" fill="#1c2333" stroke="#3fb950" stroke-width="1.5"/>
+      <text x="780" y="67" fill="#3fb950" text-anchor="middle" font-size="11" font-weight="600">CCR Server</text>
+      <line x1="780" y1="80" x2="780" y2="400" stroke="#30363d" stroke-width="1"/>
+
+      <!-- Step 1: Connect -->
+      <line x1="165" y1="105" x2="775" y2="105" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#seqArr)"/>
+      <text x="470" y="100" fill="#58a6ff" text-anchor="middle" font-size="10">WSS connect to /v1/sessions/ws/{sessionId}/subscribe?organization_uuid=...</text>
+      <text x="470" y="118" fill="#8b949e" text-anchor="middle" font-size="9">Authorization: Bearer {oauth_token} in headers (Bun) or ws options (Node)</text>
+
+      <!-- Step 2: Connected -->
+      <line x1="775" y1="148" x2="165" y2="148" stroke="#3fb950" stroke-width="1.5" marker-end="url(#seqArrG)"/>
+      <text x="470" y="143" fill="#3fb950" text-anchor="middle" font-size="10">Connection opened (auth validated via headers)</text>
+      <text x="470" y="161" fill="#8b949e" text-anchor="middle" font-size="9">reconnectAttempts = 0 &bull; sessionNotFoundRetries = 0 &bull; start ping interval (30s)</text>
+
+      <!-- Step 3: Messages -->
+      <rect x="200" y="180" width="560" height="50" rx="6" fill="rgba(63,185,80,.05)" stroke="#30363d" stroke-width="1"/>
+      <line x1="775" y1="195" x2="165" y2="195" stroke="#3fb950" stroke-width="1.5" marker-end="url(#seqArrG)"/>
+      <text x="470" y="192" fill="#3fb950" text-anchor="middle" font-size="10">SDKMessage | SDKControlRequest | SDKControlResponse stream</text>
+      <text x="470" y="220" fill="#8b949e" text-anchor="middle" font-size="9">Messages with string `type` field accepted; downstream handlers decide what to do</text>
+
+      <!-- Step 4: Ping/Pong -->
+      <line x1="165" y1="255" x2="775" y2="255" stroke="#d29922" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#seqArrO)"/>
+      <text x="470" y="250" fill="#d29922" text-anchor="middle" font-size="10">Ping (every 30s)</text>
+      <line x1="775" y1="275" x2="165" y2="275" stroke="#d29922" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#seqArrO)"/>
+      <text x="470" y="290" fill="#d29922" text-anchor="middle" font-size="10">Pong</text>
+
+      <!-- Step 5: Control response -->
+      <line x1="165" y1="315" x2="775" y2="315" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#seqArr)"/>
+      <text x="470" y="310" fill="#58a6ff" text-anchor="middle" font-size="10">sendControlResponse() / sendControlRequest()</text>
+      <text x="470" y="328" fill="#8b949e" text-anchor="middle" font-size="9">{ type: "control_request", request_id: UUID, request: { subtype: "interrupt" } }</text>
+
+      <!-- Close codes box -->
+      <rect x="200" y="350" width="560" height="45" rx="6" fill="rgba(248,81,73,.06)" stroke="#30363d" stroke-width="1"/>
+      <text x="310" y="370" fill="#f85149" text-anchor="middle" font-size="10" font-weight="600">4003 = Unauthorized</text>
+      <text x="310" y="387" fill="#8b949e" text-anchor="middle" font-size="9">Stop immediately</text>
+      <text x="530" y="370" fill="#d29922" text-anchor="middle" font-size="10" font-weight="600">4001 = Session Not Found</text>
+      <text x="530" y="387" fill="#8b949e" text-anchor="middle" font-size="9">3 retries (transient during compaction)</text>
+      <text x="720" y="370" fill="#58a6ff" text-anchor="middle" font-size="10" font-weight="600">Other codes</text>
+      <text x="720" y="387" fill="#8b949e" text-anchor="middle" font-size="9">5 reconnect attempts</text>
+    </svg>
+  </div>
+
+  <div class="reason">
+    <strong>Why allow retries on 4001?</strong> During message history compaction, the server may briefly consider the session stale while the CLI worker is busy with the compaction API call and not emitting events. The 4001 code can be transient in this window, so up to 3 retries (with escalating delay) let the client recover without permanently giving up.
+  </div>
+
+  <div class="code-block"><span class="cm">// SessionsWebSocket constants</span>
+<span class="kw">const</span> <span class="fn">RECONNECT_DELAY_MS</span>          = <span class="num">2000</span>
+<span class="kw">const</span> <span class="fn">MAX_RECONNECT_ATTEMPTS</span>      = <span class="num">5</span>
+<span class="kw">const</span> <span class="fn">PING_INTERVAL_MS</span>            = <span class="num">30000</span>
+<span class="kw">const</span> <span class="fn">MAX_SESSION_NOT_FOUND_RETRIES</span> = <span class="num">3</span>
+
+<span class="cm">// Permanent close codes (stop reconnecting immediately)</span>
+<span class="kw">const</span> <span class="fn">PERMANENT_CLOSE_CODES</span> = <span class="kw">new</span> Set([
+  <span class="num">4003</span>, <span class="cm">// unauthorized</span>
+])
+
+<span class="cm">// WebSocket URL pattern</span>
+<span class="st">wss://api.anthropic.com/v1/sessions/ws/{sessionId}/subscribe?organization_uuid=...</span></div>
+
+  <div class="cards">
+    <div class="card">
+      <h3><span class="badge badge-blue">Auth</span> Header-Based</h3>
+      <p>Authentication is sent via HTTP headers on the WebSocket upgrade request: <code>Authorization: Bearer {token}</code> plus <code>anthropic-version: 2023-06-01</code>. Bun and Node/ws handle this differently in implementation but the protocol is identical.</p>
+    </div>
+    <div class="card">
+      <h3><span class="badge badge-red">Close</span> Graceful Shutdown</h3>
+      <p>On close, event handlers are detached, the ping interval is cleared, and any pending reconnect timer is cancelled. The <code>reconnect()</code> method resets all retry counters for a clean restart after stale subscriptions.</p>
+    </div>
+    <div class="card">
+      <h3><span class="badge badge-orange">Control</span> Bidirectional</h3>
+      <p>The WebSocket is bidirectional: the server streams SDKMessages, while the client can send back <code>SDKControlResponse</code> (permission grants) and <code>SDKControlRequest</code> (interrupts) with unique request IDs.</p>
+    </div>
+  </div>
+</section>
+
+
+<!-- ======================= 5. REAL-TIME PROTOCOLS ======================= -->
+<section id="protocols">
+  <div class="section-label">Section 5</div>
+  <h2 class="section-title">Real-Time Protocols Summary</h2>
+  <p class="section-desc">Claude Code uses multiple real-time transport protocols, each optimized for a different communication pattern. Here is a comprehensive map of every WebSocket and streaming connection in the system.</p>
+
+  <div class="diagram">
+    <svg viewBox="0 0 960 380" xmlns="http://www.w3.org/2000/svg" width="100%">
+      <!-- Central hub -->
+      <circle cx="480" cy="190" r="55" fill="#1c2333" stroke="#bc8cff" stroke-width="2"/>
+      <text x="480" y="185" fill="#bc8cff" text-anchor="middle" font-size="12" font-weight="700">Claude</text>
+      <text x="480" y="200" fill="#bc8cff" text-anchor="middle" font-size="12" font-weight="700">Code CLI</text>
+
+      <!-- SessionsWebSocket -->
+      <rect x="40" y="40" width="200" height="65" rx="8" fill="#1c2333" stroke="#58a6ff" stroke-width="1.5"/>
+      <text x="140" y="62" fill="#58a6ff" text-anchor="middle" font-size="11" font-weight="600">SessionsWebSocket</text>
+      <text x="140" y="80" fill="#8b949e" text-anchor="middle" font-size="9">CCR session streaming</text>
+      <text x="140" y="94" fill="#8b949e" text-anchor="middle" font-size="9">WSS /v1/sessions/ws/...</text>
+      <line x1="240" y1="80" x2="430" y2="170" stroke="#58a6ff" stroke-width="1"/>
+
+      <!-- SSETransport -->
+      <rect x="40" y="250" width="200" height="65" rx="8" fill="#1c2333" stroke="#3fb950" stroke-width="1.5"/>
+      <text x="140" y="272" fill="#3fb950" text-anchor="middle" font-size="11" font-weight="600">SSETransport</text>
+      <text x="140" y="290" fill="#8b949e" text-anchor="middle" font-size="9">Bridge ingress (v2 reads)</text>
+      <text x="140" y="304" fill="#8b949e" text-anchor="middle" font-size="9">/worker/events/stream</text>
+      <line x1="240" y1="280" x2="430" y2="210" stroke="#3fb950" stroke-width="1"/>
+
+      <!-- HybridTransport -->
+      <rect x="720" y="40" width="200" height="65" rx="8" fill="#1c2333" stroke="#d29922" stroke-width="1.5"/>
+      <text x="820" y="62" fill="#d29922" text-anchor="middle" font-size="11" font-weight="600">HybridTransport</text>
+      <text x="820" y="80" fill="#8b949e" text-anchor="middle" font-size="9">Primary bridge transport (v1)</text>
+      <text x="820" y="94" fill="#8b949e" text-anchor="middle" font-size="9">WS read + HTTP POST write</text>
+      <line x1="720" y1="80" x2="535" y2="170" stroke="#d29922" stroke-width="1"/>
+
+      <!-- VoiceStream -->
+      <rect x="720" y="155" width="200" height="65" rx="8" fill="#1c2333" stroke="#f778ba" stroke-width="1.5"/>
+      <text x="820" y="177" fill="#f778ba" text-anchor="middle" font-size="11" font-weight="600">VoiceStream WebSocket</text>
+      <text x="820" y="195" fill="#8b949e" text-anchor="middle" font-size="9">Speech-to-text streaming</text>
+      <text x="820" y="209" fill="#8b949e" text-anchor="middle" font-size="9">Separate from MCP/CCR</text>
+      <line x1="720" y1="190" x2="535" y2="190" stroke="#f778ba" stroke-width="1"/>
+
+      <!-- MCP WebSocket -->
+      <rect x="720" y="270" width="200" height="65" rx="8" fill="#1c2333" stroke="#76e4f7" stroke-width="1.5"/>
+      <text x="820" y="292" fill="#76e4f7" text-anchor="middle" font-size="11" font-weight="600">mcpWebSocketTransport</text>
+      <text x="820" y="310" fill="#8b949e" text-anchor="middle" font-size="9">MCP over WebSocket</text>
+      <text x="820" y="324" fill="#8b949e" text-anchor="middle" font-size="9">For remote MCP servers</text>
+      <line x1="720" y1="300" x2="535" y2="210" stroke="#76e4f7" stroke-width="1"/>
+    </svg>
+  </div>
+
+  <table class="proto-table">
+    <thead>
+      <tr>
+        <th>Protocol</th>
+        <th>Transport</th>
+        <th>Direction</th>
+        <th>Purpose</th>
+        <th>Auth</th>
+        <th>Reconnect</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>SessionsWebSocket</code></td>
+        <td>WebSocket (WSS)</td>
+        <td>Bidirectional</td>
+        <td>CCR session streaming: receive SDK messages, send control responses/requests</td>
+        <td>OAuth token in headers</td>
+        <td>5 attempts, 2s delay; 3 retries for 4001</td>
+      </tr>
+      <tr>
+        <td><code>SSETransport</code></td>
+        <td>Server-Sent Events (HTTP)</td>
+        <td>Server &rarr; Client (read)</td>
+        <td>Bridge v2 ingress: receive inbound events from CCR worker endpoint</td>
+        <td>JWT (session ingress token)</td>
+        <td>Exp backoff 1s-30s, 10min budget</td>
+      </tr>
+      <tr>
+        <td><code>HybridTransport</code></td>
+        <td>WebSocket + HTTP POST</td>
+        <td>WS: read; POST: write</td>
+        <td>Bridge v1: primary transport combining real-time reads with serialized writes</td>
+        <td>Session ingress token (env var)</td>
+        <td>Inherited from WebSocketTransport</td>
+      </tr>
+      <tr>
+        <td><code>VoiceStream</code></td>
+        <td>WebSocket</td>
+        <td>Bidirectional</td>
+        <td>Speech-to-text audio streaming for voice mode (separate from MCP/CCR)</td>
+        <td>Per-service auth</td>
+        <td>Feature-gated (VOICE_MODE)</td>
+      </tr>
+      <tr>
+        <td><code>mcpWebSocketTransport</code></td>
+        <td>WebSocket</td>
+        <td>Bidirectional</td>
+        <td>MCP protocol over WebSocket for remote MCP servers (alternative to stdio)</td>
+        <td>Per-server config</td>
+        <td>MCP client managed</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="reason">
+    <strong>Why so many transports?</strong> Each protocol serves a distinct use case with different reliability/latency tradeoffs. SSE is ideal for unidirectional server pushes with built-in reconnection semantics (Last-Event-ID). WebSockets provide full-duplex communication for interactive protocols. HTTP POST offers reliable, retriable writes with batch semantics. The HybridTransport combines WebSocket reads with POST writes because the bridge write path needs stronger delivery guarantees than WebSocket's fire-and-forget semantics.
+  </div>
+</section>
+
+
+<!-- ======================= 6. DEAD CODE ELIMINATION ======================= -->
+<section id="dce">
+  <div class="section-label">Section 6</div>
+  <h2 class="section-title">Dead Code Elimination</h2>
+  <p class="section-desc">The Bun bundler's <code>feature()</code> macro enables compile-time dead code elimination. In external builds, the entire bridge module tree -- code, string literals, and GrowthBook flag names -- is tree-shaken out of the bundle. This requires careful coding discipline.</p>
+
+  <div class="diagram">
+    <svg viewBox="0 0 960 420" xmlns="http://www.w3.org/2000/svg" width="100%">
+      <!-- Source code -->
+      <rect x="40" y="30" width="260" height="150" rx="10" fill="#1c2333" stroke="#bc8cff" stroke-width="1.5"/>
+      <text x="170" y="55" fill="#bc8cff" text-anchor="middle" font-size="13" font-weight="600">Source Code</text>
+      <text x="60" y="82" fill="#8b949e" font-size="10" font-family="monospace">feature('BRIDGE_MODE')</text>
+      <text x="80" y="100" fill="#3fb950" font-size="10" font-family="monospace">? isBridgeEnabled()</text>
+      <text x="80" y="118" fill="#f85149" font-size="10" font-family="monospace">: false</text>
+      <text x="60" y="145" fill="#8b949e" font-size="9">Positive ternary pattern</text>
+      <text x="60" y="162" fill="#8b949e" font-size="9">at every bridge call site</text>
+
+      <!-- Bun Bundler -->
+      <rect x="350" y="30" width="260" height="150" rx="10" fill="#1c2333" stroke="#d29922" stroke-width="1.5"/>
+      <text x="480" y="55" fill="#d29922" text-anchor="middle" font-size="13" font-weight="600">Bun Bundler</text>
+      <text x="480" y="82" fill="#8b949e" text-anchor="middle" font-size="10">feature('BRIDGE_MODE') evaluates to</text>
+      <text x="480" y="102" fill="#3fb950" text-anchor="middle" font-size="11" font-weight="600">true (internal build)</text>
+      <text x="480" y="120" fill="#8b949e" text-anchor="middle" font-size="10">or</text>
+      <text x="480" y="138" fill="#f85149" text-anchor="middle" font-size="11" font-weight="600">false (external build)</text>
+      <text x="480" y="162" fill="#8b949e" text-anchor="middle" font-size="9">Compile-time constant folding</text>
+
+      <!-- Arrow -->
+      <line x1="300" y1="105" x2="345" y2="105" stroke="#d29922" stroke-width="1.5" marker-end="url(#seqArrO)"/>
+
+      <!-- Internal output -->
+      <rect x="660" y="30" width="260" height="65" rx="10" fill="rgba(63,185,80,.08)" stroke="#3fb950" stroke-width="1.5"/>
+      <text x="790" y="55" fill="#3fb950" text-anchor="middle" font-size="12" font-weight="600">Internal Build</text>
+      <text x="790" y="77" fill="#8b949e" text-anchor="middle" font-size="10">Bridge code included, flags resolved</text>
+
+      <!-- External output -->
+      <rect x="660" y="115" width="260" height="65" rx="10" fill="rgba(248,81,73,.08)" stroke="#f85149" stroke-width="1.5"/>
+      <text x="790" y="140" fill="#f85149" text-anchor="middle" font-size="12" font-weight="600">External Build</text>
+      <text x="790" y="162" fill="#8b949e" text-anchor="middle" font-size="10">Entire bridge tree eliminated</text>
+
+      <line x1="610" y1="75" x2="655" y2="62" stroke="#3fb950" stroke-width="1.5" marker-end="url(#seqArrG)"/>
+      <line x1="610" y1="130" x2="655" y2="147" stroke="#f85149" stroke-width="1.5" marker-end="url(#seqArrR)"/>
+
+      <!-- Correct pattern -->
+      <rect x="40" y="220" width="420" height="170" rx="10" fill="rgba(63,185,80,.05)" stroke="#3fb950" stroke-width="1.5"/>
+      <text x="250" y="248" fill="#3fb950" text-anchor="middle" font-size="12" font-weight="600">CORRECT: Positive Ternary Pattern</text>
+      <text x="60" y="280" fill="#3fb950" font-size="11" font-family="monospace">feature('BRIDGE_MODE')</text>
+      <text x="80" y="300" fill="#3fb950" font-size="11" font-family="monospace">? getFeatureValue('tengu_ccr_bridge', false)</text>
+      <text x="80" y="320" fill="#3fb950" font-size="11" font-family="monospace">: false</text>
+      <text x="60" y="350" fill="#8b949e" font-size="10">When BRIDGE_MODE=false, bundler sees: false ? ... : false</text>
+      <text x="60" y="367" fill="#8b949e" font-size="10">Constant-folds to false. 'tengu_ccr_bridge' eliminated.</text>
+
+      <!-- Wrong pattern -->
+      <rect x="500" y="220" width="420" height="170" rx="10" fill="rgba(248,81,73,.05)" stroke="#f85149" stroke-width="1.5"/>
+      <text x="710" y="248" fill="#f85149" text-anchor="middle" font-size="12" font-weight="600">WRONG: Negative Pattern</text>
+      <text x="520" y="280" fill="#f85149" font-size="11" font-family="monospace">if (!feature('BRIDGE_MODE')) return</text>
+      <text x="520" y="300" fill="#f85149" font-size="11" font-family="monospace">return getFeatureValue('tengu_ccr_bridge', false)</text>
+      <text x="520" y="340" fill="#8b949e" font-size="10">When BRIDGE_MODE=false, bundler sees: if (!false) return</text>
+      <text x="520" y="357" fill="#8b949e" font-size="10">Early return eliminates call, but 'tengu_ccr_bridge'</text>
+      <text x="520" y="374" fill="#8b949e" font-size="10">string literal remains in the bundle (not tree-shaken).</text>
+    </svg>
+  </div>
+
+  <div class="warning">
+    <strong>Critical discipline:</strong> The negative pattern <code>if (!feature('X')) return</code> does NOT fully eliminate string literals from the bundle. The bundler sees <code>if (!false) return</code> which early-returns before the call, but the string argument to downstream functions may still survive as a reference in the compiled output. Always use the positive ternary: <code>feature('X') ? realCode : false</code>.
+  </div>
+
+  <div class="code-block"><span class="cm">// bridgeEnabled.ts -- every bridge entry point uses this pattern</span>
+
+<span class="kw">export function</span> <span class="fn">isBridgeEnabled</span>(): <span class="ar">boolean</span> {
+  <span class="cm">// Positive ternary pattern -- see docs/feature-gating.md</span>
+  <span class="kw">return</span> <span class="fn">feature</span>(<span class="st">'BRIDGE_MODE'</span>)
+    ? <span class="fn">isClaudeAISubscriber</span>() &amp;&amp;
+        <span class="fn">getFeatureValue_CACHED_MAY_BE_STALE</span>(<span class="st">'tengu_ccr_bridge'</span>, <span class="ar">false</span>)
+    : <span class="ar">false</span>
+}
+
+<span class="kw">export function</span> <span class="fn">isEnvLessBridgeEnabled</span>(): <span class="ar">boolean</span> {
+  <span class="kw">return</span> <span class="fn">feature</span>(<span class="st">'BRIDGE_MODE'</span>)
+    ? <span class="fn">getFeatureValue_CACHED_MAY_BE_STALE</span>(<span class="st">'tengu_bridge_repl_v2'</span>, <span class="ar">false</span>)
+    : <span class="ar">false</span>
+}
+
+<span class="kw">export function</span> <span class="fn">isCcrMirrorEnabled</span>(): <span class="ar">boolean</span> {
+  <span class="kw">return</span> <span class="fn">feature</span>(<span class="st">'CCR_MIRROR'</span>)
+    ? <span class="fn">isEnvTruthy</span>(process.env.<span class="ar">CLAUDE_CODE_CCR_MIRROR</span>) ||
+        <span class="fn">getFeatureValue_CACHED_MAY_BE_STALE</span>(<span class="st">'tengu_ccr_mirror'</span>, <span class="ar">false</span>)
+    : <span class="ar">false</span>
+}
+
+<span class="kw">export function</span> <span class="fn">getCcrAutoConnectDefault</span>(): <span class="ar">boolean</span> {
+  <span class="kw">return</span> <span class="fn">feature</span>(<span class="st">'CCR_AUTO_CONNECT'</span>)
+    ? <span class="fn">getFeatureValue_CACHED_MAY_BE_STALE</span>(<span class="st">'tengu_cobalt_harbor'</span>, <span class="ar">false</span>)
+    : <span class="ar">false</span>
+}</div>
+
+  <div class="reason">
+    <strong>Why is string elimination important?</strong> GrowthBook flag names like <code>tengu_ccr_bridge</code> are internal identifiers that reveal feature rollout strategy, targeting rules, and internal naming conventions. If these strings survive in the external bundle, they leak operational details. The <code>excluded-strings.txt</code> enforcement ensures these never appear in production external builds.
+  </div>
+
+  <div class="cards">
+    <div class="card">
+      <h3><span class="badge badge-purple">Gate</span> feature() Macro</h3>
+      <p>The <code>feature('FLAG_NAME')</code> call from <code>bun:bundle</code> is resolved at compile time. For external builds, bridge flags evaluate to <code>false</code>, causing the bundler's constant-folding pass to eliminate the dead branch entirely.</p>
+    </div>
+    <div class="card">
+      <h3><span class="badge badge-green">Tree</span> Module Tree Shaking</h3>
+      <p>When all call sites of a module are eliminated by DCE, the module itself becomes unreachable. Bun's tree-shaker removes the entire import chain: <code>bridgeMain.ts</code>, <code>bridgeApi.ts</code>, <code>replBridge.ts</code>, and all their transitive dependencies.</p>
+    </div>
+    <div class="card">
+      <h3><span class="badge badge-red">Verify</span> excluded-strings.txt</h3>
+      <p>A build-time check scans the external bundle for strings that must not appear (GrowthBook flag names, internal URLs, etc). If any survive, the build fails. This is the safety net for the positive-ternary discipline.</p>
+    </div>
+    <div class="card">
+      <h3><span class="badge badge-orange">Flags</span> Build-Time Constants</h3>
+      <ul>
+        <li><code>BRIDGE_MODE</code> -- entire bridge/remote control system</li>
+        <li><code>CCR_AUTO_CONNECT</code> -- auto-connect default</li>
+        <li><code>CCR_MIRROR</code> -- outbound-only shadow sessions</li>
+        <li><code>KAIROS</code> -- assistant mode</li>
+        <li><code>COORDINATOR_MODE</code> -- multi-agent</li>
+        <li><code>VOICE_MODE</code> -- voice features</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3 class="sub-title">DCE Compilation Pipeline</h3>
+  <div class="diagram">
+    <svg viewBox="0 0 960 200" xmlns="http://www.w3.org/2000/svg" width="100%">
+      <!-- Step 1 -->
+      <rect x="20" y="50" width="160" height="100" rx="8" fill="#1c2333" stroke="#bc8cff" stroke-width="1.5"/>
+      <text x="100" y="80" fill="#bc8cff" text-anchor="middle" font-size="11" font-weight="600">1. Parse</text>
+      <text x="100" y="100" fill="#8b949e" text-anchor="middle" font-size="9">Resolve feature()</text>
+      <text x="100" y="115" fill="#8b949e" text-anchor="middle" font-size="9">macro calls to</text>
+      <text x="100" y="130" fill="#8b949e" text-anchor="middle" font-size="9">true/false constants</text>
+
+      <line x1="180" y1="100" x2="210" y2="100" stroke="#30363d" stroke-width="1.5" marker-end="url(#seqArr)"/>
+
+      <!-- Step 2 -->
+      <rect x="215" y="50" width="160" height="100" rx="8" fill="#1c2333" stroke="#d29922" stroke-width="1.5"/>
+      <text x="295" y="80" fill="#d29922" text-anchor="middle" font-size="11" font-weight="600">2. Constant Fold</text>
+      <text x="295" y="100" fill="#8b949e" text-anchor="middle" font-size="9">false ? X : false</text>
+      <text x="295" y="115" fill="#8b949e" text-anchor="middle" font-size="9">folds to false</text>
+      <text x="295" y="130" fill="#8b949e" text-anchor="middle" font-size="9">Dead branch removed</text>
+
+      <line x1="375" y1="100" x2="405" y2="100" stroke="#30363d" stroke-width="1.5" marker-end="url(#seqArr)"/>
+
+      <!-- Step 3 -->
+      <rect x="410" y="50" width="160" height="100" rx="8" fill="#1c2333" stroke="#3fb950" stroke-width="1.5"/>
+      <text x="490" y="80" fill="#3fb950" text-anchor="middle" font-size="11" font-weight="600">3. Tree Shake</text>
+      <text x="490" y="100" fill="#8b949e" text-anchor="middle" font-size="9">Unreachable modules</text>
+      <text x="490" y="115" fill="#8b949e" text-anchor="middle" font-size="9">removed from graph</text>
+      <text x="490" y="130" fill="#8b949e" text-anchor="middle" font-size="9">No bridge imports</text>
+
+      <line x1="570" y1="100" x2="600" y2="100" stroke="#30363d" stroke-width="1.5" marker-end="url(#seqArr)"/>
+
+      <!-- Step 4 -->
+      <rect x="605" y="50" width="160" height="100" rx="8" fill="#1c2333" stroke="#f85149" stroke-width="1.5"/>
+      <text x="685" y="80" fill="#f85149" text-anchor="middle" font-size="11" font-weight="600">4. Verify</text>
+      <text x="685" y="100" fill="#8b949e" text-anchor="middle" font-size="9">Scan bundle for</text>
+      <text x="685" y="115" fill="#8b949e" text-anchor="middle" font-size="9">excluded-strings.txt</text>
+      <text x="685" y="130" fill="#8b949e" text-anchor="middle" font-size="9">Fail build if found</text>
+
+      <line x1="765" y1="100" x2="795" y2="100" stroke="#30363d" stroke-width="1.5" marker-end="url(#seqArr)"/>
+
+      <!-- Step 5 -->
+      <rect x="800" y="50" width="140" height="100" rx="8" fill="rgba(63,185,80,.08)" stroke="#3fb950" stroke-width="2"/>
+      <text x="870" y="85" fill="#3fb950" text-anchor="middle" font-size="12" font-weight="700">Clean</text>
+      <text x="870" y="105" fill="#3fb950" text-anchor="middle" font-size="12" font-weight="700">Bundle</text>
+      <text x="870" y="130" fill="#8b949e" text-anchor="middle" font-size="9">No bridge code</text>
+      <text x="870" y="145" fill="#8b949e" text-anchor="middle" font-size="9">No flag strings</text>
+    </svg>
+  </div>
+</section>
+
+</main>
+
+<!-- Footer -->
+<footer style="text-align:center; padding:40px 20px; color:var(--text-muted); font-size:.85rem; border-top:1px solid var(--border);">
+  Claude Code Bridge / Remote Control -- System Documentation<br>
+  Based on source analysis of bridgeMain.ts, SessionsWebSocket.ts, HybridTransport.ts, SSETransport.ts, replBridgeTransport.ts, and bridgeEnabled.ts
+</footer>
+
+</body>
+</html>
