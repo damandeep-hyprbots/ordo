@@ -1,0 +1,1250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AXIS — API Platform Design System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+<style>
+/* ═══════════════════════════════════════════════════════════
+   AXIS — API Platform Design System
+   Stripe/Linear-inspired. Clean, restrained, production-grade.
+   ═══════════════════════════════════════════════════════════ */
+:root {
+  --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --mono: 'IBM Plex Mono', monospace;
+  --blue: #3B82F6;
+  --blue-hover: #2563EB;
+  --green: #22C55E;
+  --amber: #EAB308;
+  --red: #EF4444;
+  --radius: 6px;
+  --radius-sm: 4px;
+}
+
+/* LIGHT tokens */
+.light {
+  --bg: #FFFFFF;
+  --bg-subtle: #F9FAFB;
+  --surface: #FFFFFF;
+  --border: #C5C8CE;
+  --border-hover: #9CA3AF;
+  --text: #111827;
+  --text-secondary: #4B5563;
+  --text-tertiary: #9CA3AF;
+  --text-muted: #D1D5DB;
+  --shadow: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md: 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
+  --hover-bg: #F3F4F6;
+  --blue-subtle: rgba(59,130,246,0.08);
+  --green-subtle: rgba(34,197,94,0.08);
+  --amber-subtle: rgba(234,179,8,0.08);
+  --red-subtle: rgba(239,68,68,0.06);
+}
+
+/* DARK tokens */
+.dark {
+  --bg: #121215;
+  --bg-subtle: #17171B;
+  --surface: #1E1E22;
+  --border: #3A3A42;
+  --border-hover: #505059;
+  --text: #F4F4F5;
+  --text-secondary: #A1A1AA;
+  --text-tertiary: #63636E;
+  --text-muted: #3A3A42;
+  --shadow: 0 1px 3px rgba(0,0,0,0.4);
+  --shadow-md: 0 2px 6px rgba(0,0,0,0.3), 0 6px 16px rgba(0,0,0,0.2);
+  --hover-bg: #28282E;
+  --blue-subtle: rgba(59,130,246,0.12);
+  --green-subtle: rgba(34,197,94,0.1);
+  --amber-subtle: rgba(234,179,8,0.1);
+  --red-subtle: rgba(239,68,68,0.08);
+}
+
+/* ── Reset ── */
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+html { scroll-behavior:smooth; }
+body {
+  font-family: var(--font);
+  background: #121215;
+  color: #F4F4F5;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+::selection { background: rgba(59,130,246,0.2); }
+
+/* ── Page Nav ── */
+.page-nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(18,18,21,0.9);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid #3A3A42;
+  padding: 0 24px;
+  display: flex; align-items: center; height: 48px;
+  gap: 24px;
+}
+.page-nav-brand {
+  font-weight: 700; font-size: 14px; color: #F4F4F5;
+  text-decoration: none; flex-shrink: 0;
+  display: flex; align-items: center; gap: 8px;
+}
+.page-nav-brand span { color: var(--blue); }
+.page-nav-links {
+  display: flex; gap: 4px; overflow-x: auto;
+}
+.page-nav-links a {
+  padding: 6px 12px; font-size: 13px; color: #7A7A85;
+  text-decoration: none; border-radius: var(--radius-sm);
+  transition: color 0.15s, background 0.15s;
+  white-space: nowrap;
+}
+.page-nav-links a:hover { color: #F4F4F5; background: #3A3A42; }
+.page-nav-links a.active { color: #F4F4F5; background: #3A3A42; }
+
+/* ── Hero ── */
+.hero {
+  padding: 80px 48px 64px;
+  max-width: 720px;
+}
+.hero h1 {
+  font-size: 36px; font-weight: 700; letter-spacing: -0.025em;
+  line-height: 1.15; margin-bottom: 16px;
+}
+.hero h1 span { color: var(--blue); }
+.hero p {
+  font-size: 16px; color: #A1A1AA; line-height: 1.7;
+  max-width: 560px;
+}
+
+/* ── Section ── */
+.section { padding: 48px; border-top: 1px solid #3A3A42; }
+.section-header {
+  margin-bottom: 40px;
+}
+.section-label {
+  font-size: 12px; font-weight: 600; color: var(--blue);
+  text-transform: uppercase; letter-spacing: 0.06em;
+  margin-bottom: 8px;
+}
+.section-title {
+  font-size: 22px; font-weight: 700; letter-spacing: -0.02em;
+  color: #F4F4F5;
+}
+.section-desc {
+  font-size: 14px; color: #7A7A85; margin-top: 6px;
+}
+
+/* ── Dual Panel ── */
+.dual {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 1px solid #3A3A42;
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.panel {
+  padding: 24px;
+  background: var(--bg);
+  min-width: 0;
+}
+.panel + .panel { border-left: 1px solid #3A3A42; }
+.panel-tag {
+  display: inline-block;
+  font-size: 11px; font-weight: 600; color: var(--text-tertiary);
+  margin-bottom: 16px;
+  padding: 2px 8px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+/* ── Subsection ── */
+.sub { margin-bottom: 40px; }
+.sub:last-child { margin-bottom: 0; }
+.sub-title {
+  font-size: 13px; font-weight: 600; color: #A1A1AA;
+  margin-bottom: 16px;
+}
+.sub-note {
+  margin-top: 12px; font-size: 12px; color: #63636E;
+  line-height: 1.6;
+}
+
+/* ═══ BUTTONS ═══ */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px; font-size: 13px; font-weight: 500;
+  font-family: var(--font);
+  border: 1px solid transparent; border-radius: var(--radius-sm);
+  cursor: pointer; transition: all 0.15s;
+  line-height: 1.4;
+}
+.btn svg { width: 14px; height: 14px; }
+.btn-primary {
+  background: var(--text); color: var(--bg);
+  border-color: var(--text);
+}
+.btn-primary:hover { opacity: 0.85; }
+.btn-blue {
+  background: var(--blue); color: #fff;
+}
+.btn-blue:hover { background: var(--blue-hover); }
+.btn-secondary {
+  background: var(--surface); color: var(--text-secondary);
+  border-color: var(--border);
+}
+.btn-secondary:hover { background: var(--hover-bg); border-color: var(--border-hover); color: var(--text); }
+.btn-ghost {
+  background: transparent; color: var(--text-tertiary);
+}
+.btn-ghost:hover { color: var(--text-secondary); background: var(--hover-bg); }
+.btn-danger {
+  background: transparent; color: var(--red); border-color: var(--red);
+}
+.btn-danger:hover { background: var(--red-subtle); }
+.btn-sm { padding: 4px 10px; font-size: 12px; }
+.btn-sm svg { width: 12px; height: 12px; }
+
+/* ═══ BADGES ═══ */
+.badge {
+  display: inline-flex; align-items: center;
+  padding: 2px 8px; font-size: 11px; font-weight: 500;
+  border-radius: var(--radius-sm);
+  border: 1px solid; background: transparent;
+}
+.badge-green { color: var(--green); border-color: var(--green); }
+.badge-amber { color: var(--amber); border-color: var(--amber); }
+.badge-red { color: var(--red); border-color: var(--red); }
+.badge-blue { color: var(--blue); border-color: var(--blue); }
+.badge-gray { color: var(--text-tertiary); border-color: var(--border); }
+
+/* ═══ STAT CARDS ═══ */
+.stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; }
+.stat {
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.stat-label { font-size: 12px; color: var(--text-tertiary); font-weight: 500; }
+.stat-value {
+  font-family: var(--mono); font-size: 24px; font-weight: 600;
+  font-variant-numeric: tabular-nums; color: var(--text);
+  margin-top: 4px; line-height: 1.2;
+}
+.stat-delta { font-size: 12px; margin-top: 6px; display: flex; align-items: center; gap: 4px; }
+.stat-delta.up { color: var(--green); }
+.stat-delta.down { color: var(--red); }
+.stat-delta.flat { color: var(--text-tertiary); }
+
+/* ═══ TABLE ═══ */
+.table-wrap {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden; background: var(--surface);
+}
+.table-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 16px; border-bottom: 1px solid var(--border);
+  gap: 8px;
+}
+.table-filters { display: flex; gap: 6px; }
+.filter {
+  font-family: var(--font); font-size: 12px; font-weight: 500;
+  padding: 4px 10px; background: var(--surface);
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  color: var(--text-tertiary); cursor: pointer;
+  transition: all 0.15s;
+}
+.filter:hover { border-color: var(--border-hover); color: var(--text-secondary); }
+.filter.on { border-color: var(--blue); color: var(--blue); background: var(--blue-subtle); }
+table { width:100%; border-collapse:collapse; font-size:13px; }
+th {
+  text-align:left; padding:8px 16px;
+  font-size:12px; font-weight:500; color:var(--text-tertiary);
+  border-bottom:1px solid var(--border);
+}
+th.r { text-align:right; }
+td { padding:10px 16px; border-bottom:1px solid var(--border); color:var(--text-secondary); }
+td.r { text-align:right; }
+td.mono { font-family:var(--mono); font-size:12px; font-variant-numeric:tabular-nums; }
+tr:last-child td { border-bottom:none; }
+tbody tr { transition: background 0.1s; cursor:pointer; }
+tbody tr:hover td { background: var(--hover-bg); }
+
+/* ═══ CODE ═══ */
+.code {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden; background: var(--bg-subtle);
+}
+.code-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 12px; border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.code-tabs { display: flex; gap: 2px; }
+.code-tab {
+  font-family: var(--mono); font-size: 12px; font-weight: 500;
+  padding: 3px 10px; background: transparent;
+  border: none; border-radius: 4px;
+  color: var(--text-tertiary); cursor: pointer;
+  transition: all 0.12s;
+}
+.code-tab:hover { color: var(--text-secondary); background: var(--hover-bg); }
+.code-tab.on { color: var(--text); background: var(--hover-bg); }
+.copy-btn {
+  font-family: var(--mono); font-size: 11px;
+  padding: 3px 8px; background: transparent;
+  border: 1px solid var(--border); border-radius: 4px;
+  color: var(--text-tertiary); cursor: pointer;
+  transition: all 0.12s;
+}
+.copy-btn:hover { border-color: var(--border-hover); color: var(--text-secondary); }
+.copy-btn.ok { color: var(--green); border-color: var(--green); }
+.code pre {
+  padding: 16px; font-family: var(--mono);
+  font-size: 13px; line-height: 1.65;
+  color: var(--text-secondary); overflow-x: auto;
+  margin: 0;
+}
+.code .kw { color: var(--blue); }
+.code .str { color: var(--green); }
+.code .cmt { color: var(--text-muted); }
+
+/* ═══ ALERTS ═══ */
+.alert {
+  display: flex; gap: 12px; padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 13px;
+}
+.alert svg { width:16px; height:16px; flex-shrink:0; margin-top:1px; }
+.alert-amber { border-color: var(--amber); }
+.alert-amber svg { color: var(--amber); }
+.alert-red { border-color: var(--red); }
+.alert-red svg { color: var(--red); }
+.alert-blue { border-color: var(--blue); }
+.alert-blue svg { color: var(--blue); }
+.alert-title { font-weight: 600; color: var(--text); }
+.alert-desc { color: var(--text-tertiary); margin-top: 2px; font-size: 12px; }
+
+/* ═══ TOAST ═══ */
+.toast {
+  display: flex; gap: 10px; padding: 12px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  font-size: 13px; max-width: 340px;
+}
+.toast svg { width:16px; height:16px; flex-shrink:0; margin-top:1px; }
+.toast-title { font-weight: 600; color: var(--text); }
+.toast-desc { color: var(--text-tertiary); font-size: 12px; margin-top: 1px; }
+
+/* ═══ EMPTY STATE ═══ */
+.empty {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; text-align: center;
+  padding: 48px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.empty svg { width:40px; height:40px; color:var(--text-muted); margin-bottom:16px; }
+.empty-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.empty-desc { font-size: 13px; color: var(--text-tertiary); max-width: 280px; margin-bottom: 16px; }
+
+/* ═══ SKELETON ═══ */
+@keyframes shimmer { 0%{transform:translateX(-100%)} 100%{transform:translateX(100%)} }
+.skel { background:var(--hover-bg); border-radius:4px; position:relative; overflow:hidden; }
+.skel::after {
+  content:''; position:absolute; inset:0;
+  background:linear-gradient(90deg, transparent, var(--bg-subtle), transparent);
+  animation: shimmer 1.5s infinite;
+}
+
+/* ═══ STEP PROGRESS ═══ */
+.steps { display:flex; align-items:center; }
+.step { display:flex; align-items:center; gap:6px; }
+.step-dot {
+  width:24px; height:24px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:11px; font-weight:600;
+  border:2px solid var(--border); color:var(--text-tertiary);
+  transition:all 0.2s;
+}
+.step-dot.done { background:var(--green); border-color:var(--green); color:#fff; }
+.step-dot.on { border-color:var(--blue); color:var(--blue); box-shadow:0 0 0 3px var(--blue-subtle); }
+.step-label { font-size:12px; font-weight:500; color:var(--text-tertiary); }
+.step.done .step-label { color:var(--green); }
+.step.on .step-label { color:var(--blue); }
+.step-line { flex:1; height:2px; background:var(--border); margin:0 8px; min-width:20px; border-radius:1px; }
+.step-line.done { background:var(--green); }
+
+/* ═══ FORMS ═══ */
+.input {
+  font-family:var(--font); font-size:13px;
+  padding:8px 12px; width:100%;
+  background:var(--surface); color:var(--text);
+  border:1px solid var(--border); border-radius:var(--radius-sm);
+  outline:none; transition:border-color 0.15s, box-shadow 0.15s;
+}
+.input:focus { border-color:var(--blue); box-shadow:0 0 0 3px var(--blue-subtle); }
+.input.err { border-color:var(--red); box-shadow:0 0 0 3px var(--red-subtle); }
+.input-label { font-size:12px; font-weight:500; color:var(--text-secondary); margin-bottom:6px; display:block; }
+.input-err { font-size:12px; color:var(--red); margin-top:4px; }
+
+/* ═══ KEY CARD ═══ */
+.key-card {
+  display:flex; align-items:center; gap:16px;
+  padding:16px;
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  background:var(--surface);
+  transition:border-color 0.15s;
+}
+.key-card:hover { border-color:var(--border-hover); }
+.key-card + .key-card { margin-top:8px; }
+.key-icon {
+  width:36px; height:36px; border-radius:var(--radius-sm);
+  background:var(--blue-subtle);
+  display:flex; align-items:center; justify-content:center;
+  flex-shrink:0;
+}
+.key-icon svg { width:16px; height:16px; color:var(--blue); }
+.key-info { flex:1; min-width:0; }
+.key-name { font-size:14px; font-weight:600; color:var(--text); }
+.key-val { font-family:var(--mono); font-size:12px; color:var(--text-tertiary); margin-top:2px; }
+.key-meta { font-size:12px; color:var(--text-tertiary); text-align:right; white-space:nowrap; }
+.key-actions { display:flex; gap:4px; }
+
+/* ═══ SIDEBAR ═══ */
+.sidebar-demo {
+  width:220px; background:var(--surface);
+  border:1px solid var(--border); border-radius:var(--radius);
+  overflow:hidden;
+}
+.sb-head {
+  padding:12px 16px; border-bottom:1px solid var(--border);
+  font-size:14px; font-weight:700; color:var(--text);
+  display:flex; align-items:center; gap:8px;
+}
+.sb-head span { color:var(--blue); }
+.sb-section { padding:8px; }
+.sb-label {
+  font-size:11px; font-weight:600; color:var(--text-tertiary);
+  padding:4px 8px; margin-bottom:2px;
+}
+.sb-item {
+  display:flex; align-items:center; gap:8px;
+  padding:6px 8px; font-size:13px; font-weight:500;
+  color:var(--text-tertiary); border-radius:var(--radius-sm);
+  cursor:pointer; transition:all 0.1s;
+}
+.sb-item:hover { color:var(--text); background:var(--hover-bg); }
+.sb-item.on { color:var(--text); background:var(--hover-bg); }
+.sb-item svg { width:15px; height:15px; }
+.sb-kbd {
+  margin-left:auto; font-family:var(--mono); font-size:10px;
+  color:var(--text-muted);
+  padding:1px 4px; border:1px solid var(--border); border-radius:3px;
+}
+.sb-footer {
+  padding:8px 12px; border-top:1px solid var(--border);
+  display:flex; align-items:center; gap:6px;
+  font-size:11px; color:var(--text-tertiary);
+}
+.sb-dot { width:6px; height:6px; border-radius:50%; background:var(--green); }
+
+/* ═══ PLAYGROUND ═══ */
+.pg { display:grid; grid-template-columns:1fr 1fr; border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; }
+.pg-pane { background:var(--surface); }
+.pg-pane + .pg-pane { border-left:1px solid var(--border); }
+.pg-top {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 16px; height:40px;
+  border-bottom:1px solid var(--border);
+  font-size:13px; font-weight:600; color:var(--text);
+}
+.pg-body { padding:16px; }
+.dropzone {
+  border:2px dashed var(--border);
+  border-radius:var(--radius);
+  padding:40px 16px;
+  display:flex; flex-direction:column; align-items:center;
+  text-align:center; cursor:pointer;
+  transition:border-color 0.15s;
+}
+.dropzone:hover { border-color:var(--blue); }
+.dropzone svg { width:28px; height:28px; color:var(--text-muted); margin-bottom:12px; }
+
+/* ═══ CMD PALETTE ═══ */
+.cmd-bg {
+  position:fixed; inset:0; z-index:200;
+  background:rgba(0,0,0,0.5); backdrop-filter:blur(4px);
+  display:flex; align-items:flex-start; justify-content:center;
+  padding-top:20vh;
+  opacity:0; pointer-events:none; transition:opacity 0.15s;
+}
+.cmd-bg.open { opacity:1; pointer-events:auto; }
+.cmd-box {
+  width:500px; max-height:380px; background:#1E1E22;
+  border:1px solid #3A3A42; border-radius:var(--radius);
+  overflow:hidden; box-shadow:0 16px 70px rgba(0,0,0,0.5);
+  transform:translateY(-4px) scale(0.98); transition:transform 0.15s;
+}
+.cmd-bg.open .cmd-box { transform:translateY(0) scale(1); }
+.cmd-search {
+  display:flex; align-items:center; gap:10px;
+  padding:12px 16px; border-bottom:1px solid #3A3A42;
+}
+.cmd-search svg { width:16px; height:16px; color:#7A7A85; flex-shrink:0; }
+.cmd-search input {
+  flex:1; background:transparent; border:none; outline:none;
+  font-family:var(--font); font-size:14px; color:#F4F4F5;
+}
+.cmd-search input::placeholder { color:#63636E; }
+.cmd-esc { font-family:var(--mono); font-size:10px; color:#63636E; padding:2px 6px; border:1px solid #3A3A42; border-radius:4px; }
+.cmd-list { padding:4px 0; }
+.cmd-label {
+  padding:6px 16px; font-size:11px; font-weight:600; color:#63636E;
+}
+.cmd-opt {
+  display:flex; align-items:center; gap:10px;
+  padding:8px 16px; font-size:13px; color:#A1A1AA;
+  cursor:pointer; transition:all 0.1s;
+}
+.cmd-opt:hover { background:#3A3A42; color:#F4F4F5; }
+.cmd-opt svg { width:15px; height:15px; color:#7A7A85; flex-shrink:0; }
+.cmd-opt .cmd-k { margin-left:auto; font-family:var(--mono); font-size:10px; color:#63636E; }
+
+/* ═══ DIALOG ═══ */
+.dlg-bg {
+  position:fixed; inset:0; z-index:200;
+  background:rgba(0,0,0,0.5); backdrop-filter:blur(4px);
+  display:flex; align-items:center; justify-content:center;
+  opacity:0; pointer-events:none; transition:opacity 0.15s;
+}
+.dlg-bg.open { opacity:1; pointer-events:auto; }
+.dlg {
+  width:420px; background:#1E1E22; border:1px solid #3A3A42;
+  border-radius:var(--radius); padding:24px;
+  box-shadow:0 16px 70px rgba(0,0,0,0.5);
+}
+.dlg h3 { font-size:16px; font-weight:600; margin-bottom:8px; }
+.dlg p { font-size:13px; color:#A1A1AA; line-height:1.65; margin-bottom:20px; }
+.dlg-actions { display:flex; justify-content:flex-end; gap:8px; }
+
+/* ═══ RESPONSIVE ═══ */
+@media(max-width:900px){
+  .dual { grid-template-columns:1fr; }
+  .panel + .panel { border-left:none; border-top:1px solid #3A3A42; }
+  .stats { grid-template-columns:1fr 1fr; }
+  .pg { grid-template-columns:1fr; }
+  .qs { grid-template-columns:1fr; }
+  .qs-pane + .qs-pane { border-left:none; border-top:1px solid var(--border); }
+  .feat-grid { grid-template-columns:1fr; }
+  .section { padding:24px; }
+  .hero { padding:48px 24px; }
+}
+
+/* ═══ QUICK START ═══ */
+.qs { display:grid; grid-template-columns:1fr 1fr; gap:0; border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; background:var(--surface); }
+.qs-pane { padding:20px; }
+.qs-pane + .qs-pane { border-left:1px solid var(--border); }
+.qs-title { font-size:18px; font-weight:700; color:var(--text); margin-bottom:4px; }
+.qs-desc { font-size:13px; color:var(--text-tertiary); margin-bottom:20px; }
+
+/* ═══ FEATURE CARDS ═══ */
+.feat-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.feat-card { padding:16px; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); transition:border-color 0.15s; cursor:pointer; }
+.feat-card:hover { border-color:var(--border-hover); }
+.feat-icon { width:32px; height:32px; border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center; margin-bottom:10px; }
+.feat-title { font-size:14px; font-weight:600; color:var(--text); margin-bottom:4px; display:flex; align-items:center; gap:6px; }
+.feat-desc { font-size:12px; color:var(--text-tertiary); line-height:1.5; }
+.badge-pill { display:inline-flex; align-items:center; padding:1px 7px; font-size:10px; font-weight:600; border-radius:10px; }
+.badge-pill-blue { background:var(--blue-subtle); color:var(--blue); }
+.badge-pill-gray { background:var(--hover-bg); color:var(--text-tertiary); border:1px solid var(--border); }
+
+/* ═══ LINKS PANEL ═══ */
+.links-panel { width:200px; }
+.links-group { margin-bottom:16px; }
+.links-group:last-child { margin-bottom:0; }
+.links-group-title { font-size:11px; font-weight:600; color:var(--text-tertiary); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em; }
+.links-item { display:flex; align-items:center; justify-content:space-between; padding:5px 0; font-size:13px; color:var(--text-secondary); cursor:pointer; transition:color 0.1s; text-decoration:none; }
+.links-item:hover { color:var(--blue); }
+.links-item i { font-size:12px; color:var(--text-muted); }
+
+/* ═══ FOOTER ═══ */
+footer {
+  padding:40px 48px; border-top:1px solid #3A3A42;
+  text-align:center; font-size:12px; color:#63636E;
+}
+footer a { color:#7A7A85; text-decoration:none; }
+footer a:hover { color:#A1A1AA; }
+</style>
+</head>
+
+<body>
+
+<!-- Nav -->
+<nav class="page-nav">
+  <a class="page-nav-brand" href="#">Axis <span>API</span></a>
+  <div class="page-nav-links">
+    <a href="#tokens" class="active">Tokens</a>
+    <a href="#components">Components</a>
+    <a href="#data">Data</a>
+    <a href="#code">Code</a>
+    <a href="#navigation">Navigation</a>
+    <a href="#states">States</a>
+    <a href="#patterns">Patterns</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <h1>API Platform <span>Design System</span></h1>
+  <p>Dashboard-grade components for HyperAPI. Optimized for developer speed, information density, and copy-first workflows. Both modes shown side by side.</p>
+</section>
+
+<!-- 01 TOKENS -->
+<section class="section" id="tokens">
+  <div class="section-header">
+    <div class="section-label">01 &mdash; Foundation</div>
+    <div class="section-title">Design Tokens</div>
+    <div class="section-desc">Colors, typography, and spacing across light and dark modes.</div>
+  </div>
+
+  <div class="sub">
+    <div class="sub-title">Surface colors</div>
+    <div class="dual">
+      <div class="panel light">
+        <div class="panel-tag">Light</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
+          <div><div style="height:40px;background:#FFFFFF;border:1px solid #E5E7EB;border-radius:6px;margin-bottom:6px"></div><div style="font-size:11px;color:#9CA3AF">--bg<br><span style="font-family:var(--mono);font-size:10px">#FFFFFF</span></div></div>
+          <div><div style="height:40px;background:#F9FAFB;border:1px solid #E5E7EB;border-radius:6px;margin-bottom:6px"></div><div style="font-size:11px;color:#9CA3AF">--bg-subtle<br><span style="font-family:var(--mono);font-size:10px">#F9FAFB</span></div></div>
+          <div><div style="height:40px;background:#C5C8CE;border-radius:6px;margin-bottom:6px"></div><div style="font-size:11px;color:#9CA3AF">--border<br><span style="font-family:var(--mono);font-size:10px">#C5C8CE</span></div></div>
+          <div><div style="height:40px;background:#F3F4F6;border-radius:6px;margin-bottom:6px"></div><div style="font-size:11px;color:#9CA3AF">--hover<br><span style="font-family:var(--mono);font-size:10px">#F3F4F6</span></div></div>
+        </div>
+      </div>
+      <div class="panel dark">
+        <div class="panel-tag">Dark</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
+          <div><div style="height:40px;background:#121215;border:1px solid #3A3A42;border-radius:6px;margin-bottom:6px"></div><div style="font-size:11px;color:#63636E">--bg<br><span style="font-family:var(--mono);font-size:10px">#121215</span></div></div>
+          <div><div style="height:40px;background:#1E1E22;border:1px solid #3A3A42;border-radius:6px;margin-bottom:6px"></div><div style="font-size:11px;color:#63636E">--surface<br><span style="font-family:var(--mono);font-size:10px">#1E1E22</span></div></div>
+          <div><div style="height:40px;background:#3A3A42;border-radius:6px;margin-bottom:6px"></div><div style="font-size:11px;color:#63636E">--border<br><span style="font-family:var(--mono);font-size:10px">#3A3A42</span></div></div>
+          <div><div style="height:40px;background:#3A3A42;border-radius:6px;margin-bottom:6px"></div><div style="font-size:11px;color:#63636E">--hover<br><span style="font-family:var(--mono);font-size:10px">#3A3A42</span></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sub">
+    <div class="sub-title">Text hierarchy</div>
+    <div class="dual">
+      <div class="panel light">
+        <div class="panel-tag">Light</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div style="font-size:14px;font-weight:600;color:#111827">Primary text <span style="font-family:var(--mono);font-size:11px;color:#9CA3AF;font-weight:400">#111827</span></div>
+          <div style="font-size:14px;color:#4B5563">Secondary text <span style="font-family:var(--mono);font-size:11px;color:#9CA3AF">#4B5563</span></div>
+          <div style="font-size:14px;color:#9CA3AF">Tertiary text <span style="font-family:var(--mono);font-size:11px">#9CA3AF</span></div>
+          <div style="font-size:14px;color:#D1D5DB">Muted <span style="font-family:var(--mono);font-size:11px">#D1D5DB</span></div>
+        </div>
+      </div>
+      <div class="panel dark">
+        <div class="panel-tag">Dark</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div style="font-size:14px;font-weight:600;color:#F4F4F5">Primary text <span style="font-family:var(--mono);font-size:11px;color:#63636E;font-weight:400">#F4F4F5</span></div>
+          <div style="font-size:14px;color:#A1A1AA">Secondary text <span style="font-family:var(--mono);font-size:11px;color:#63636E">#A1A1AA</span></div>
+          <div style="font-size:14px;color:#63636E">Tertiary text <span style="font-family:var(--mono);font-size:11px">#63636E</span></div>
+          <div style="font-size:14px;color:#3A3A42">Muted <span style="font-family:var(--mono);font-size:11px">#3A3A42</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sub">
+    <div class="sub-title">Semantic colors (fixed across modes)</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;max-width:480px;">
+      <div style="padding:12px;background:var(--blue);color:#fff;border-radius:var(--radius-sm);font-size:13px;font-weight:600">Blue<div style="font-family:var(--mono);font-size:11px;opacity:0.7;margin-top:2px">#3B82F6</div></div>
+      <div style="padding:12px;background:var(--green);color:#000;border-radius:var(--radius-sm);font-size:13px;font-weight:600">Green<div style="font-family:var(--mono);font-size:11px;opacity:0.5;margin-top:2px">#22C55E</div></div>
+      <div style="padding:12px;background:var(--amber);color:#000;border-radius:var(--radius-sm);font-size:13px;font-weight:600">Amber<div style="font-family:var(--mono);font-size:11px;opacity:0.5;margin-top:2px">#EAB308</div></div>
+      <div style="padding:12px;background:var(--red);color:#fff;border-radius:var(--radius-sm);font-size:13px;font-weight:600">Red<div style="font-family:var(--mono);font-size:11px;opacity:0.7;margin-top:2px">#EF4444</div></div>
+    </div>
+  </div>
+
+  <div class="sub">
+    <div class="sub-title">Typography</div>
+    <div class="dual">
+      <div class="panel light">
+        <div class="panel-tag">Light</div>
+        <div style="font-size:20px;font-weight:700;letter-spacing:-0.02em;color:#111827;margin-bottom:12px">Inter &mdash; UI and labels</div>
+        <div style="font-family:var(--mono);font-size:13px;color:#4B5563;font-variant-numeric:tabular-nums">IBM Plex Mono &middot; 12,847 &middot; $142.50 &middot; hyp_sk_7a8b...</div>
+        <div style="font-size:12px;color:#9CA3AF;margin-top:8px">Mono for all numeric data, API keys, code, and IDs. <code style="font-family:var(--mono);font-size:11px;background:#F3F4F6;padding:1px 5px;border-radius:3px">tabular-nums</code> always.</div>
+      </div>
+      <div class="panel dark">
+        <div class="panel-tag">Dark</div>
+        <div style="font-size:20px;font-weight:700;letter-spacing:-0.02em;color:#F4F4F5;margin-bottom:12px">Inter &mdash; UI and labels</div>
+        <div style="font-family:var(--mono);font-size:13px;color:#A1A1AA;font-variant-numeric:tabular-nums">IBM Plex Mono &middot; 12,847 &middot; $142.50 &middot; hyp_sk_7a8b...</div>
+        <div style="font-size:12px;color:#63636E;margin-top:8px">Mono for all numeric data, API keys, code, and IDs. <code style="font-family:var(--mono);font-size:11px;background:#3A3A42;padding:1px 5px;border-radius:3px">tabular-nums</code> always.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sub">
+    <div class="sub-title">Spacing scale</div>
+    <div class="dual">
+      <div class="panel light"><div class="panel-tag">Light</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;align-items:center;gap:12px"><div style="width:4px;height:16px;background:var(--blue);border-radius:2px"></div><span style="font-family:var(--mono);font-size:12px;color:var(--text-secondary);min-width:32px">4px</span><span style="font-size:12px;color:var(--text-tertiary)">Inline padding, icon gaps</span></div>
+          <div style="display:flex;align-items:center;gap:12px"><div style="width:8px;height:16px;background:var(--blue);border-radius:2px"></div><span style="font-family:var(--mono);font-size:12px;color:var(--text-secondary);min-width:32px">8px</span><span style="font-size:12px;color:var(--text-tertiary)">Compact gaps, badge padding</span></div>
+          <div style="display:flex;align-items:center;gap:12px"><div style="width:12px;height:16px;background:var(--blue);border-radius:2px"></div><span style="font-family:var(--mono);font-size:12px;color:var(--text-secondary);min-width:32px">12px</span><span style="font-size:12px;color:var(--text-tertiary)">Card gaps, stat card grid</span></div>
+          <div style="display:flex;align-items:center;gap:12px"><div style="width:16px;height:16px;background:var(--blue);border-radius:2px"></div><span style="font-family:var(--mono);font-size:12px;color:var(--text-secondary);min-width:32px">16px</span><span style="font-size:12px;color:var(--text-tertiary)">Card padding, table cell</span></div>
+          <div style="display:flex;align-items:center;gap:12px"><div style="width:24px;height:16px;background:var(--blue);border-radius:2px"></div><span style="font-family:var(--mono);font-size:12px;color:var(--text-secondary);min-width:32px">24px</span><span style="font-size:12px;color:var(--text-tertiary)">Panel padding, section gap</span></div>
+          <div style="display:flex;align-items:center;gap:12px"><div style="width:32px;height:16px;background:var(--blue);border-radius:2px"></div><span style="font-family:var(--mono);font-size:12px;color:var(--text-secondary);min-width:32px">32px</span><span style="font-size:12px;color:var(--text-tertiary)">Content margins</span></div>
+          <div style="display:flex;align-items:center;gap:12px"><div style="width:48px;height:16px;background:var(--blue);border-radius:2px"></div><span style="font-family:var(--mono);font-size:12px;color:var(--text-secondary);min-width:32px">48px</span><span style="font-size:12px;color:var(--text-tertiary)">Page padding, section dividers</span></div>
+        </div>
+      </div>
+      <div class="panel dark"><div class="panel-tag">Dark</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;align-items:center;gap:12px"><div style="width:4px;height:16px;background:var(--blue);border-radius:2px"></div><span style="font-family:var(--mono);font-size:12px;color:var(--text-secondary);min-width:32px">4px</span><span style="font-size:12px;color:var(--text-tertiary)">Inline padding, icon gaps</span></div>
+          <div style="display:flex;align-items:center;gap:12px"><div style="width:8px;height:16px;background:var(--blue);border-radius:2px"></div><span style="font-family:var(--mono);font-size:12px;color:var(--text-secondary);min-width:32px">8px</span><span style="font-size:12px;color:var(--text-tertiary)">Compact gaps, badge padding</span></div>
+          <div style="display:flex;align-items:center;gap:12px"><div style="width:12px;height:16px;background:var(--blue);border-radius:2px"></div><span style="font-family:var(--mono);font-size:12px;color:var(--text-secondary);min-width:32px">12px</span><span style="font-size:12px;color:var(--text-tertiary)">Card gaps, stat card grid</span></div>
+          <div style="display:flex;align-items:center;gap:12px"><div style="width:16px;height:16px;background:var(--blue);border-radius:2px"></div><span style="font-family:var(--mono);font-size:12px;color:var(--text-secondary);min-width:32px">16px</span><span style="font-size:12px;color:var(--text-tertiary)">Card padding, table cell</span></div>
+          <div style="display:flex;align-items:center;gap:12px"><div style="width:24px;height:16px;background:var(--blue);border-radius:2px"></div><span style="font-family:var(--mono);font-size:12px;color:var(--text-secondary);min-width:32px">24px</span><span style="font-size:12px;color:var(--text-tertiary)">Panel padding, section gap</span></div>
+          <div style="display:flex;align-items:center;gap:12px"><div style="width:32px;height:16px;background:var(--blue);border-radius:2px"></div><span style="font-family:var(--mono);font-size:12px;color:var(--text-secondary);min-width:32px">32px</span><span style="font-size:12px;color:var(--text-tertiary)">Content margins</span></div>
+          <div style="display:flex;align-items:center;gap:12px"><div style="width:48px;height:16px;background:var(--blue);border-radius:2px"></div><span style="font-family:var(--mono);font-size:12px;color:var(--text-secondary);min-width:32px">48px</span><span style="font-size:12px;color:var(--text-tertiary)">Page padding, section dividers</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="sub-note">4px base unit. Use multiples only. Page padding 48px, card padding 16px, card gaps 12px, inline gaps 4–8px.</div>
+  </div>
+</section>
+
+<!-- 02 COMPONENTS -->
+<section class="section" id="components">
+  <div class="section-header">
+    <div class="section-label">02 &mdash; Primitives</div>
+    <div class="section-title">Components</div>
+  </div>
+
+  <div class="sub">
+    <div class="sub-title">Buttons</div>
+    <div class="dual">
+      <div class="panel light"><div class="panel-tag">Light</div><div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center"><button class="btn btn-primary">Create key</button><button class="btn btn-blue"><i class="ph ph-play" style="font-size:14px"></i>Run API</button><button class="btn btn-secondary">Export CSV</button><button class="btn btn-ghost">View all</button><button class="btn btn-danger">Revoke</button></div></div>
+      <div class="panel dark"><div class="panel-tag">Dark</div><div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center"><button class="btn btn-primary">Create key</button><button class="btn btn-blue"><i class="ph ph-play" style="font-size:14px"></i>Run API</button><button class="btn btn-secondary">Export CSV</button><button class="btn btn-ghost">View all</button><button class="btn btn-danger">Revoke</button></div></div>
+    </div>
+    <div class="sub-note">No gradients, no glow, no hover-lift. Just clean color shifts.</div>
+  </div>
+
+  <div class="sub">
+    <div class="sub-title">Button states</div>
+    <div class="dual">
+      <div class="panel light"><div class="panel-tag">Light</div>
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div>
+            <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:8px;font-weight:600">Primary</div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <button class="btn btn-primary">Default</button>
+              <button class="btn btn-primary" style="opacity:0.85">Hover</button>
+              <button class="btn btn-primary" style="box-shadow:0 0 0 3px var(--blue-subtle);outline:2px solid var(--blue)">Focus</button>
+              <button class="btn btn-primary" style="opacity:0.4;cursor:not-allowed">Disabled</button>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:8px;font-weight:600">Secondary</div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <button class="btn btn-secondary">Default</button>
+              <button class="btn btn-secondary" style="background:var(--hover-bg);border-color:var(--border-hover);color:var(--text)">Hover</button>
+              <button class="btn btn-secondary" style="box-shadow:0 0 0 3px var(--blue-subtle);border-color:var(--blue)">Focus</button>
+              <button class="btn btn-secondary" style="opacity:0.4;cursor:not-allowed">Disabled</button>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:8px;font-weight:600">Danger</div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <button class="btn btn-danger">Default</button>
+              <button class="btn btn-danger" style="background:var(--red-subtle)">Hover</button>
+              <button class="btn btn-danger" style="box-shadow:0 0 0 3px var(--red-subtle);border-color:var(--red)">Focus</button>
+              <button class="btn btn-danger" style="opacity:0.4;cursor:not-allowed">Disabled</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="panel dark"><div class="panel-tag">Dark</div>
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div>
+            <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:8px;font-weight:600">Primary</div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <button class="btn btn-primary">Default</button>
+              <button class="btn btn-primary" style="opacity:0.85">Hover</button>
+              <button class="btn btn-primary" style="box-shadow:0 0 0 3px var(--blue-subtle);outline:2px solid var(--blue)">Focus</button>
+              <button class="btn btn-primary" style="opacity:0.4;cursor:not-allowed">Disabled</button>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:8px;font-weight:600">Secondary</div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <button class="btn btn-secondary">Default</button>
+              <button class="btn btn-secondary" style="background:var(--hover-bg);border-color:var(--border-hover);color:var(--text)">Hover</button>
+              <button class="btn btn-secondary" style="box-shadow:0 0 0 3px var(--blue-subtle);border-color:var(--blue)">Focus</button>
+              <button class="btn btn-secondary" style="opacity:0.4;cursor:not-allowed">Disabled</button>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:8px;font-weight:600">Danger</div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <button class="btn btn-danger">Default</button>
+              <button class="btn btn-danger" style="background:var(--red-subtle)">Hover</button>
+              <button class="btn btn-danger" style="box-shadow:0 0 0 3px var(--red-subtle);border-color:var(--red)">Focus</button>
+              <button class="btn btn-danger" style="opacity:0.4;cursor:not-allowed">Disabled</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="sub-note">Focus rings use 3px box-shadow with subtle color. Disabled = 40% opacity + not-allowed cursor. No other visual change.</div>
+  </div>
+
+  <div class="sub">
+    <div class="sub-title">Badges</div>
+    <div class="dual">
+      <div class="panel light"><div class="panel-tag">Light</div><div style="display:flex;flex-wrap:wrap;gap:6px"><span class="badge badge-green">200 OK</span><span class="badge badge-amber">429 Rate Limited</span><span class="badge badge-red">500 Error</span><span class="badge badge-blue">Active</span><span class="badge badge-gray">Revoked</span></div></div>
+      <div class="panel dark"><div class="panel-tag">Dark</div><div style="display:flex;flex-wrap:wrap;gap:6px"><span class="badge badge-green">200 OK</span><span class="badge badge-amber">429 Rate Limited</span><span class="badge badge-red">500 Error</span><span class="badge badge-blue">Active</span><span class="badge badge-gray">Revoked</span></div></div>
+    </div>
+  </div>
+
+  <div class="sub">
+    <div class="sub-title">Alerts &amp; Toasts</div>
+    <div class="dual">
+      <div class="panel light"><div class="panel-tag">Light</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div class="alert alert-amber"><i class="ph ph-warning" style="font-size:16px"></i><div><div class="alert-title">Usage at 85%</div><div class="alert-desc">8,500 of 10,000 pages used</div></div></div>
+          <div class="toast"><i class="ph ph-check-circle" style="font-size:16px;color:var(--green)"></i><div><div class="toast-title">API key created</div><div class="toast-desc">Key "Production" is now active</div></div></div>
+        </div>
+      </div>
+      <div class="panel dark"><div class="panel-tag">Dark</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div class="alert alert-red"><i class="ph ph-x-circle" style="font-size:16px"></i><div><div class="alert-title">No API key</div><div class="alert-desc">Create an API key to use the playground</div></div></div>
+          <div class="toast"><i class="ph ph-copy" style="font-size:16px;color:var(--blue)"></i><div><div class="toast-title">Copied to clipboard</div><div class="toast-desc">hyp_sk_7a8b9c0d...</div></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="sub-note">Alerts: semantic border color on the full card. Toasts: icon + title + description, bottom-right. Replace all window.alert() and confirm().</div>
+  </div>
+
+  <div class="sub">
+    <div class="sub-title">Forms</div>
+    <div class="dual">
+      <div class="panel light"><div class="panel-tag">Light</div><div style="display:flex;flex-direction:column;gap:12px;max-width:240px"><div><label class="input-label">Key name</label><input class="input" value="Production API Key"></div><div><label class="input-label">Focus</label><input class="input" placeholder="Focused" style="border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-subtle)"></div><div><label class="input-label">Error</label><input class="input err" value="bad-key"><div class="input-err">Must start with hyp_</div></div></div></div>
+      <div class="panel dark"><div class="panel-tag">Dark</div><div style="display:flex;flex-direction:column;gap:12px;max-width:240px"><div><label class="input-label">Key name</label><input class="input" value="Production API Key"></div><div><label class="input-label">Focus</label><input class="input" placeholder="Focused" style="border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-subtle)"></div><div><label class="input-label">Error</label><input class="input err" value="bad-key"><div class="input-err">Must start with hyp_</div></div></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 03 DATA -->
+<section class="section" id="data">
+  <div class="section-header">
+    <div class="section-label">03 &mdash; Data Display</div>
+    <div class="section-title">Cards, Tables, Keys</div>
+  </div>
+
+  <div class="sub">
+    <div class="sub-title">Stat cards</div>
+    <div class="dual">
+      <div class="panel light"><div class="panel-tag">Light</div>
+        <div class="stats"><div class="stat"><div class="stat-label">Pages</div><div class="stat-value">12,847</div><div class="stat-delta up">&#8593; 18%</div></div><div class="stat"><div class="stat-label">Requests</div><div class="stat-value">4,291</div><div class="stat-delta up">&#8593; 7%</div></div><div class="stat"><div class="stat-label">Latency</div><div class="stat-value">1.8s</div><div class="stat-delta down">&#8595; 12%</div></div><div class="stat"><div class="stat-label">Success</div><div class="stat-value">99.7%</div><div class="stat-delta flat">&mdash;</div></div></div>
+      </div>
+      <div class="panel dark"><div class="panel-tag">Dark</div>
+        <div class="stats"><div class="stat"><div class="stat-label">Pages</div><div class="stat-value">12,847</div><div class="stat-delta up">&#8593; 18%</div></div><div class="stat"><div class="stat-label">Requests</div><div class="stat-value">4,291</div><div class="stat-delta up">&#8593; 7%</div></div><div class="stat"><div class="stat-label">Latency</div><div class="stat-value">1.8s</div><div class="stat-delta down">&#8595; 12%</div></div><div class="stat"><div class="stat-label">Success</div><div class="stat-value">99.7%</div><div class="stat-delta flat">&mdash;</div></div></div>
+      </div>
+    </div>
+    <div class="sub-note">Mono tabular-nums for values. Trend deltas color-coded. Subtle border, gentle radius.</div>
+  </div>
+
+  <div class="sub">
+    <div class="sub-title">Request log table</div>
+    <div class="dual">
+      <div class="panel light" style="padding:0">
+        <div class="table-wrap" style="border:none;border-radius:0">
+          <div class="table-bar"><div class="table-filters"><button class="filter on">All APIs</button><button class="filter">Status</button><button class="filter">Last 30 days</button><input class="input" placeholder="Search request ID..." style="width:140px;padding:4px 8px;font-size:12px"></div><button class="btn btn-ghost btn-sm">Export</button></div>
+          <table><thead><tr><th>Time</th><th>Request ID</th><th>API</th><th>Status</th><th class="r">Pages</th><th class="r">Latency</th><th class="r">Cost</th></tr></thead><tbody>
+          <tr><td class="mono">3m ago</td><td class="mono" style="color:var(--text-tertiary)">req_8f7a6b5c</td><td><span class="badge badge-blue">Parse</span></td><td><span class="badge badge-green">200</span></td><td class="r mono">12</td><td class="r mono">1.2s</td><td class="r mono">$0.60</td></tr>
+          <tr><td class="mono">12m ago</td><td class="mono" style="color:var(--text-tertiary)">req_3d4e5f6a</td><td><span class="badge badge-blue">Extract</span></td><td><span class="badge badge-green">200</span></td><td class="r mono">3</td><td class="r mono">34.2s</td><td class="r mono">$0.24</td></tr>
+          <tr><td class="mono">28m ago</td><td class="mono" style="color:var(--text-tertiary)">req_1b2c3d4e</td><td><span class="badge badge-blue">Classify</span></td><td><span class="badge badge-red">500</span></td><td class="r mono">0</td><td class="r mono">0.8s</td><td class="r mono">$0.00</td></tr>
+          <tr><td class="mono">1h ago</td><td class="mono" style="color:var(--text-tertiary)">req_9a8b7c6d</td><td><span class="badge badge-blue">Split</span></td><td><span class="badge badge-green">200</span></td><td class="r mono">47</td><td class="r mono">2.1s</td><td class="r mono">$0.94</td></tr>
+          </tbody></table>
+        </div>
+      </div>
+      <div class="panel dark" style="padding:0">
+        <div class="table-wrap" style="border:none;border-radius:0">
+          <div class="table-bar"><div class="table-filters"><button class="filter on">All APIs</button><button class="filter">Status</button><button class="filter">Last 30 days</button><input class="input" placeholder="Search request ID..." style="width:140px;padding:4px 8px;font-size:12px"></div><button class="btn btn-ghost btn-sm">Export</button></div>
+          <table><thead><tr><th>Time</th><th>Request ID</th><th>API</th><th>Status</th><th class="r">Pages</th><th class="r">Latency</th><th class="r">Cost</th></tr></thead><tbody>
+          <tr><td class="mono">3m ago</td><td class="mono" style="color:var(--text-tertiary)">req_8f7a6b5c</td><td><span class="badge badge-blue">Parse</span></td><td><span class="badge badge-green">200</span></td><td class="r mono">12</td><td class="r mono">1.2s</td><td class="r mono">$0.60</td></tr>
+          <tr><td class="mono">12m ago</td><td class="mono" style="color:var(--text-tertiary)">req_3d4e5f6a</td><td><span class="badge badge-blue">Extract</span></td><td><span class="badge badge-green">200</span></td><td class="r mono">3</td><td class="r mono">34.2s</td><td class="r mono">$0.24</td></tr>
+          <tr><td class="mono">28m ago</td><td class="mono" style="color:var(--text-tertiary)">req_1b2c3d4e</td><td><span class="badge badge-blue">Classify</span></td><td><span class="badge badge-red">500</span></td><td class="r mono">0</td><td class="r mono">0.8s</td><td class="r mono">$0.00</td></tr>
+          <tr><td class="mono">1h ago</td><td class="mono" style="color:var(--text-tertiary)">req_9a8b7c6d</td><td><span class="badge badge-blue">Split</span></td><td><span class="badge badge-green">200</span></td><td class="r mono">47</td><td class="r mono">2.1s</td><td class="r mono">$0.94</td></tr>
+          </tbody></table>
+        </div>
+      </div>
+    </div>
+    <div class="sub-note">Click row for detail sheet. Sortable columns. Filter chips. Right-aligned numerics in mono.</div>
+  </div>
+
+  <div class="sub">
+    <div class="sub-title">API key cards</div>
+    <div class="dual">
+      <div class="panel light"><div class="panel-tag">Light</div>
+        <div class="key-card"><div class="key-icon"><i class="ph ph-key" style="font-size:16px"></i></div><div class="key-info"><div class="key-name">Production</div><div class="key-val">hyp_sk_7a8b&#8226;&#8226;&#8226;&#8226;9c0d</div></div><div class="key-meta">3m ago &middot; 1,247 req</div><span class="badge badge-blue">Full access</span><div class="key-actions"><button class="btn btn-ghost btn-sm">Revoke</button></div></div>
+      </div>
+      <div class="panel dark"><div class="panel-tag">Dark</div>
+        <div class="key-card"><div class="key-icon"><i class="ph ph-key" style="font-size:16px"></i></div><div class="key-info"><div class="key-name">Production</div><div class="key-val">hyp_sk_7a8b&#8226;&#8226;&#8226;&#8226;9c0d</div></div><div class="key-meta">3m ago &middot; 1,247 req</div><span class="badge badge-blue">Full access</span><div class="key-actions"><button class="btn btn-ghost btn-sm">Revoke</button></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sub">
+    <div class="sub-title">Feature discovery cards</div>
+    <div class="dual">
+      <div class="panel light"><div class="panel-tag">Light</div>
+        <div class="feat-grid">
+          <div class="feat-card">
+            <div class="feat-icon" style="background:var(--blue-subtle)"><i class="ph ph-file-magnifying-glass" style="font-size:16px;color:var(--blue)"></i></div>
+            <div class="feat-title">Parse <span class="badge-pill badge-pill-blue">Start here</span></div>
+            <div class="feat-desc">Parse your documents including tables and images to connect them to LLM.</div>
+          </div>
+          <div class="feat-card">
+            <div class="feat-icon" style="background:var(--green-subtle)"><i class="ph ph-database" style="font-size:16px;color:var(--green)"></i></div>
+            <div class="feat-title">Extract</div>
+            <div class="feat-desc">Provide your documents, define the schema and extract the information.</div>
+          </div>
+          <div class="feat-card">
+            <div class="feat-icon" style="background:var(--amber-subtle)"><i class="ph ph-table" style="font-size:16px;color:var(--amber)"></i></div>
+            <div class="feat-title">Sheets <span class="badge-pill badge-pill-gray">Beta</span></div>
+            <div class="feat-desc">Extract structured tables with configurable ranges and preview outputs.</div>
+          </div>
+          <div class="feat-card">
+            <div class="feat-icon" style="background:var(--red-subtle)"><i class="ph ph-scissors" style="font-size:16px;color:var(--red)"></i></div>
+            <div class="feat-title">Split</div>
+            <div class="feat-desc">Split your documents into sections based on categories and strategies.</div>
+          </div>
+        </div>
+      </div>
+      <div class="panel dark"><div class="panel-tag">Dark</div>
+        <div class="feat-grid">
+          <div class="feat-card">
+            <div class="feat-icon" style="background:var(--blue-subtle)"><i class="ph ph-file-magnifying-glass" style="font-size:16px;color:var(--blue)"></i></div>
+            <div class="feat-title">Parse <span class="badge-pill badge-pill-blue">Start here</span></div>
+            <div class="feat-desc">Parse your documents including tables and images to connect them to LLM.</div>
+          </div>
+          <div class="feat-card">
+            <div class="feat-icon" style="background:var(--green-subtle)"><i class="ph ph-database" style="font-size:16px;color:var(--green)"></i></div>
+            <div class="feat-title">Extract</div>
+            <div class="feat-desc">Provide your documents, define the schema and extract the information.</div>
+          </div>
+          <div class="feat-card">
+            <div class="feat-icon" style="background:var(--amber-subtle)"><i class="ph ph-table" style="font-size:16px;color:var(--amber)"></i></div>
+            <div class="feat-title">Sheets <span class="badge-pill badge-pill-gray">Beta</span></div>
+            <div class="feat-desc">Extract structured tables with configurable ranges and preview outputs.</div>
+          </div>
+          <div class="feat-card">
+            <div class="feat-icon" style="background:var(--red-subtle)"><i class="ph ph-scissors" style="font-size:16px;color:var(--red)"></i></div>
+            <div class="feat-title">Split</div>
+            <div class="feat-desc">Split your documents into sections based on categories and strategies.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="sub-note">2x2 capability grid for overview pages. "Start here" pill highlights primary action. "Beta" badge for unreleased features.</div>
+  </div>
+</section>
+
+<!-- 04 CODE -->
+<section class="section" id="code">
+  <div class="section-header">
+    <div class="section-label">04 &mdash; Developer</div>
+    <div class="section-title">Code Blocks</div>
+  </div>
+  <div class="sub">
+    <div class="dual">
+      <div class="panel light"><div class="panel-tag">Light</div><div class="code"><div class="code-header"><div class="code-tabs"><button class="code-tab on">cURL</button><button class="code-tab">Python</button><button class="code-tab">Node</button></div><button class="copy-btn" onclick="doCopy(this)">Copy</button></div><pre><span class="cmt"># Parse a document</span>
+<span class="kw">curl</span> -X POST https://api.hyperapi.io/v1/parse \
+  -H <span class="str">"X-API-Key: hyp_sk_7a8b..."</span> \
+  -F <span class="str">"file=@invoice.pdf"</span></pre></div></div>
+      <div class="panel dark"><div class="panel-tag">Dark</div><div class="code"><div class="code-header"><div class="code-tabs"><button class="code-tab on">cURL</button><button class="code-tab">Python</button><button class="code-tab">Node</button></div><button class="copy-btn" onclick="doCopy(this)">Copy</button></div><pre><span class="cmt"># Parse a document</span>
+<span class="kw">curl</span> -X POST https://api.hyperapi.io/v1/parse \
+  -H <span class="str">"X-API-Key: hyp_sk_7a8b..."</span> \
+  -F <span class="str">"file=@invoice.pdf"</span></pre></div></div>
+    </div>
+    <div class="sub-note">One-click copy. Language tabs. Syntax colored. API key auto-interpolated from user's active key.</div>
+  </div>
+</section>
+
+<!-- 05 NAVIGATION -->
+<section class="section" id="navigation">
+  <div class="section-header">
+    <div class="section-label">05 &mdash; Navigation</div>
+    <div class="section-title">Sidebar &amp; Command Palette</div>
+  </div>
+  <div class="sub">
+    <div class="dual">
+      <div class="panel light"><div class="panel-tag">Light</div>
+        <div class="sidebar-demo">
+          <div class="sb-head">HyperAPI <i class="ph ph-caret-down" style="font-size:12px;color:var(--text-tertiary);margin-left:auto"></i></div>
+          <div class="sb-section"><div class="sb-label">Main</div><div class="sb-item on"><i class="ph ph-squares-four" style="font-size:16px"></i>Overview<span class="sb-kbd">G O</span></div><div class="sb-item"><i class="ph ph-key" style="font-size:16px"></i>API Keys<span class="sb-kbd">G K</span></div><div class="sb-item"><i class="ph ph-play" style="font-size:16px"></i>Playground<span class="sb-kbd">G P</span></div><div class="sb-item"><i class="ph ph-file-text" style="font-size:16px"></i>Logs<span class="sb-kbd">G L</span></div></div>
+          <div class="sb-section"><div class="sb-label">Analytics</div><div class="sb-item"><i class="ph ph-chart-bar" style="font-size:16px"></i>Usage</div><div class="sb-item"><i class="ph ph-credit-card" style="font-size:16px"></i>Billing</div></div>
+          <div class="sb-footer"><div style="display:flex;justify-content:space-between;width:100%"><span style="font-family:var(--mono);font-size:11px">2,847 / 10,000 pages</span><span style="color:var(--blue);cursor:pointer">Upgrade</span></div></div>
+        </div>
+      </div>
+      <div class="panel dark"><div class="panel-tag">Dark</div>
+        <div class="sidebar-demo">
+          <div class="sb-head">HyperAPI <i class="ph ph-caret-down" style="font-size:12px;color:var(--text-tertiary);margin-left:auto"></i></div>
+          <div class="sb-section"><div class="sb-label">Main</div><div class="sb-item on"><i class="ph ph-squares-four" style="font-size:16px"></i>Overview<span class="sb-kbd">G O</span></div><div class="sb-item"><i class="ph ph-key" style="font-size:16px"></i>API Keys<span class="sb-kbd">G K</span></div><div class="sb-item"><i class="ph ph-play" style="font-size:16px"></i>Playground<span class="sb-kbd">G P</span></div><div class="sb-item"><i class="ph ph-file-text" style="font-size:16px"></i>Logs<span class="sb-kbd">G L</span></div></div>
+          <div class="sb-section"><div class="sb-label">Analytics</div><div class="sb-item"><i class="ph ph-chart-bar" style="font-size:16px"></i>Usage</div><div class="sb-item"><i class="ph ph-credit-card" style="font-size:16px"></i>Billing</div></div>
+          <div class="sb-footer"><div style="display:flex;justify-content:space-between;width:100%"><span style="font-family:var(--mono);font-size:11px">2,847 / 10,000 pages</span><span style="color:var(--blue);cursor:pointer">Upgrade</span></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="sub-note">Keyboard shortcuts on each item. Status indicator in footer. Press <kbd style="font-family:var(--mono);font-size:11px;background:#3A3A42;padding:2px 6px;border-radius:4px;border:1px solid #3A3A42">&#8984;K</kbd> to try the command palette.</div>
+    <div style="margin-top:16px"><button class="btn btn-blue btn-sm" onclick="toggleCmd()"><i class="ph ph-magnifying-glass" style="font-size:16px"></i>Open Command Palette</button></div>
+  </div>
+
+  <div class="sub">
+    <div class="sub-title">Contextual links panel</div>
+    <div class="dual">
+      <div class="panel light"><div class="panel-tag">Light</div>
+        <div class="links-panel">
+          <div class="links-group">
+            <div class="links-group-title">Getting Started</div>
+            <a class="links-item">Web UI<i class="ph ph-caret-right"></i></a>
+            <a class="links-item">Python SDK<i class="ph ph-caret-right"></i></a>
+            <a class="links-item">TypeScript SDK<i class="ph ph-caret-right"></i></a>
+            <a class="links-item">Direct API<i class="ph ph-caret-right"></i></a>
+          </div>
+          <div class="links-group">
+            <div class="links-group-title">Cookbooks</div>
+            <a class="links-item">Structured Extraction<i class="ph ph-caret-right"></i></a>
+            <a class="links-item">Batch Processing<i class="ph ph-caret-right"></i></a>
+            <a class="links-item">JSON Mode<i class="ph ph-caret-right"></i></a>
+          </div>
+        </div>
+      </div>
+      <div class="panel dark"><div class="panel-tag">Dark</div>
+        <div class="links-panel">
+          <div class="links-group">
+            <div class="links-group-title">Getting Started</div>
+            <a class="links-item">Web UI<i class="ph ph-caret-right"></i></a>
+            <a class="links-item">Python SDK<i class="ph ph-caret-right"></i></a>
+            <a class="links-item">TypeScript SDK<i class="ph ph-caret-right"></i></a>
+            <a class="links-item">Direct API<i class="ph ph-caret-right"></i></a>
+          </div>
+          <div class="links-group">
+            <div class="links-group-title">Cookbooks</div>
+            <a class="links-item">Structured Extraction<i class="ph ph-caret-right"></i></a>
+            <a class="links-item">Batch Processing<i class="ph ph-caret-right"></i></a>
+            <a class="links-item">JSON Mode<i class="ph ph-caret-right"></i></a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="sub-note">Right-side contextual docs panel. Groups links by topic. Shows alongside main content on overview/home pages.</div>
+  </div>
+</section>
+
+<!-- 06 STATES -->
+<section class="section" id="states">
+  <div class="section-header">
+    <div class="section-label">06 &mdash; States</div>
+    <div class="section-title">Empty, Loading, Progress</div>
+  </div>
+
+  <div class="sub">
+    <div class="sub-title">Empty states</div>
+    <div class="dual">
+      <div class="panel light"><div class="panel-tag">Light</div><div class="empty"><i class="ph ph-key" style="font-size:40px"></i><div class="empty-title">No API keys yet</div><div class="empty-desc">Create your first key to start processing documents.</div><button class="btn btn-primary btn-sm">Create API key</button></div></div>
+      <div class="panel dark"><div class="panel-tag">Dark</div><div class="empty"><i class="ph ph-file-text" style="font-size:40px"></i><div class="empty-title">No requests yet</div><div class="empty-desc">Use the Playground or API to start processing documents.</div><div style="display:flex;gap:8px"><button class="btn btn-blue btn-sm">Playground</button><button class="btn btn-secondary btn-sm">View docs</button></div></div></div>
+    </div>
+  </div>
+
+  <div class="sub">
+    <div class="sub-title">Skeleton loading</div>
+    <div class="dual">
+      <div class="panel light"><div class="panel-tag">Light</div><div class="stats"><div class="stat"><div class="skel" style="height:10px;width:60%;margin-bottom:8px"></div><div class="skel" style="height:22px;width:80px;margin-bottom:8px"></div><div class="skel" style="height:10px;width:45%"></div></div><div class="stat"><div class="skel" style="height:10px;width:50%;margin-bottom:8px"></div><div class="skel" style="height:22px;width:60px;margin-bottom:8px"></div><div class="skel" style="height:10px;width:40%"></div></div><div class="stat"><div class="skel" style="height:10px;width:55%;margin-bottom:8px"></div><div class="skel" style="height:22px;width:50px;margin-bottom:8px"></div><div class="skel" style="height:10px;width:50%"></div></div><div class="stat"><div class="skel" style="height:10px;width:65%;margin-bottom:8px"></div><div class="skel" style="height:22px;width:70px;margin-bottom:8px"></div><div class="skel" style="height:10px;width:35%"></div></div></div></div>
+      <div class="panel dark"><div class="panel-tag">Dark</div><div class="stats"><div class="stat"><div class="skel" style="height:10px;width:60%;margin-bottom:8px"></div><div class="skel" style="height:22px;width:80px;margin-bottom:8px"></div><div class="skel" style="height:10px;width:45%"></div></div><div class="stat"><div class="skel" style="height:10px;width:50%;margin-bottom:8px"></div><div class="skel" style="height:22px;width:60px;margin-bottom:8px"></div><div class="skel" style="height:10px;width:40%"></div></div><div class="stat"><div class="skel" style="height:10px;width:55%;margin-bottom:8px"></div><div class="skel" style="height:22px;width:50px;margin-bottom:8px"></div><div class="skel" style="height:10px;width:50%"></div></div><div class="stat"><div class="skel" style="height:10px;width:65%;margin-bottom:8px"></div><div class="skel" style="height:22px;width:70px;margin-bottom:8px"></div><div class="skel" style="height:10px;width:35%"></div></div></div></div>
+    </div>
+  </div>
+
+  <div class="sub">
+    <div class="sub-title">Step progress</div>
+    <div class="dual">
+      <div class="panel light"><div class="panel-tag">Light</div><div style="display:flex;flex-direction:column;gap:20px"><div><div style="font-size:11px;color:var(--text-tertiary);margin-bottom:8px">Processing</div><div class="steps"><div class="step done"><div class="step-dot done">&#10003;</div><div class="step-label">Upload</div></div><div class="step-line done"></div><div class="step done"><div class="step-dot done">&#10003;</div><div class="step-label">Queue</div></div><div class="step-line"></div><div class="step on"><div class="step-dot on">3</div><div class="step-label">Process</div></div><div class="step-line"></div><div class="step"><div class="step-dot">4</div><div class="step-label">Done</div></div></div></div></div></div>
+      <div class="panel dark"><div class="panel-tag">Dark</div><div style="display:flex;flex-direction:column;gap:20px"><div><div style="font-size:11px;color:var(--text-tertiary);margin-bottom:8px">Complete</div><div class="steps"><div class="step done"><div class="step-dot done">&#10003;</div><div class="step-label">Upload</div></div><div class="step-line done"></div><div class="step done"><div class="step-dot done">&#10003;</div><div class="step-label">Queue</div></div><div class="step-line done"></div><div class="step done"><div class="step-dot done">&#10003;</div><div class="step-label">Process</div></div><div class="step-line done"></div><div class="step done"><div class="step-dot done">&#10003;</div><div class="step-label">Done</div></div></div></div></div></div>
+    </div>
+    <div class="sub-note">Replaces the hourglass spinner. Shows real pipeline stages.</div>
+  </div>
+</section>
+
+<!-- 07 PATTERNS -->
+<section class="section" id="patterns">
+  <div class="section-header">
+    <div class="section-label">07 &mdash; Composition</div>
+    <div class="section-title">Playground, Onboarding &amp; Dialogs</div>
+  </div>
+  <div class="sub">
+    <div class="sub-title">Playground layout</div>
+    <div class="dual">
+      <div class="panel light" style="padding:0">
+        <div style="padding:12px 16px;border-bottom:1px solid var(--border)"><span class="panel-tag" style="margin-bottom:0">Light</span></div>
+        <div class="pg" style="border:none;border-radius:0"><div class="pg-pane"><div class="pg-top"><span>Input</span><span style="font-size:12px;color:var(--text-tertiary)"><span class="badge badge-blue" style="font-size:10px">Parse</span> $0.05/pg</span></div><div class="pg-body"><div class="dropzone"><i class="ph ph-upload-simple" style="font-size:28px"></i><div style="font-size:13px;color:var(--text-secondary)">Drop a file or click to browse</div><div style="font-size:11px;color:var(--text-tertiary);margin-top:4px">PDF, PNG, JPG &middot; 50MB</div></div><div style="margin-top:16px;display:flex;flex-direction:column;gap:8px;padding-top:12px;border-top:1px solid var(--border)"><div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:var(--text-tertiary)">Endpoint</span><span style="color:var(--text-secondary);font-family:var(--mono);font-size:11px">POST /v1/parse</span></div><div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:var(--text-tertiary)">Key</span><span style="color:var(--blue);font-family:var(--mono);font-size:11px">hyp_sk_7a8b..</span></div></div><button class="btn btn-blue" style="width:100%;justify-content:center;margin-top:16px"><i class="ph ph-play" style="font-size:14px"></i>Run API Call</button></div></div>
+        <div class="pg-pane"><div class="pg-top"><span>Output</span><span style="display:flex;gap:4px"><button class="btn btn-ghost btn-sm">Copy</button><button class="btn btn-ghost btn-sm" style="color:var(--blue)">View code</button></span></div><div class="pg-body" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:200px;color:var(--text-muted)"><i class="ph ph-file-text" style="font-size:32px;margin-bottom:12px"></i><div style="font-size:13px;color:var(--text-tertiary)">Upload a document and run the API</div></div></div></div>
+      </div>
+      <div class="panel dark" style="padding:0">
+        <div style="padding:12px 16px;border-bottom:1px solid var(--border)"><span class="panel-tag" style="margin-bottom:0">Dark</span></div>
+        <div class="pg" style="border:none;border-radius:0"><div class="pg-pane"><div class="pg-top"><span>Input</span><span style="font-size:12px;color:var(--text-tertiary)"><span class="badge badge-blue" style="font-size:10px">Parse</span> $0.05/pg</span></div><div class="pg-body"><div class="dropzone"><i class="ph ph-upload-simple" style="font-size:28px"></i><div style="font-size:13px;color:var(--text-secondary)">Drop a file or click to browse</div><div style="font-size:11px;color:var(--text-tertiary);margin-top:4px">PDF, PNG, JPG &middot; 50MB</div></div><div style="margin-top:16px;display:flex;flex-direction:column;gap:8px;padding-top:12px;border-top:1px solid var(--border)"><div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:var(--text-tertiary)">Endpoint</span><span style="color:var(--text-secondary);font-family:var(--mono);font-size:11px">POST /v1/parse</span></div><div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:var(--text-tertiary)">Key</span><span style="color:var(--blue);font-family:var(--mono);font-size:11px">hyp_sk_7a8b..</span></div></div><button class="btn btn-blue" style="width:100%;justify-content:center;margin-top:16px"><i class="ph ph-play" style="font-size:14px"></i>Run API Call</button></div></div>
+        <div class="pg-pane"><div class="pg-top"><span>Output</span><span style="display:flex;gap:4px"><button class="btn btn-ghost btn-sm">Copy</button><button class="btn btn-ghost btn-sm" style="color:var(--blue)">View code</button></span></div><div class="pg-body" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:200px;color:var(--text-muted)"><i class="ph ph-file-text" style="font-size:32px;margin-bottom:12px"></i><div style="font-size:13px;color:var(--text-tertiary)">Upload a document and run the API</div></div></div></div>
+      </div>
+    </div>
+    <div class="sub-note">Side-by-side. "View code" generates the exact request. Step progress during processing.</div>
+  </div>
+
+  <div class="sub">
+    <div class="sub-title">Quick Start onboarding</div>
+    <div class="dual">
+      <div class="panel light"><div class="panel-tag">Light</div>
+        <div class="qs">
+          <div class="qs-pane">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><i class="ph ph-key" style="font-size:16px;color:var(--blue)"></i><span style="font-size:14px;font-weight:600;color:var(--text)">API Key</span></div>
+            <div style="font-size:12px;color:var(--text-tertiary);margin-bottom:16px">Your most recent key</div>
+            <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-subtle);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:12px">
+              <span style="font-family:var(--mono);font-size:12px;color:var(--text-secondary);flex:1">hyp_sk_7a8b&#8226;&#8226;&#8226;&#8226;9c0d</span>
+              <button class="btn btn-ghost btn-sm" style="padding:2px 6px"><i class="ph ph-copy" style="font-size:14px"></i></button>
+            </div>
+            <button class="btn btn-secondary btn-sm"><i class="ph ph-plus" style="font-size:12px"></i>Generate new key</button>
+          </div>
+          <div class="qs-pane" style="padding:0">
+            <div class="code" style="border:none;border-radius:0;height:100%"><div class="code-header"><div class="code-tabs"><button class="code-tab">cURL</button><button class="code-tab on">Python</button><button class="code-tab">TypeScript</button></div><button class="copy-btn" onclick="doCopy(this)">Copy</button></div><pre><span class="kw">from</span> hyperapi <span class="kw">import</span> HyperAPI
+
+client = HyperAPI(api_key=<span class="str">"hyp_sk_..."</span>)
+
+<span class="cmt"># Upload and parse a document</span>
+result = client.parse(
+  file=<span class="str">"invoice.pdf"</span>
+)</pre></div>
+          </div>
+        </div>
+      </div>
+      <div class="panel dark"><div class="panel-tag">Dark</div>
+        <div class="qs">
+          <div class="qs-pane">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><i class="ph ph-key" style="font-size:16px;color:var(--blue)"></i><span style="font-size:14px;font-weight:600;color:var(--text)">API Key</span></div>
+            <div style="font-size:12px;color:var(--text-tertiary);margin-bottom:16px">Your most recent key</div>
+            <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-subtle);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:12px">
+              <span style="font-family:var(--mono);font-size:12px;color:var(--text-secondary);flex:1">hyp_sk_7a8b&#8226;&#8226;&#8226;&#8226;9c0d</span>
+              <button class="btn btn-ghost btn-sm" style="padding:2px 6px"><i class="ph ph-copy" style="font-size:14px"></i></button>
+            </div>
+            <button class="btn btn-secondary btn-sm"><i class="ph ph-plus" style="font-size:12px"></i>Generate new key</button>
+          </div>
+          <div class="qs-pane" style="padding:0">
+            <div class="code" style="border:none;border-radius:0;height:100%"><div class="code-header"><div class="code-tabs"><button class="code-tab">cURL</button><button class="code-tab on">Python</button><button class="code-tab">TypeScript</button></div><button class="copy-btn" onclick="doCopy(this)">Copy</button></div><pre><span class="kw">from</span> hyperapi <span class="kw">import</span> HyperAPI
+
+client = HyperAPI(api_key=<span class="str">"hyp_sk_..."</span>)
+
+<span class="cmt"># Upload and parse a document</span>
+result = client.parse(
+  file=<span class="str">"invoice.pdf"</span>
+)</pre></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="sub-note">First thing users see after login. API key + code in one view. Language tabs persist selection. Key auto-interpolated.</div>
+  </div>
+
+  <div class="sub">
+    <div class="sub-title">Confirmation dialog</div>
+    <div style="display:flex;gap:12px;align-items:center">
+      <button class="btn btn-danger" onclick="document.getElementById('dlg').classList.add('open')">Revoke API key</button>
+      <span style="font-size:12px;color:#63636E">Replaces window.confirm()</span>
+    </div>
+  </div>
+</section>
+
+<footer>AXIS / API Platform Design System &mdash; v1.0 &middot; Built for <a href="#">HyperAPI</a></footer>
+
+<!-- CMD PALETTE -->
+<div class="cmd-bg" id="cmd" onclick="if(event.target===this)toggleCmd()">
+  <div class="cmd-box">
+    <div class="cmd-search">
+      <i class="ph ph-magnifying-glass" style="font-size:16px"></i>
+      <input placeholder="Type a command or search..." id="cmdIn" oninput="filterCmd()">
+      <span class="cmd-esc">ESC</span>
+    </div>
+    <div class="cmd-list" id="cmdList">
+      <div class="cmd-label">Navigation</div>
+      <div class="cmd-opt" data-s="overview dashboard"><i class="ph ph-squares-four" style="font-size:16px"></i>Overview<span class="cmd-k">G O</span></div>
+      <div class="cmd-opt" data-s="api keys"><i class="ph ph-key" style="font-size:16px"></i>API Keys<span class="cmd-k">G K</span></div>
+      <div class="cmd-opt" data-s="playground test"><i class="ph ph-play" style="font-size:16px"></i>Playground<span class="cmd-k">G P</span></div>
+      <div class="cmd-opt" data-s="logs requests"><i class="ph ph-file-text" style="font-size:16px"></i>Logs<span class="cmd-k">G L</span></div>
+      <div class="cmd-label" style="margin-top:4px">Actions</div>
+      <div class="cmd-opt" data-s="create key"><i class="ph ph-plus" style="font-size:16px"></i>Create API Key<span class="cmd-k">C K</span></div>
+      <div class="cmd-opt" data-s="export csv"><i class="ph ph-download-simple" style="font-size:16px"></i>Export Usage CSV</div>
+      <div class="cmd-opt" data-s="docs help"><i class="ph ph-question" style="font-size:16px"></i>Documentation</div>
+    </div>
+  </div>
+</div>
+
+<!-- DIALOG -->
+<div class="dlg-bg" id="dlg" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="dlg">
+    <h3>Revoke API key?</h3>
+    <p>This will immediately invalidate <span style="font-family:var(--mono);color:var(--blue)">hyp_sk_7a8b...9c0d</span>. Applications using this key will stop working. This cannot be undone.</p>
+    <div class="dlg-actions">
+      <button class="btn btn-secondary" onclick="document.getElementById('dlg').classList.remove('open')">Cancel</button>
+      <button class="btn btn-danger" onclick="document.getElementById('dlg').classList.remove('open')">Revoke key</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleCmd(){
+  const el=document.getElementById('cmd');
+  el.classList.toggle('open');
+  if(el.classList.contains('open')){document.getElementById('cmdIn').focus();document.getElementById('cmdIn').value='';filterCmd();}
+}
+function filterCmd(){
+  const q=document.getElementById('cmdIn').value.toLowerCase();
+  document.querySelectorAll('.cmd-opt').forEach(i=>{
+    const t=(i.textContent+' '+(i.dataset.s||'')).toLowerCase();
+    i.style.display=t.includes(q)?'':'none';
+  });
+}
+function doCopy(btn){
+  const code=btn.closest('.code').querySelector('pre').textContent;
+  navigator.clipboard.writeText(code).then(()=>{
+    btn.classList.add('ok');btn.textContent='Copied!';
+    setTimeout(()=>{btn.classList.remove('ok');btn.textContent='Copy';},2000);
+  });
+}
+document.addEventListener('keydown',e=>{
+  if((e.metaKey||e.ctrlKey)&&e.key==='k'){e.preventDefault();toggleCmd();}
+  if(e.key==='Escape'){document.getElementById('cmd').classList.remove('open');document.getElementById('dlg').classList.remove('open');}
+});
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(en=>{
+    if(en.isIntersecting){
+      document.querySelectorAll('.page-nav-links a').forEach(a=>{
+        a.classList.toggle('active',a.getAttribute('href')==='#'+en.target.id);
+      });
+    }
+  });
+},{rootMargin:'-60px 0px -60% 0px'});
+document.querySelectorAll('.section[id]').forEach(s=>obs.observe(s));
+</script>
+</body>
+</html>

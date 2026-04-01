@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Code — Memory System Deep Dive</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1c2333;
+    --border: #30363d;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --accent: #58a6ff;
+    --purple: #bc8cff;
+    --green: #3fb950;
+    --orange: #d29922;
+    --red: #f85149;
+    --pink: #f778ba;
+    --teal: #39d353;
+    --cyan: #76e4f7;
+    --yellow: #e3b341;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.65;
+  }
+
+  /* ---- Hero ---- */
+  .hero {
+    text-align: center; padding: 72px 20px 56px;
+    background: linear-gradient(180deg, #0d1117 0%, #111820 100%);
+    border-bottom: 1px solid var(--border);
+  }
+  .hero h1 {
+    font-size: 2.8rem; font-weight: 800;
+    background: linear-gradient(135deg, var(--purple), var(--pink));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .hero .sub { color: var(--muted); font-size: 1.1rem; max-width: 720px; margin: 12px auto 0; }
+  .toc { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 28px; }
+  .toc a {
+    background: var(--surface); border: 1px solid var(--border); color: var(--muted);
+    padding: 6px 14px; border-radius: 100px; text-decoration: none; font-size: .82rem;
+    transition: all .2s;
+  }
+  .toc a:hover { border-color: var(--purple); color: var(--purple); }
+
+  /* ---- Layout ---- */
+  .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+  section { padding: 56px 0; border-bottom: 1px solid var(--border); }
+  section:last-of-type { border-bottom: none; }
+  .label { font-size: .72rem; letter-spacing: 2px; text-transform: uppercase; color: var(--purple); margin-bottom: 6px; }
+  .title { font-size: 1.9rem; font-weight: 700; margin-bottom: 6px; }
+  .desc { color: var(--muted); max-width: 720px; margin-bottom: 32px; font-size: 1.02rem; }
+
+  /* ---- Diagram ---- */
+  .diagram {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 28px; overflow-x: auto; margin-bottom: 24px;
+  }
+  svg text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', monospace; }
+
+  /* ---- Cards ---- */
+  .cards { display: grid; grid-template-columns: repeat(auto-fit,minmax(280px,1fr)); gap: 18px; margin-top: 20px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 22px; transition: border-color .2s;
+  }
+  .card:hover { border-color: var(--purple); }
+  .card h3 { font-size: 1.05rem; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+  .card p, .card li { color: var(--muted); font-size: .9rem; }
+  .card ul { padding-left: 18px; margin-top: 6px; }
+  .badge {
+    display: inline-block; font-size: .68rem; padding: 2px 8px; border-radius: 100px;
+    font-weight: 600; text-transform: uppercase; letter-spacing: .5px;
+  }
+  .b-blue   { background: rgba(88,166,255,.15); color: var(--accent); }
+  .b-purple { background: rgba(188,140,255,.15); color: var(--purple); }
+  .b-green  { background: rgba(63,185,80,.15);  color: var(--green); }
+  .b-orange { background: rgba(210,153,34,.15); color: var(--orange); }
+  .b-pink   { background: rgba(247,120,186,.15);color: var(--pink); }
+  .b-teal   { background: rgba(57,211,83,.15);  color: var(--teal); }
+  .b-red    { background: rgba(248,81,73,.15);  color: var(--red); }
+  .b-cyan   { background: rgba(118,228,247,.15);color: var(--cyan); }
+
+  /* ---- Callout ---- */
+  .why {
+    background: rgba(188,140,255,.06); border-left: 3px solid var(--purple);
+    border-radius: 0 8px 8px 0; padding: 14px 18px; margin: 14px 0; font-size: .92rem;
+  }
+  .why strong { color: var(--purple); }
+  .warn {
+    background: rgba(248,81,73,.06); border-left: 3px solid var(--red);
+    border-radius: 0 8px 8px 0; padding: 14px 18px; margin: 14px 0; font-size: .92rem;
+  }
+  .warn strong { color: var(--red); }
+
+  /* ---- Code ---- */
+  .code {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+    padding: 18px 22px; font-family: 'SF Mono','Fira Code','Cascadia Code',monospace;
+    font-size: .83rem; color: var(--muted); overflow-x: auto; white-space: pre; line-height: 1.7;
+    margin: 14px 0;
+  }
+  .code .kw { color: var(--purple); } .code .fn { color: var(--accent); }
+  .code .cm { color: #484f58; }       .code .st { color: var(--green); }
+  .code .ar { color: var(--orange); }  .code .hi { color: var(--pink); }
+
+  /* ---- Table ---- */
+  .tbl-wrap { overflow-x: auto; margin: 16px 0; }
+  table {
+    width: 100%; border-collapse: collapse; font-size: .88rem;
+    background: var(--surface); border-radius: 8px; overflow: hidden;
+  }
+  th { background: var(--surface2); color: var(--accent); text-align: left; padding: 10px 14px; font-weight: 600; font-size: .8rem; text-transform: uppercase; letter-spacing: .5px; }
+  td { padding: 10px 14px; border-top: 1px solid var(--border); color: var(--muted); }
+  tr:hover td { background: rgba(88,166,255,.04); }
+
+  @media (max-width: 768px) {
+    .hero h1 { font-size: 2rem; }
+    .cards { grid-template-columns: 1fr; }
+    .diagram { padding: 14px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <h1>Memory System Deep Dive</h1>
+  <p class="sub">How Claude Code remembers across conversations — a persistent, file-based memory with four semantic types, relevance-ranked retrieval, background extraction, team sync, and layered security.</p>
+  <nav class="toc">
+    <a href="#overview">Overview</a>
+    <a href="#types">Memory Types</a>
+    <a href="#storage">Storage &amp; Format</a>
+    <a href="#lifecycle">Lifecycle</a>
+    <a href="#retrieval">Retrieval Pipeline</a>
+    <a href="#extraction">Background Extraction</a>
+    <a href="#session">Session Memory</a>
+    <a href="#team">Team Memory</a>
+    <a href="#agent">Agent Memory</a>
+    <a href="#security">Security</a>
+    <a href="#constants">Constants</a>
+  </nav>
+</header>
+
+<main class="container">
+
+<!-- ===== 1. OVERVIEW ===== -->
+<section id="overview">
+  <div class="label">Chapter 1</div>
+  <h2 class="title">Architecture Overview</h2>
+  <p class="desc">The memory system is a file-based knowledge store that persists across conversations. It has <strong>three scopes</strong> (personal, team, agent), <strong>four semantic types</strong>, and <strong>two ingestion paths</strong> (explicit writes + background extraction). Retrieval is relevance-ranked via a side-query to a fast model.</p>
+
+  <div class="diagram">
+    <svg viewBox="0 0 1060 520" width="100%" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="a" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#58a6ff"/></marker>
+        <marker id="ad" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#484f58"/></marker>
+        <marker id="ag" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#3fb950"/></marker>
+        <marker id="ap" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#bc8cff"/></marker>
+      </defs>
+
+      <!-- ====== Conversation ====== -->
+      <rect x="20" y="30" width="200" height="80" rx="10" fill="#1c2333" stroke="#58a6ff" stroke-width="1.5"/>
+      <text x="120" y="62" text-anchor="middle" fill="#58a6ff" font-size="12" font-weight="700">Conversation</text>
+      <text x="120" y="82" text-anchor="middle" fill="#8b949e" font-size="10">User ↔ Claude ↔ Tools</text>
+      <text x="120" y="98" text-anchor="middle" fill="#8b949e" font-size="9">query() async generator</text>
+
+      <!-- Arrow: conversation -> write path -->
+      <line x1="220" y1="55" x2="310" y2="55" stroke="#3fb950" stroke-width="1.5" marker-end="url(#ag)"/>
+      <text x="265" y="48" text-anchor="middle" fill="#3fb950" font-size="8">explicit</text>
+
+      <!-- Arrow: conversation -> extraction -->
+      <line x1="220" y1="90" x2="310" y2="200" stroke="#bc8cff" stroke-width="1.5" marker-end="url(#ap)"/>
+      <text x="240" y="155" fill="#bc8cff" font-size="8" transform="rotate(30 240 155)">background</text>
+
+      <!-- ====== Write path ====== -->
+      <rect x="310" y="20" width="200" height="70" rx="8" fill="#1c2333" stroke="#3fb950" stroke-width="1.5"/>
+      <text x="410" y="48" text-anchor="middle" fill="#3fb950" font-size="11" font-weight="700">Explicit Write</text>
+      <text x="410" y="68" text-anchor="middle" fill="#8b949e" font-size="9">Model uses Write/Edit tools</text>
+      <text x="410" y="80" text-anchor="middle" fill="#8b949e" font-size="9">directly in memory dir</text>
+
+      <!-- ====== Extraction agent ====== -->
+      <rect x="310" y="170" width="200" height="80" rx="8" fill="#1c2333" stroke="#bc8cff" stroke-width="1.5"/>
+      <text x="410" y="198" text-anchor="middle" fill="#bc8cff" font-size="11" font-weight="700">Extraction Agent</text>
+      <text x="410" y="218" text-anchor="middle" fill="#8b949e" font-size="9">runForkedAgent() at turn end</text>
+      <text x="410" y="234" text-anchor="middle" fill="#8b949e" font-size="9">Shares parent prompt cache</text>
+
+      <!-- Both write paths converge -->
+      <line x1="510" y1="55" x2="600" y2="130" stroke="#3fb950" stroke-width="1.5" marker-end="url(#ag)"/>
+      <line x1="510" y1="210" x2="600" y2="150" stroke="#bc8cff" stroke-width="1.5" marker-end="url(#ap)"/>
+
+      <!-- ====== Memory Directory ====== -->
+      <rect x="600" y="70" width="240" height="180" rx="10" fill="rgba(247,120,186,.06)" stroke="#f778ba" stroke-width="1.5"/>
+      <text x="720" y="98" text-anchor="middle" fill="#f778ba" font-size="13" font-weight="700">Memory Directory</text>
+      <text x="720" y="118" text-anchor="middle" fill="#8b949e" font-size="9">~/.claude/projects/&lt;slug&gt;/memory/</text>
+
+      <rect x="620" y="132" width="200" height="24" rx="4" fill="#1c2333" stroke="#d29922"/>
+      <text x="720" y="149" text-anchor="middle" fill="#d29922" font-size="9" font-weight="600">MEMORY.md — index (≤200 lines)</text>
+
+      <rect x="620" y="162" width="96" height="22" rx="4" fill="#1c2333" stroke="#58a6ff"/>
+      <text x="668" y="177" text-anchor="middle" fill="#58a6ff" font-size="8">user_role.md</text>
+      <rect x="722" y="162" width="98" height="22" rx="4" fill="#1c2333" stroke="#3fb950"/>
+      <text x="771" y="177" text-anchor="middle" fill="#3fb950" font-size="8">feedback_*.md</text>
+      <rect x="620" y="190" width="96" height="22" rx="4" fill="#1c2333" stroke="#bc8cff"/>
+      <text x="668" y="205" text-anchor="middle" fill="#bc8cff" font-size="8">project_*.md</text>
+      <rect x="722" y="190" width="98" height="22" rx="4" fill="#1c2333" stroke="#d29922"/>
+      <text x="771" y="205" text-anchor="middle" fill="#d29922" font-size="8">reference_*.md</text>
+
+      <rect x="620" y="220" width="200" height="22" rx="4" fill="#1c2333" stroke="#76e4f7"/>
+      <text x="720" y="235" text-anchor="middle" fill="#76e4f7" font-size="8">team/ (synced sub-directory)</text>
+
+      <!-- ====== Retrieval ====== -->
+      <line x1="720" y1="250" x2="720" y2="310" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#a)"/>
+
+      <rect x="560" y="310" width="320" height="110" rx="10" fill="rgba(88,166,255,.06)" stroke="#58a6ff" stroke-width="1.5"/>
+      <text x="720" y="338" text-anchor="middle" fill="#58a6ff" font-size="12" font-weight="700">Retrieval Pipeline</text>
+
+      <rect x="580" y="352" width="140" height="24" rx="4" fill="#1c2333" stroke="#d29922"/>
+      <text x="650" y="368" text-anchor="middle" fill="#d29922" font-size="9">① MEMORY.md → context</text>
+
+      <rect x="730" y="352" width="140" height="24" rx="4" fill="#1c2333" stroke="#3fb950"/>
+      <text x="800" y="368" text-anchor="middle" fill="#3fb950" font-size="9">② scanMemoryFiles()</text>
+
+      <rect x="580" y="384" width="140" height="24" rx="4" fill="#1c2333" stroke="#bc8cff"/>
+      <text x="650" y="400" text-anchor="middle" fill="#bc8cff" font-size="9">③ Sonnet relevance rank</text>
+
+      <rect x="730" y="384" width="140" height="24" rx="4" fill="#1c2333" stroke="#58a6ff"/>
+      <text x="800" y="400" text-anchor="middle" fill="#58a6ff" font-size="9">④ Inject ≤5 files</text>
+
+      <!-- Back to conversation -->
+      <line x1="560" y1="370" x2="120" y2="110" stroke="#58a6ff" stroke-width="1.5" stroke-dasharray="5" marker-end="url(#a)"/>
+      <text x="300" y="260" text-anchor="middle" fill="#58a6ff" font-size="9">relevant memories → &lt;system-reminder&gt;</text>
+
+      <!-- ====== System Prompt ====== -->
+      <rect x="880" y="30" width="160" height="220" rx="8" fill="rgba(210,153,34,.06)" stroke="#d29922" stroke-width="1.5"/>
+      <text x="960" y="58" text-anchor="middle" fill="#d29922" font-size="11" font-weight="700">System Prompt</text>
+      <text x="960" y="80" text-anchor="middle" fill="#8b949e" font-size="9">Behavioral rules:</text>
+      <text x="960" y="100" text-anchor="middle" fill="#8b949e" font-size="8">• 4 memory types</text>
+      <text x="960" y="116" text-anchor="middle" fill="#8b949e" font-size="8">• What NOT to save</text>
+      <text x="960" y="132" text-anchor="middle" fill="#8b949e" font-size="8">• How to save (2 steps)</text>
+      <text x="960" y="148" text-anchor="middle" fill="#8b949e" font-size="8">• When to access</text>
+      <text x="960" y="164" text-anchor="middle" fill="#8b949e" font-size="8">• Staleness caveat</text>
+      <text x="960" y="180" text-anchor="middle" fill="#8b949e" font-size="8">• Trust-before-use</text>
+      <text x="960" y="196" text-anchor="middle" fill="#8b949e" font-size="8">• Plans vs tasks vs mem</text>
+      <text x="960" y="212" text-anchor="middle" fill="#8b949e" font-size="8">• Memory dir path</text>
+      <text x="960" y="234" text-anchor="middle" fill="#484f58" font-size="7">loadMemoryPrompt()</text>
+
+      <line x1="840" y1="140" x2="880" y2="140" stroke="#d29922" stroke-width="1" stroke-dasharray="4"/>
+
+      <!-- ====== Session Memory (separate) ====== -->
+      <rect x="20" y="430" width="480" height="70" rx="8" fill="rgba(118,228,247,.06)" stroke="#76e4f7" stroke-width="1.5"/>
+      <text x="260" y="458" text-anchor="middle" fill="#76e4f7" font-size="12" font-weight="700">Session Memory (separate system)</text>
+      <text x="260" y="478" text-anchor="middle" fill="#8b949e" font-size="9">Structured summary.md — updated every 5K tokens — survives compaction — NOT persisted across sessions</text>
+      <text x="260" y="492" text-anchor="middle" fill="#8b949e" font-size="9">Path: {projectDir}/{sessionId}/session-memory/summary.md</text>
+
+      <line x1="120" y1="110" x2="120" y2="430" stroke="#76e4f7" stroke-width="1" stroke-dasharray="4"/>
+    </svg>
+  </div>
+
+  <div class="why">
+    <strong>Why file-based, not a database?</strong> Files are transparent — users can <code>cat</code>, <code>grep</code>, and <code>vi</code> their memories. They're Git-friendly (team memories can be committed). They use the same tools the model already has (Read/Write/Edit). And they survive any process crash — no WAL, no corruption recovery needed.
+  </div>
+</section>
+
+<!-- ===== 2. MEMORY TYPES ===== -->
+<section id="types">
+  <div class="label">Chapter 2</div>
+  <h2 class="title">The Four Memory Types</h2>
+  <p class="desc">Each memory has a semantic type that determines when it's saved, how it's structured, and how it should influence future behavior. Defined in <code>memdir/memoryTypes.ts</code>.</p>
+
+  <div class="cards">
+    <div class="card">
+      <h3><span class="badge b-blue">user</span> Who is the user?</h3>
+      <p>Role, goals, responsibilities, expertise, preferences. Always private — never shared with the team.</p>
+      <ul>
+        <li><strong>When saved:</strong> Learning the user's role, tech stack experience, communication preferences</li>
+        <li><strong>Example:</strong> "Senior backend engineer, deep Go expertise, new to React frontend"</li>
+        <li><strong>Purpose:</strong> Tailor explanations and collaboration style. A senior engineer gets architecture-level answers; a student gets step-by-step tutorials.</li>
+      </ul>
+      <div class="why" style="margin-top:12px">
+        <strong>Why private?</strong> Personal context (skill level, working style) shouldn't leak to teammates. The model adapts its tone per person, not per team.
+      </div>
+    </div>
+
+    <div class="card">
+      <h3><span class="badge b-green">feedback</span> How to work</h3>
+      <p>Corrections <em>and</em> confirmations of approach. Body structure: rule → <strong>Why:</strong> → <strong>How to apply:</strong></p>
+      <ul>
+        <li><strong>When saved:</strong> User says "don't do X" (correction) OR accepts a non-obvious approach (confirmation)</li>
+        <li><strong>Example:</strong> "Integration tests must hit a real database, not mocks. <strong>Why:</strong> prior incident where mock/prod divergence masked a broken migration."</li>
+        <li><strong>Key insight:</strong> Records from <em>both</em> failure and success. If only corrections are saved, the model grows overly cautious and drifts from validated approaches.</li>
+      </ul>
+      <div class="why" style="margin-top:12px">
+        <strong>Why include "Why"?</strong> A bare rule ("don't mock DB") can't handle edge cases. Knowing the reason (mock/prod divergence) lets the model judge when the rule applies and when it doesn't — e.g., unit tests for pure functions can still use mocks.
+      </div>
+    </div>
+
+    <div class="card">
+      <h3><span class="badge b-purple">project</span> What's happening</h3>
+      <p>Non-derivable facts about ongoing work, deadlines, decisions. Decays fast — always convert relative dates to absolute.</p>
+      <ul>
+        <li><strong>When saved:</strong> Learning who's doing what, why, or by when</li>
+        <li><strong>Example:</strong> "Merge freeze begins 2026-03-05 for mobile release cut. Flag any non-critical PR work after that date."</li>
+        <li><strong>Key rule:</strong> Must NOT be derivable from code or git history. If <code>git log</code> can tell you, don't save it.</li>
+      </ul>
+      <div class="why" style="margin-top:12px">
+        <strong>Why absolute dates?</strong> "Next Thursday" is meaningless in a memory read 3 weeks later. Converting to "2026-03-05" ensures the memory remains interpretable as time passes.
+      </div>
+    </div>
+
+    <div class="card">
+      <h3><span class="badge b-orange">reference</span> Where to look</h3>
+      <p>Pointers to external systems — not the data itself, just where to find it.</p>
+      <ul>
+        <li><strong>When saved:</strong> Learning about Linear projects, Grafana dashboards, Slack channels, wiki pages</li>
+        <li><strong>Example:</strong> "Pipeline bugs tracked in Linear project 'INGEST'. Oncall latency dashboard: grafana.internal/d/api-latency."</li>
+        <li><strong>Scope:</strong> Usually team-scoped — these references benefit everyone.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="warn" style="margin-top: 24px;">
+    <strong>What NOT to save:</strong> Code patterns, architecture, file paths (derivable from reading code). Git history (use <code>git log</code>). Debugging solutions (the fix is in the code). CLAUDE.md content (already loaded). Ephemeral task details (use tasks instead). These exclusions apply <em>even when the user explicitly asks</em> — the model is instructed to push back and ask what was surprising or non-obvious.
+  </div>
+</section>
+
+<!-- ===== 3. STORAGE FORMAT ===== -->
+<section id="storage">
+  <div class="label">Chapter 3</div>
+  <h2 class="title">Storage &amp; File Format</h2>
+  <p class="desc">Memories are plain Markdown files with YAML frontmatter, organized in a per-project directory with a flat index file.</p>
+
+  <div class="diagram">
+    <svg viewBox="0 0 1060 400" width="100%" xmlns="http://www.w3.org/2000/svg">
+      <!-- Directory tree -->
+      <rect x="30" y="20" width="440" height="360" rx="10" fill="rgba(247,120,186,.05)" stroke="#f778ba" stroke-width="1.5"/>
+      <text x="250" y="50" text-anchor="middle" fill="#f778ba" font-size="13" font-weight="700">Directory Structure</text>
+
+      <text x="50" y="82" fill="#d29922" font-size="11" font-family="monospace">~/.claude/</text>
+      <text x="70" y="104" fill="#8b949e" font-size="10" font-family="monospace">├── CLAUDE.md              <tspan fill="#484f58">← user-level instructions</tspan></text>
+      <text x="70" y="126" fill="#8b949e" font-size="10" font-family="monospace">├── settings.json</text>
+      <text x="70" y="148" fill="#d29922" font-size="10" font-family="monospace">└── projects/</text>
+      <text x="90" y="170" fill="#d29922" font-size="10" font-family="monospace">    └── &lt;sanitized-git-root&gt;/</text>
+      <text x="110" y="192" fill="#f778ba" font-size="10" font-family="monospace" font-weight="600">        └── memory/</text>
+      <text x="130" y="214" fill="#d29922" font-size="10" font-family="monospace">            ├── MEMORY.md        <tspan fill="#484f58">← index</tspan></text>
+      <text x="130" y="236" fill="#58a6ff" font-size="10" font-family="monospace">            ├── user_role.md</text>
+      <text x="130" y="258" fill="#3fb950" font-size="10" font-family="monospace">            ├── feedback_testing.md</text>
+      <text x="130" y="280" fill="#bc8cff" font-size="10" font-family="monospace">            ├── project_freeze.md</text>
+      <text x="130" y="302" fill="#d29922" font-size="10" font-family="monospace">            ├── reference_linear.md</text>
+      <text x="130" y="324" fill="#76e4f7" font-size="10" font-family="monospace">            └── team/             <tspan fill="#484f58">← synced</tspan></text>
+      <text x="150" y="346" fill="#76e4f7" font-size="10" font-family="monospace">                ├── MEMORY.md</text>
+      <text x="150" y="368" fill="#76e4f7" font-size="10" font-family="monospace">                └── reference_*.md</text>
+
+      <!-- File format -->
+      <rect x="520" y="20" width="510" height="170" rx="10" fill="rgba(63,185,80,.05)" stroke="#3fb950" stroke-width="1.5"/>
+      <text x="775" y="48" text-anchor="middle" fill="#3fb950" font-size="13" font-weight="700">Memory File Format</text>
+
+      <text x="540" y="76" fill="#bc8cff" font-size="10" font-family="monospace">---</text>
+      <text x="540" y="94" fill="#8b949e" font-size="10" font-family="monospace">name: <tspan fill="#3fb950">No database mocking in tests</tspan></text>
+      <text x="540" y="112" fill="#8b949e" font-size="10" font-family="monospace">description: <tspan fill="#3fb950">Integration tests must use real DB</tspan></text>
+      <text x="540" y="130" fill="#8b949e" font-size="10" font-family="monospace">type: <tspan fill="#3fb950">feedback</tspan></text>
+      <text x="540" y="148" fill="#bc8cff" font-size="10" font-family="monospace">---</text>
+      <text x="540" y="172" fill="#8b949e" font-size="10" font-family="monospace">Integration tests must hit a real database.</text>
+
+      <!-- MEMORY.md format -->
+      <rect x="520" y="210" width="510" height="170" rx="10" fill="rgba(210,153,34,.05)" stroke="#d29922" stroke-width="1.5"/>
+      <text x="775" y="238" text-anchor="middle" fill="#d29922" font-size="13" font-weight="700">MEMORY.md — The Index</text>
+
+      <text x="540" y="266" fill="#8b949e" font-size="10" font-family="monospace">- [User role](user_role.md) — senior backend eng, new to React</text>
+      <text x="540" y="286" fill="#8b949e" font-size="10" font-family="monospace">- [Testing](feedback_testing.md) — no DB mocking, use real DB</text>
+      <text x="540" y="306" fill="#8b949e" font-size="10" font-family="monospace">- [Merge freeze](project_freeze.md) — freeze after 2026-03-05</text>
+      <text x="540" y="326" fill="#8b949e" font-size="10" font-family="monospace">- [Linear](reference_linear.md) — pipeline bugs in INGEST</text>
+
+      <text x="540" y="360" fill="#484f58" font-size="9">≤ 200 lines · ≤ 25KB · One line per entry · No frontmatter · No content</text>
+    </svg>
+  </div>
+
+  <div class="why">
+    <strong>Why a separate index?</strong> MEMORY.md is <em>always</em> loaded into context (like CLAUDE.md). Individual memory files are loaded <em>only when relevant</em> via the retrieval pipeline. This keeps base context cost low — a project with 100 memories only pays for a 100-line index, not 100 full files.
+  </div>
+
+  <div class="why">
+    <strong>Why per-project directories?</strong> The path uses the canonical Git root, so all worktrees of the same repo share memories. But different projects get separate directories — feedback about "how to test in project A" doesn't pollute project B.
+  </div>
+
+  <div class="code"><span class="cm">// Path resolution priority (paths.ts)</span>
+
+<span class="kw">1.</span> CLAUDE_COWORK_MEMORY_PATH_OVERRIDE   <span class="ar">← full override (Cowork mode)</span>
+<span class="kw">2.</span> settings.json → autoMemoryDirectory   <span class="ar">← trusted sources only (NOT project settings!)</span>
+<span class="kw">3.</span> ~/.claude/projects/&lt;sanitizePath(canonicalGitRoot)&gt;/memory/  <span class="ar">← default</span></div>
+
+  <div class="warn">
+    <strong>Security: Project settings excluded.</strong> A malicious repo could set <code>autoMemoryDirectory: "~/.ssh"</code> in its <code>.claude/settings.json</code> to gain write access to sensitive directories. Project-scoped settings are therefore intentionally blocked from configuring the memory path.
+  </div>
+</section>
+
+<!-- ===== 4. LIFECYCLE ===== -->
+<section id="lifecycle">
+  <div class="label">Chapter 4</div>
+  <h2 class="title">Memory Lifecycle</h2>
+  <p class="desc">A memory's journey: creation (two-step), update, staleness detection, verification-before-use, and deletion.</p>
+
+  <div class="diagram">
+    <svg viewBox="0 0 1060 320" width="100%" xmlns="http://www.w3.org/2000/svg">
+      <!-- Step 1 -->
+      <rect x="30" y="60" width="170" height="90" rx="8" fill="#1c2333" stroke="#3fb950" stroke-width="1.5"/>
+      <text x="115" y="88" text-anchor="middle" fill="#3fb950" font-size="11" font-weight="700">Step 1: Write File</text>
+      <text x="115" y="108" text-anchor="middle" fill="#8b949e" font-size="9">Write topic_name.md</text>
+      <text x="115" y="124" text-anchor="middle" fill="#8b949e" font-size="9">with YAML frontmatter</text>
+      <text x="115" y="140" text-anchor="middle" fill="#8b949e" font-size="9">(name, description, type)</text>
+
+      <line x1="200" y1="105" x2="250" y2="105" stroke="#30363d" stroke-width="2" marker-end="url(#a)"/>
+
+      <!-- Step 2 -->
+      <rect x="250" y="60" width="170" height="90" rx="8" fill="#1c2333" stroke="#d29922" stroke-width="1.5"/>
+      <text x="335" y="88" text-anchor="middle" fill="#d29922" font-size="11" font-weight="700">Step 2: Update Index</text>
+      <text x="335" y="108" text-anchor="middle" fill="#8b949e" font-size="9">Add one-line pointer</text>
+      <text x="335" y="124" text-anchor="middle" fill="#8b949e" font-size="9">to MEMORY.md</text>
+      <text x="335" y="140" text-anchor="middle" fill="#8b949e" font-size="9">&lt;150 chars per entry</text>
+
+      <line x1="420" y1="105" x2="470" y2="105" stroke="#30363d" stroke-width="2" marker-end="url(#a)"/>
+
+      <!-- Retrieval -->
+      <rect x="470" y="60" width="170" height="90" rx="8" fill="#1c2333" stroke="#58a6ff" stroke-width="1.5"/>
+      <text x="555" y="88" text-anchor="middle" fill="#58a6ff" font-size="11" font-weight="700">Retrieval</text>
+      <text x="555" y="108" text-anchor="middle" fill="#8b949e" font-size="9">Sonnet side-query</text>
+      <text x="555" y="124" text-anchor="middle" fill="#8b949e" font-size="9">ranks by relevance</text>
+      <text x="555" y="140" text-anchor="middle" fill="#8b949e" font-size="9">injects ≤5 files</text>
+
+      <line x1="640" y1="105" x2="690" y2="105" stroke="#30363d" stroke-width="2" marker-end="url(#a)"/>
+
+      <!-- Verification -->
+      <rect x="690" y="60" width="170" height="90" rx="8" fill="#1c2333" stroke="#f778ba" stroke-width="1.5"/>
+      <text x="775" y="88" text-anchor="middle" fill="#f778ba" font-size="11" font-weight="700">Verify Before Use</text>
+      <text x="775" y="108" text-anchor="middle" fill="#8b949e" font-size="9">Check file exists?</text>
+      <text x="775" y="124" text-anchor="middle" fill="#8b949e" font-size="9">Grep for function?</text>
+      <text x="775" y="140" text-anchor="middle" fill="#8b949e" font-size="9">Trust current > memory</text>
+
+      <line x1="860" y1="105" x2="910" y2="105" stroke="#30363d" stroke-width="2" marker-end="url(#a)"/>
+
+      <!-- Use / Update / Delete -->
+      <rect x="910" y="40" width="130" height="40" rx="6" fill="#1c2333" stroke="#3fb950"/>
+      <text x="975" y="65" text-anchor="middle" fill="#3fb950" font-size="10">Use in response</text>
+
+      <rect x="910" y="90" width="130" height="40" rx="6" fill="#1c2333" stroke="#d29922"/>
+      <text x="975" y="115" text-anchor="middle" fill="#d29922" font-size="10">Update if stale</text>
+
+      <rect x="910" y="140" width="130" height="40" rx="6" fill="#1c2333" stroke="#f85149"/>
+      <text x="975" y="165" text-anchor="middle" fill="#f85149" font-size="10">Delete if wrong</text>
+
+      <!-- Staleness timeline -->
+      <rect x="30" y="210" width="1000" height="90" rx="10" fill="rgba(210,153,34,.06)" stroke="#d29922" stroke-width="1.5"/>
+      <text x="530" y="238" text-anchor="middle" fill="#d29922" font-size="12" font-weight="700">Staleness Detection (memoryAge.ts)</text>
+
+      <rect x="60" y="258" width="100" height="28" rx="5" fill="#1c2333" stroke="#3fb950"/>
+      <text x="110" y="277" text-anchor="middle" fill="#3fb950" font-size="9">today</text>
+
+      <rect x="180" y="258" width="100" height="28" rx="5" fill="#1c2333" stroke="#3fb950"/>
+      <text x="230" y="277" text-anchor="middle" fill="#3fb950" font-size="9">yesterday</text>
+
+      <rect x="300" y="258" width="120" height="28" rx="5" fill="#1c2333" stroke="#d29922"/>
+      <text x="360" y="277" text-anchor="middle" fill="#d29922" font-size="9">2-7 days ago</text>
+
+      <rect x="440" y="258" width="160" height="28" rx="5" fill="#1c2333" stroke="#f85149"/>
+      <text x="520" y="277" text-anchor="middle" fill="#f85149" font-size="9">&gt;1 day: staleness warning</text>
+
+      <rect x="620" y="258" width="380" height="28" rx="5" fill="#1c2333" stroke="#f85149"/>
+      <text x="810" y="277" text-anchor="middle" fill="#f85149" font-size="8">"This memory is N days old. Claims about code may be outdated. Verify before asserting as fact."</text>
+    </svg>
+  </div>
+
+  <div class="why">
+    <strong>Why two-step creation?</strong> Writing the file and updating MEMORY.md are separate because the index must remain a curated summary, not an automatic mirror. The model can choose whether a memory is important enough to index. Orphaned files (in the directory but not in the index) are still discoverable via <code>scanMemoryFiles()</code> but won't appear in every conversation's context.
+  </div>
+
+  <div class="why">
+    <strong>Why verify before recommending?</strong> A memory that says "function parseConfig() is in src/config.ts:42" is a <em>claim about the past</em>. The function may have been renamed, moved, or deleted. The model is explicitly instructed: "The memory says X exists" ≠ "X exists now." Always grep/check before acting on stale references.
+  </div>
+</section>
+
+<!-- ===== 5. RETRIEVAL PIPELINE ===== -->
+<section id="retrieval">
+  <div class="label">Chapter 5</div>
+  <h2 class="title">Retrieval Pipeline</h2>
+  <p class="desc">Memories are surfaced via three complementary mechanisms: always-on index injection, relevance-ranked file selection, and on-demand access by the model.</p>
+
+  <div class="diagram">
+    <svg viewBox="0 0 1060 430" width="100%" xmlns="http://www.w3.org/2000/svg">
+      <!-- Mechanism 1: Always-on -->
+      <rect x="30" y="30" width="310" height="160" rx="10" fill="rgba(210,153,34,.05)" stroke="#d29922" stroke-width="1.5"/>
+      <text x="185" y="58" text-anchor="middle" fill="#d29922" font-size="12" font-weight="700">① Always-On: MEMORY.md</text>
+      <text x="185" y="82" text-anchor="middle" fill="#8b949e" font-size="10">Loaded as user context (like CLAUDE.md)</text>
+      <text x="185" y="102" text-anchor="middle" fill="#8b949e" font-size="10">Every conversation, every turn</text>
+      <text x="185" y="122" text-anchor="middle" fill="#8b949e" font-size="10">Truncated at 200 lines / 25KB</text>
+      <text x="185" y="146" text-anchor="middle" fill="#484f58" font-size="9">Cost: always in context window</text>
+      <text x="185" y="162" text-anchor="middle" fill="#484f58" font-size="9">Value: model always sees the full index</text>
+
+      <!-- Mechanism 2: Relevance-ranked -->
+      <rect x="370" y="30" width="340" height="160" rx="10" fill="rgba(88,166,255,.05)" stroke="#58a6ff" stroke-width="1.5"/>
+      <text x="540" y="58" text-anchor="middle" fill="#58a6ff" font-size="12" font-weight="700">② Relevance-Ranked Prefetch</text>
+      <text x="540" y="82" text-anchor="middle" fill="#8b949e" font-size="10">Fires non-blocking Sonnet side-query</text>
+      <text x="540" y="102" text-anchor="middle" fill="#8b949e" font-size="10">while main model is streaming</text>
+
+      <rect x="390" y="118" width="300" height="60" rx="6" fill="#1c2333" stroke="#30363d"/>
+      <text x="540" y="138" text-anchor="middle" fill="#8b949e" font-size="9">scanMemoryFiles() → frontmatter descriptions</text>
+      <text x="540" y="155" text-anchor="middle" fill="#8b949e" font-size="9">Sonnet selects ≤5 relevant files</text>
+      <text x="540" y="170" text-anchor="middle" fill="#8b949e" font-size="9">→ injected as &lt;system-reminder&gt; attachments</text>
+
+      <!-- Mechanism 3: On-demand -->
+      <rect x="740" y="30" width="290" height="160" rx="10" fill="rgba(188,140,255,.05)" stroke="#bc8cff" stroke-width="1.5"/>
+      <text x="885" y="58" text-anchor="middle" fill="#bc8cff" font-size="12" font-weight="700">③ On-Demand: Model Reads</text>
+      <text x="885" y="82" text-anchor="middle" fill="#8b949e" font-size="10">Model can Read/Grep/Glob the</text>
+      <text x="885" y="102" text-anchor="middle" fill="#8b949e" font-size="10">memory directory at any time</text>
+      <text x="885" y="126" text-anchor="middle" fill="#8b949e" font-size="10">Instructed: "MUST access when</text>
+      <text x="885" y="142" text-anchor="middle" fill="#8b949e" font-size="10">user explicitly asks to recall"</text>
+      <text x="885" y="162" text-anchor="middle" fill="#484f58" font-size="9">Past context search (session transcripts)</text>
+
+      <!-- Prefetch detail flow -->
+      <rect x="30" y="230" width="1000" height="180" rx="10" fill="rgba(88,166,255,.04)" stroke="#58a6ff" stroke-width="1"/>
+      <text x="530" y="258" text-anchor="middle" fill="#58a6ff" font-size="12" font-weight="700">Relevance Prefetch — Detailed Flow</text>
+
+      <!-- Step boxes -->
+      <rect x="50" y="280" width="170" height="60" rx="6" fill="#1c2333" stroke="#d29922"/>
+      <text x="135" y="305" text-anchor="middle" fill="#d29922" font-size="10" font-weight="600">scanMemoryFiles()</text>
+      <text x="135" y="322" text-anchor="middle" fill="#8b949e" font-size="8">Recursive readdir, parse</text>
+      <text x="135" y="334" text-anchor="middle" fill="#8b949e" font-size="8">frontmatter, sort by mtime</text>
+
+      <line x1="220" y1="310" x2="260" y2="310" stroke="#30363d" stroke-width="1.5" marker-end="url(#a)"/>
+
+      <rect x="260" y="280" width="170" height="60" rx="6" fill="#1c2333" stroke="#bc8cff"/>
+      <text x="345" y="305" text-anchor="middle" fill="#bc8cff" font-size="10" font-weight="600">findRelevantMemories()</text>
+      <text x="345" y="322" text-anchor="middle" fill="#8b949e" font-size="8">Sonnet side-query with</text>
+      <text x="345" y="334" text-anchor="middle" fill="#8b949e" font-size="8">descriptions + user message</text>
+
+      <line x1="430" y1="310" x2="470" y2="310" stroke="#30363d" stroke-width="1.5" marker-end="url(#a)"/>
+
+      <rect x="470" y="280" width="160" height="60" rx="6" fill="#1c2333" stroke="#3fb950"/>
+      <text x="550" y="305" text-anchor="middle" fill="#3fb950" font-size="10" font-weight="600">Read ≤5 files</text>
+      <text x="550" y="322" text-anchor="middle" fill="#8b949e" font-size="8">Max 200 lines / 4KB each</text>
+      <text x="550" y="334" text-anchor="middle" fill="#8b949e" font-size="8">+ staleness header</text>
+
+      <line x1="630" y1="310" x2="670" y2="310" stroke="#30363d" stroke-width="1.5" marker-end="url(#a)"/>
+
+      <rect x="670" y="280" width="160" height="60" rx="6" fill="#1c2333" stroke="#f778ba"/>
+      <text x="750" y="305" text-anchor="middle" fill="#f778ba" font-size="10" font-weight="600">Dedup Check</text>
+      <text x="750" y="322" text-anchor="middle" fill="#8b949e" font-size="8">Skip if already surfaced</text>
+      <text x="750" y="334" text-anchor="middle" fill="#8b949e" font-size="8">in this session</text>
+
+      <line x1="830" y1="310" x2="870" y2="310" stroke="#30363d" stroke-width="1.5" marker-end="url(#a)"/>
+
+      <rect x="870" y="280" width="140" height="60" rx="6" fill="#1c2333" stroke="#58a6ff"/>
+      <text x="940" y="305" text-anchor="middle" fill="#58a6ff" font-size="10" font-weight="600">Inject</text>
+      <text x="940" y="322" text-anchor="middle" fill="#8b949e" font-size="8">&lt;system-reminder&gt;</text>
+      <text x="940" y="334" text-anchor="middle" fill="#8b949e" font-size="8">type: relevant_memories</text>
+
+      <!-- Session cap -->
+      <text x="530" y="395" text-anchor="middle" fill="#f85149" font-size="10">Session cap: 60KB cumulative — prefetch stops once exceeded to preserve context window</text>
+    </svg>
+  </div>
+
+  <div class="why">
+    <strong>Why three mechanisms?</strong> Each serves a different need. The always-on index gives the model awareness of <em>what exists</em> (cheap — just file names). Relevance prefetch proactively loads the <em>right</em> memories for the current task (no model action needed). On-demand access is the fallback for explicit user requests or edge cases the prefetch missed.
+  </div>
+
+  <div class="why">
+    <strong>Why a Sonnet side-query?</strong> Semantic relevance can't be solved by keyword matching — "should I mock the database?" is related to a memory about "integration test policy" despite no shared keywords. A small, fast model (Sonnet) reads the frontmatter descriptions and selects the most relevant files. This runs <em>in parallel</em> with the main model's response, adding zero latency to the user experience.
+  </div>
+
+  <div class="why">
+    <strong>Why a 60KB session cap?</strong> Without it, long conversations could accumulate hundreds of KB of surfaced memories, crowding out actual conversation content from the context window. Once 60KB is reached, the prefetch stops — the model can still manually read files if needed.
+  </div>
+</section>
+
+<!-- ===== 6. BACKGROUND EXTRACTION ===== -->
+<section id="extraction">
+  <div class="label">Chapter 6</div>
+  <h2 class="title">Background Extraction Agent</h2>
+  <p class="desc">At the end of each turn, a forked agent silently reviews the conversation and saves memories the main agent missed — sharing the parent's prompt cache for efficiency.</p>
+
+  <div class="diagram">
+    <svg viewBox="0 0 1060 310" width="100%" xmlns="http://www.w3.org/2000/svg">
+      <!-- Main conversation -->
+      <rect x="30" y="30" width="300" height="100" rx="10" fill="#1c2333" stroke="#58a6ff" stroke-width="1.5"/>
+      <text x="180" y="60" text-anchor="middle" fill="#58a6ff" font-size="12" font-weight="700">Main Conversation Turn</text>
+      <text x="180" y="82" text-anchor="middle" fill="#8b949e" font-size="10">User ↔ Claude ↔ Tools</text>
+      <text x="180" y="100" text-anchor="middle" fill="#8b949e" font-size="10">query() completes a turn</text>
+      <text x="180" y="118" text-anchor="middle" fill="#8b949e" font-size="9">handleStopHooks() fires</text>
+
+      <!-- Decision -->
+      <line x1="330" y1="80" x2="400" y2="80" stroke="#30363d" stroke-width="2" marker-end="url(#a)"/>
+
+      <rect x="400" y="40" width="200" height="80" rx="8" fill="#1c2333" stroke="#d29922" stroke-width="1.5"/>
+      <text x="500" y="68" text-anchor="middle" fill="#d29922" font-size="11" font-weight="700">Should Extract?</text>
+      <text x="500" y="88" text-anchor="middle" fill="#8b949e" font-size="9">hasMemoryWritesSince()?</text>
+      <text x="500" y="104" text-anchor="middle" fill="#8b949e" font-size="9">If main already wrote → skip</text>
+
+      <!-- Yes path -->
+      <line x1="600" y1="80" x2="670" y2="80" stroke="#3fb950" stroke-width="1.5" marker-end="url(#ag)"/>
+      <text x="635" y="72" fill="#3fb950" font-size="9">no writes</text>
+
+      <rect x="670" y="30" width="360" height="120" rx="10" fill="rgba(188,140,255,.06)" stroke="#bc8cff" stroke-width="1.5"/>
+      <text x="850" y="58" text-anchor="middle" fill="#bc8cff" font-size="12" font-weight="700">Extraction Agent (forked)</text>
+
+      <rect x="690" y="70" width="150" height="24" rx="4" fill="#1c2333" stroke="#30363d"/>
+      <text x="765" y="86" text-anchor="middle" fill="#8b949e" font-size="9">runForkedAgent()</text>
+
+      <rect x="850" y="70" width="160" height="24" rx="4" fill="#1c2333" stroke="#3fb950"/>
+      <text x="930" y="86" text-anchor="middle" fill="#3fb950" font-size="9">Shares prompt cache</text>
+
+      <rect x="690" y="102" width="320" height="36" rx="4" fill="#1c2333" stroke="#30363d"/>
+      <text x="850" y="118" text-anchor="middle" fill="#8b949e" font-size="9">Permissions: Read/Grep/Glob (unrestricted), Bash (read-only)</text>
+      <text x="850" y="132" text-anchor="middle" fill="#8b949e" font-size="9">Write/Edit: ONLY within memory directory</text>
+
+      <!-- Pre-injected manifest -->
+      <rect x="30" y="180" width="1000" height="110" rx="10" fill="rgba(63,185,80,.04)" stroke="#3fb950" stroke-width="1"/>
+      <text x="530" y="208" text-anchor="middle" fill="#3fb950" font-size="12" font-weight="700">Extraction Agent Behavior</text>
+
+      <rect x="50" y="224" width="220" height="50" rx="6" fill="#1c2333" stroke="#d29922"/>
+      <text x="160" y="245" text-anchor="middle" fill="#d29922" font-size="10" font-weight="600">Pre-injected manifest</text>
+      <text x="160" y="263" text-anchor="middle" fill="#8b949e" font-size="8">scanMemoryFiles() → existing files</text>
+
+      <rect x="290" y="224" width="220" height="50" rx="6" fill="#1c2333" stroke="#f778ba"/>
+      <text x="400" y="245" text-anchor="middle" fill="#f778ba" font-size="10" font-weight="600">Deduplication check</text>
+      <text x="400" y="263" text-anchor="middle" fill="#8b949e" font-size="8">Update existing > create new</text>
+
+      <rect x="530" y="224" width="220" height="50" rx="6" fill="#1c2333" stroke="#58a6ff"/>
+      <text x="640" y="245" text-anchor="middle" fill="#58a6ff" font-size="10" font-weight="600">Max 5 turns</text>
+      <text x="640" y="263" text-anchor="middle" fill="#8b949e" font-size="8">Throttled by feature flag</text>
+
+      <rect x="770" y="224" width="240" height="50" rx="6" fill="#1c2333" stroke="#76e4f7"/>
+      <text x="890" y="245" text-anchor="middle" fill="#76e4f7" font-size="10" font-weight="600">UI notification</text>
+      <text x="890" y="263" text-anchor="middle" fill="#8b949e" font-size="8">MemoryUpdateNotification.tsx</text>
+    </svg>
+  </div>
+
+  <div class="why">
+    <strong>Why a forked agent?</strong> The main model is focused on answering the user's question — asking it to also extract memories would split its attention and add latency. A <code>runForkedAgent()</code> shares the parent's prompt cache (so no re-encoding cost) but runs independently in the background. The user sees their answer immediately; memories are saved silently afterward.
+  </div>
+
+  <div class="why">
+    <strong>Why skip if main already wrote?</strong> If the main agent proactively saved a memory (e.g., user said "remember this"), the extraction agent has nothing to add. The <code>hasMemoryWritesSince()</code> check prevents duplicate work and avoids conflicting writes.
+  </div>
+</section>
+
+<!-- ===== 7. SESSION MEMORY ===== -->
+<section id="session">
+  <div class="label">Chapter 7</div>
+  <h2 class="title">Session Memory (Intra-Conversation)</h2>
+  <p class="desc">A separate, session-scoped system that maintains a structured summary of the current conversation — surviving context compaction but NOT persisting across sessions. This is distinct from the persistent memory system.</p>
+
+  <div class="diagram">
+    <svg viewBox="0 0 1060 280" width="100%" xmlns="http://www.w3.org/2000/svg">
+      <!-- Conversation -->
+      <rect x="30" y="30" width="200" height="220" rx="10" fill="rgba(88,166,255,.05)" stroke="#58a6ff" stroke-width="1.5"/>
+      <text x="130" y="58" text-anchor="middle" fill="#58a6ff" font-size="12" font-weight="700">Conversation</text>
+
+      <rect x="50" y="75" width="160" height="20" rx="3" fill="#1c2333" stroke="#30363d"/>
+      <text x="130" y="89" text-anchor="middle" fill="#8b949e" font-size="8">0K tokens</text>
+
+      <rect x="50" y="100" width="160" height="20" rx="3" fill="#1c2333" stroke="#d29922"/>
+      <text x="130" y="114" text-anchor="middle" fill="#d29922" font-size="8">10K tokens → initialize</text>
+
+      <rect x="50" y="125" width="160" height="20" rx="3" fill="#1c2333" stroke="#30363d"/>
+      <text x="130" y="139" text-anchor="middle" fill="#8b949e" font-size="8">...</text>
+
+      <rect x="50" y="150" width="160" height="20" rx="3" fill="#1c2333" stroke="#3fb950"/>
+      <text x="130" y="164" text-anchor="middle" fill="#3fb950" font-size="8">15K tokens → update (+5K, +3 tools)</text>
+
+      <rect x="50" y="175" width="160" height="20" rx="3" fill="#1c2333" stroke="#30363d"/>
+      <text x="130" y="189" text-anchor="middle" fill="#8b949e" font-size="8">...</text>
+
+      <rect x="50" y="200" width="160" height="20" rx="3" fill="#1c2333" stroke="#f85149"/>
+      <text x="130" y="214" text-anchor="middle" fill="#f85149" font-size="8">context full → compact</text>
+
+      <text x="130" y="240" text-anchor="middle" fill="#484f58" font-size="8">Session memory survives!</text>
+
+      <!-- Arrow -->
+      <line x1="230" y1="130" x2="310" y2="130" stroke="#76e4f7" stroke-width="2" marker-end="url(#a)"/>
+
+      <!-- Summary file -->
+      <rect x="310" y="30" width="340" height="220" rx="10" fill="rgba(118,228,247,.05)" stroke="#76e4f7" stroke-width="1.5"/>
+      <text x="480" y="58" text-anchor="middle" fill="#76e4f7" font-size="12" font-weight="700">summary.md — Structured Sections</text>
+
+      <rect x="330" y="74" width="300" height="22" rx="4" fill="#1c2333" stroke="#30363d"/>
+      <text x="480" y="90" text-anchor="middle" fill="#8b949e" font-size="9">## Session Title</text>
+      <rect x="330" y="100" width="300" height="22" rx="4" fill="#1c2333" stroke="#30363d"/>
+      <text x="480" y="116" text-anchor="middle" fill="#8b949e" font-size="9">## Current State</text>
+      <rect x="330" y="126" width="300" height="22" rx="4" fill="#1c2333" stroke="#30363d"/>
+      <text x="480" y="142" text-anchor="middle" fill="#8b949e" font-size="9">## Task Specification</text>
+      <rect x="330" y="152" width="300" height="22" rx="4" fill="#1c2333" stroke="#30363d"/>
+      <text x="480" y="168" text-anchor="middle" fill="#8b949e" font-size="9">## Files and Functions</text>
+      <rect x="330" y="178" width="145" height="22" rx="4" fill="#1c2333" stroke="#30363d"/>
+      <text x="402" y="194" text-anchor="middle" fill="#8b949e" font-size="9">## Errors</text>
+      <rect x="485" y="178" width="145" height="22" rx="4" fill="#1c2333" stroke="#30363d"/>
+      <text x="557" y="194" text-anchor="middle" fill="#8b949e" font-size="9">## Learnings</text>
+      <rect x="330" y="206" width="145" height="22" rx="4" fill="#1c2333" stroke="#30363d"/>
+      <text x="402" y="222" text-anchor="middle" fill="#8b949e" font-size="9">## Key Results</text>
+      <rect x="485" y="206" width="145" height="22" rx="4" fill="#1c2333" stroke="#30363d"/>
+      <text x="557" y="222" text-anchor="middle" fill="#8b949e" font-size="9">## Worklog</text>
+
+      <!-- Limits -->
+      <rect x="700" y="30" width="330" height="120" rx="10" fill="rgba(210,153,34,.05)" stroke="#d29922" stroke-width="1.5"/>
+      <text x="865" y="58" text-anchor="middle" fill="#d29922" font-size="12" font-weight="700">Limits &amp; Triggers</text>
+      <text x="865" y="82" text-anchor="middle" fill="#8b949e" font-size="10">Init after: 10,000 tokens</text>
+      <text x="865" y="100" text-anchor="middle" fill="#8b949e" font-size="10">Update every: 5,000 tokens + 3 tools</text>
+      <text x="865" y="118" text-anchor="middle" fill="#8b949e" font-size="10">Section cap: 2,000 tokens each</text>
+      <text x="865" y="136" text-anchor="middle" fill="#8b949e" font-size="10">Total cap: 12,000 tokens</text>
+
+      <!-- Customization -->
+      <rect x="700" y="170" width="330" height="80" rx="10" fill="rgba(188,140,255,.05)" stroke="#bc8cff" stroke-width="1.5"/>
+      <text x="865" y="198" text-anchor="middle" fill="#bc8cff" font-size="12" font-weight="700">Customizable</text>
+      <text x="865" y="220" text-anchor="middle" fill="#8b949e" font-size="10">Template: ~/.claude/session-memory/config/template.md</text>
+      <text x="865" y="238" text-anchor="middle" fill="#8b949e" font-size="10">Prompt: ~/.claude/session-memory/config/prompt.md</text>
+    </svg>
+  </div>
+
+  <div class="why">
+    <strong>Why separate from persistent memory?</strong> Session memory tracks ephemeral state: "which files have I touched," "what errors did I hit," "what's my current approach." This is invaluable when context is compacted mid-conversation (the model loses old messages but keeps the summary), but useless in future conversations. Persistent memory is the opposite — designed for cross-conversation knowledge.
+  </div>
+
+  <div class="why">
+    <strong>Why structured sections?</strong> A free-form summary would be hard to maintain incrementally. Fixed sections (Task, Files, Errors, Learnings, Worklog) let the update agent surgically modify one section without rewriting the entire summary. Each section has a 2,000-token cap to prevent any single aspect from dominating.
+  </div>
+</section>
+
+<!-- ===== 8. TEAM MEMORY ===== -->
+<section id="team">
+  <div class="label">Chapter 8</div>
+  <h2 class="title">Team Memory Sync</h2>
+  <p class="desc">A shared memory layer synced via Anthropic's API. Server wins on pull, delta-only push, with secret scanning to prevent credential leaks.</p>
+
+  <div class="diagram">
+    <svg viewBox="0 0 1060 280" width="100%" xmlns="http://www.w3.org/2000/svg">
+      <!-- Local -->
+      <rect x="30" y="40" width="300" height="200" rx="10" fill="rgba(118,228,247,.05)" stroke="#76e4f7" stroke-width="1.5"/>
+      <text x="180" y="70" text-anchor="middle" fill="#76e4f7" font-size="12" font-weight="700">Local: memory/team/</text>
+
+      <rect x="50" y="90" width="260" height="24" rx="4" fill="#1c2333" stroke="#30363d"/>
+      <text x="180" y="107" text-anchor="middle" fill="#8b949e" font-size="9">MEMORY.md (team index)</text>
+      <rect x="50" y="120" width="260" height="24" rx="4" fill="#1c2333" stroke="#30363d"/>
+      <text x="180" y="137" text-anchor="middle" fill="#8b949e" font-size="9">reference_linear.md</text>
+      <rect x="50" y="150" width="260" height="24" rx="4" fill="#1c2333" stroke="#30363d"/>
+      <text x="180" y="167" text-anchor="middle" fill="#8b949e" font-size="9">project_conventions.md</text>
+
+      <rect x="50" y="186" width="260" height="42" rx="4" fill="rgba(248,81,73,.06)" stroke="#f85149"/>
+      <text x="180" y="206" text-anchor="middle" fill="#f85149" font-size="9" font-weight="600">Secret Scanner (gitleaks rules)</text>
+      <text x="180" y="220" text-anchor="middle" fill="#8b949e" font-size="8">Files with secrets skipped on push</text>
+
+      <!-- Arrows -->
+      <line x1="330" y1="110" x2="430" y2="110" stroke="#3fb950" stroke-width="2" marker-end="url(#ag)"/>
+      <text x="380" y="102" text-anchor="middle" fill="#3fb950" font-size="9">push (delta)</text>
+
+      <line x1="430" y1="170" x2="330" y2="170" stroke="#58a6ff" stroke-width="2" marker-end="url(#a)"/>
+      <text x="380" y="190" text-anchor="middle" fill="#58a6ff" font-size="9">pull (server wins)</text>
+
+      <!-- Server -->
+      <rect x="430" y="40" width="300" height="200" rx="10" fill="rgba(63,185,80,.05)" stroke="#3fb950" stroke-width="1.5"/>
+      <text x="580" y="70" text-anchor="middle" fill="#3fb950" font-size="12" font-weight="700">Anthropic API</text>
+      <text x="580" y="94" text-anchor="middle" fill="#8b949e" font-size="10">GET/PUT /api/claude_code/team_memory</text>
+      <text x="580" y="114" text-anchor="middle" fill="#8b949e" font-size="10">?repo={owner/repo}</text>
+
+      <rect x="450" y="130" width="260" height="22" rx="4" fill="#1c2333" stroke="#30363d"/>
+      <text x="580" y="145" text-anchor="middle" fill="#8b949e" font-size="9">entries: Record&lt;path, content&gt;</text>
+      <rect x="450" y="158" width="260" height="22" rx="4" fill="#1c2333" stroke="#30363d"/>
+      <text x="580" y="173" text-anchor="middle" fill="#8b949e" font-size="9">entryChecksums: Record&lt;path, hash&gt;</text>
+
+      <rect x="450" y="192" width="260" height="36" rx="4" fill="#1c2333" stroke="#d29922"/>
+      <text x="580" y="210" text-anchor="middle" fill="#d29922" font-size="9">Max 250KB per file</text>
+      <text x="580" y="224" text-anchor="middle" fill="#d29922" font-size="9">Max 200KB per PUT body (chunked)</text>
+
+      <!-- Other teammates -->
+      <rect x="790" y="40" width="240" height="200" rx="10" fill="rgba(247,120,186,.05)" stroke="#f778ba" stroke-width="1.5"/>
+      <text x="910" y="70" text-anchor="middle" fill="#f778ba" font-size="12" font-weight="700">Teammates</text>
+      <text x="910" y="96" text-anchor="middle" fill="#8b949e" font-size="10">Each pulls the same data</text>
+      <text x="910" y="116" text-anchor="middle" fill="#8b949e" font-size="10">into their local team/ dir</text>
+      <text x="910" y="146" text-anchor="middle" fill="#8b949e" font-size="10">Per-org entry limits via</text>
+      <text x="910" y="166" text-anchor="middle" fill="#8b949e" font-size="10">GrowthBook feature flag</text>
+      <text x="910" y="196" text-anchor="middle" fill="#f85149" font-size="10" font-weight="600">Deletions do NOT propagate</text>
+      <text x="910" y="216" text-anchor="middle" fill="#8b949e" font-size="9">(intentional — prevents accidental team data loss)</text>
+
+      <line x1="730" y1="140" x2="790" y2="140" stroke="#30363d" stroke-width="1.5" stroke-dasharray="4"/>
+    </svg>
+  </div>
+
+  <div class="why">
+    <strong>Why server-wins on pull?</strong> Team memory is a shared resource. If two people edit the same file, the last pusher wins on the server, and everyone else gets that version on pull. This is simpler than merge conflict resolution and matches the expected usage pattern: team memories are reference docs, not constantly-edited collaboration documents.
+  </div>
+
+  <div class="warn">
+    <strong>Security: Symlink traversal prevention.</strong> A two-pass validation checks: (1) string-level path containment after <code>path.resolve()</code>, (2) real filesystem containment via <code>realpathDeepestExisting()</code> to catch symlink escape attacks. Also blocks null bytes, URL-encoded traversals, and Unicode normalization attacks (fullwidth <code>．．／</code>).
+  </div>
+</section>
+
+<!-- ===== 9. AGENT MEMORY ===== -->
+<section id="agent">
+  <div class="label">Chapter 9</div>
+  <h2 class="title">Agent Memory</h2>
+  <p class="desc">Custom agents (created via the Agent creation wizard) get their own isolated memory directories, scoped by agent type and visibility level.</p>
+
+  <div class="cards">
+    <div class="card">
+      <h3><span class="badge b-blue">user scope</span> ~/.claude/agent-memory/&lt;type&gt;/</h3>
+      <p>Memories persist across all projects for this user. Recommended for user-scoped agents. Guidance: "keep learnings general since they apply across all projects."</p>
+    </div>
+    <div class="card">
+      <h3><span class="badge b-purple">project scope</span> .claude/agent-memory/&lt;type&gt;/</h3>
+      <p>Lives inside the project directory, shared via version control. Recommended for project-scoped agents. Guidance: "tailor your memories to this project."</p>
+    </div>
+    <div class="card">
+      <h3><span class="badge b-orange">local scope</span> .claude/agent-memory-local/&lt;type&gt;/</h3>
+      <p>Project-specific but NOT in version control. For machine-specific configuration that shouldn't be shared with teammates.</p>
+    </div>
+    <div class="card">
+      <h3><span class="badge b-pink">none</span> No persistence</h3>
+      <p>Agent starts fresh every invocation. Used for stateless, deterministic agents where memory would add unwanted variability.</p>
+    </div>
+  </div>
+
+  <div class="why">
+    <strong>Why separate from the main memory?</strong> An agent (e.g., a code reviewer) has different context than the main Claude conversation. A code reviewer's memory about "this team prefers explicit error handling over panics" should only be surfaced when the code reviewer runs, not during general conversation. Agent memory isolation prevents cross-contamination.
+  </div>
+</section>
+
+<!-- ===== 10. SECURITY ===== -->
+<section id="security">
+  <div class="label">Chapter 10</div>
+  <h2 class="title">Security Model</h2>
+  <p class="desc">Memory writes happen in sensitive directories (~/.claude/). Multiple layers prevent path traversal, credential leaks, and malicious project configurations.</p>
+
+  <div class="cards">
+    <div class="card">
+      <h3><span class="badge b-red">Path Validation</span> validateMemoryPath()</h3>
+      <p>Rejects: relative paths, root/near-root paths, Windows drive roots, UNC paths (<code>\\</code>), null bytes. Ensures all writes stay within the designated memory directory.</p>
+    </div>
+    <div class="card">
+      <h3><span class="badge b-red">Symlink Defense</span> Two-pass containment</h3>
+      <p>Pass 1: <code>path.resolve()</code> normalizes <code>..</code> segments. Pass 2: <code>realpathDeepestExisting()</code> resolves symlinks on the real filesystem. Both must be contained within the memory dir. Prevents symlink escape attacks (PSR M22186).</p>
+    </div>
+    <div class="card">
+      <h3><span class="badge b-red">Secret Scanning</span> gitleaks rules</h3>
+      <p>Before team memory push, each file is scanned for secrets (API keys, tokens, passwords). Files with detected secrets are silently skipped with a warning — never uploaded to the server.</p>
+    </div>
+    <div class="card">
+      <h3><span class="badge b-red">Project Settings Blocked</span> autoMemoryDirectory</h3>
+      <p>A malicious repo's <code>.claude/settings.json</code> could set <code>autoMemoryDirectory: "~/.ssh"</code>. Project settings are therefore intentionally excluded from configuring the memory path — only user/policy/local settings are trusted.</p>
+    </div>
+    <div class="card">
+      <h3><span class="badge b-red">Unicode Normalization</span> sanitizePathKey()</h3>
+      <p>Blocks fullwidth Unicode traversals (<code>．．／</code>), URL-encoded sequences (<code>%2e%2e%2f</code>), backslashes, absolute paths, and null bytes in team memory path keys.</p>
+    </div>
+    <div class="card">
+      <h3><span class="badge b-red">Dangerous Dir Carve-out</span> Filesystem permissions</h3>
+      <p><code>~/.claude/</code> is in <code>DANGEROUS_DIRECTORIES</code>. An explicit carve-out allows memory writes only when using the default path — env var overrides get no special treatment and must supply their own allow rules.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 11. CONSTANTS ===== -->
+<section id="constants">
+  <div class="label">Chapter 11</div>
+  <h2 class="title">Key Constants &amp; Limits</h2>
+  <p class="desc">All the hard limits that govern the memory system's behavior.</p>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr><th>Constant</th><th>Value</th><th>Purpose</th><th>Source</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>ENTRYPOINT_NAME</td><td><code>MEMORY.md</code></td><td>Index filename</td><td>memdir/memdir.ts</td></tr>
+        <tr><td>MAX_ENTRYPOINT_LINES</td><td><code>200</code></td><td>Max lines in MEMORY.md before truncation</td><td>memdir/memdir.ts</td></tr>
+        <tr><td>MAX_ENTRYPOINT_BYTES</td><td><code>25,000</code></td><td>Max bytes in MEMORY.md</td><td>memdir/memdir.ts</td></tr>
+        <tr><td>MAX_MEMORY_FILES</td><td><code>200</code></td><td>Max files scanned per directory</td><td>memdir/memoryScan.ts</td></tr>
+        <tr><td>FRONTMATTER_MAX_LINES</td><td><code>30</code></td><td>Lines read per file for frontmatter parsing</td><td>memdir/memoryScan.ts</td></tr>
+        <tr><td>MAX_MEMORY_LINES (surfacing)</td><td><code>200</code></td><td>Max lines read per surfaced memory</td><td>utils/attachments.ts</td></tr>
+        <tr><td>MAX_MEMORY_BYTES (surfacing)</td><td><code>4,096</code></td><td>Max bytes per surfaced memory</td><td>utils/attachments.ts</td></tr>
+        <tr><td>MAX_SESSION_BYTES</td><td><code>60 KB</code></td><td>Cumulative surfaced memory cap per session</td><td>utils/attachments.ts</td></tr>
+        <tr><td>MAX_MEMORY_CHARACTER_COUNT</td><td><code>40,000</code></td><td>Recommended max per CLAUDE.md file</td><td>utils/claudemd.ts</td></tr>
+        <tr><td>minimumMessageTokensToInit</td><td><code>10,000</code></td><td>Token threshold to initialize session memory</td><td>services/SessionMemory/</td></tr>
+        <tr><td>minimumTokensBetweenUpdate</td><td><code>5,000</code></td><td>Tokens between session memory updates</td><td>services/SessionMemory/</td></tr>
+        <tr><td>toolCallsBetweenUpdates</td><td><code>3</code></td><td>Min tool calls between session memory updates</td><td>services/SessionMemory/</td></tr>
+        <tr><td>MAX_SECTION_LENGTH</td><td><code>2,000</code></td><td>Tokens per session memory section</td><td>services/SessionMemory/</td></tr>
+        <tr><td>MAX_TOTAL_SESSION_MEMORY_TOKENS</td><td><code>12,000</code></td><td>Total session memory budget</td><td>services/SessionMemory/</td></tr>
+        <tr><td>MAX_FILE_SIZE_BYTES (team)</td><td><code>250 KB</code></td><td>Max single file for team sync</td><td>services/teamMemorySync/</td></tr>
+        <tr><td>MAX_PUT_BODY_BYTES (team)</td><td><code>200 KB</code></td><td>Max PUT body (chunked if larger)</td><td>services/teamMemorySync/</td></tr>
+        <tr><td>Relevance prefetch results</td><td><code>≤ 5</code></td><td>Files selected per Sonnet side-query</td><td>memdir/findRelevantMemories.ts</td></tr>
+        <tr><td>Extraction agent max turns</td><td><code>5</code></td><td>Max turns for background extraction</td><td>services/extractMemories/</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="why">
+    <strong>Why these specific limits?</strong> They balance information density against context window cost. 200 lines in MEMORY.md ≈ 200 memories indexed ≈ ~4K tokens — about 2% of a 200K context window. The 60KB session cap ensures memories never consume more than ~15% of context. The 5-file prefetch limit prevents any single turn from being overwhelmed by background knowledge.
+  </div>
+</section>
+
+<!-- ===== FOOTER ===== -->
+<section style="text-align:center; padding:40px 0; border-bottom:none;">
+  <p style="color:var(--muted); font-size:.88rem;">
+    Deep dive into the Claude Code memory system — from source analysis of the <code>memdir/</code>, <code>services/extractMemories/</code>, <code>services/SessionMemory/</code>, and <code>services/teamMemorySync/</code> modules.<br>
+    Generated for educational purposes.
+  </p>
+</section>
+
+</main>
+</body>
+</html>
