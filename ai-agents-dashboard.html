@@ -1,0 +1,908 @@
+<!doctype html><html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Agents — Daily Snapshot</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js" integrity="sha384-iU8HYtnGQ8Cy4zl7gbNMOhsDTTKX02BTXptVP/vqAWIaTfM7isw76iyZCsjL2eVi" crossorigin="anonymous"></script>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #fafaf7;
+    --surface: #ffffff;
+    --surface-2: #f5f5f1;
+    --border: #ece9e3;
+    --border-strong: #d8d4cb;
+    --ink: #1a1714;
+    --ink-2: #524d44;
+    --ink-3: #8a8275;
+    --accent: #b8460e;
+    --accent-soft: #fdf4ed;
+    --accent-2: #1d4e3f;
+    --accent-2-soft: #ecf3f0;
+    --accent-3: #5b4ea8;
+    --accent-3-soft: #f0eef8;
+    --warn: #8a6d1a;
+    --warn-soft: #fdf8e8;
+    --radius: 10px;
+    --radius-sm: 6px;
+    --shadow-sm: 0 1px 2px rgba(17, 14, 10, 0.04);
+    --shadow-md: 0 4px 14px -6px rgba(17, 14, 10, 0.10), 0 1px 2px rgba(17, 14, 10, 0.04);
+    --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-serif: "Iowan Old Style", "Charter", "Georgia", serif;
+    --font-mono: "SF Mono", "Menlo", "Consolas", monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font-family: var(--font-sans); font-size: 14px; line-height: 1.5;
+    -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+  a { color: inherit; text-decoration: none; }
+
+  .shell { max-width: 1180px; margin: 0 auto; padding: 28px 28px 80px; }
+  @media (max-width: 640px) { .shell { padding: 20px 16px 60px; } }
+
+  .masthead {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    gap: 24px; flex-wrap: wrap; padding-bottom: 18px;
+    border-bottom: 1px solid var(--border);
+  }
+  .brand-mark {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--accent);
+    margin-bottom: 8px;
+  }
+  .brand-mark::before { content: ""; width: 24px; height: 1px; background: var(--accent); }
+  h1 {
+    font-family: var(--font-serif); font-size: clamp(28px, 4vw, 36px);
+    font-weight: 600; letter-spacing: -0.02em; line-height: 1.1;
+    margin: 0; color: var(--ink);
+  }
+  .lede { margin-top: 8px; font-size: 14px; color: var(--ink-2); max-width: 560px; }
+  .updated {
+    font-size: 12px; color: var(--ink-3);
+    display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+  }
+  .updated::before {
+    content: ""; width: 6px; height: 6px; border-radius: 50%;
+    background: #1d8a4f; box-shadow: 0 0 0 3px rgba(29, 138, 79, 0.15);
+    animation: pulse 2.4s ease-in-out infinite;
+  }
+  .updated.stale::before { background: var(--warn); box-shadow: 0 0 0 3px var(--warn-soft); animation: none; }
+  @keyframes pulse { 50% { box-shadow: 0 0 0 6px rgba(29, 138, 79, 0); } }
+
+  .stats {
+    display: grid; gap: 1px; grid-template-columns: repeat(4, 1fr);
+    background: var(--border); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden;
+    margin: 22px 0 26px;
+  }
+  @media (max-width: 640px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+  .stat { background: var(--surface); padding: 14px 16px; }
+  .stat-label { font-size: 11px; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 500; margin-bottom: 4px; }
+  .stat-value { font-family: var(--font-serif); font-size: 22px; font-weight: 600; letter-spacing: -0.01em; color: var(--ink); line-height: 1.1; }
+  .stat-sub { font-size: 11px; color: var(--ink-3); margin-top: 2px; }
+
+  .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 18px; flex-wrap: wrap; }
+  .tab {
+    padding: 10px 0; margin-right: 22px;
+    font-size: 13px; font-weight: 500;
+    color: var(--ink-3); cursor: pointer; user-select: none;
+    border-bottom: 2px solid transparent;
+    transition: color .15s, border-color .15s;
+    display: inline-flex; align-items: center; gap: 7px;
+  }
+  .tab:hover { color: var(--ink-2); }
+  .tab.active { color: var(--ink); border-bottom-color: var(--accent); }
+  .tab .pill {
+    background: var(--surface-2); color: var(--ink-2);
+    font-size: 11px; padding: 1px 7px; border-radius: 10px; font-weight: 500;
+    min-width: 20px; text-align: center;
+  }
+  .tab.active .pill { background: var(--accent-soft); color: var(--accent); }
+
+  .control-bar {
+    position: sticky; top: 0; z-index: 5;
+    background: rgba(250, 250, 247, 0.92);
+    backdrop-filter: saturate(140%) blur(8px);
+    -webkit-backdrop-filter: saturate(140%) blur(8px);
+    margin: 0 -28px 16px; padding: 10px 28px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  }
+  @media (max-width: 640px) { .control-bar { margin: 0 -16px 12px; padding: 10px 16px; } }
+  .control { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; color: var(--ink-2); }
+  .control label { font-weight: 500; color: var(--ink-3); }
+  .control select, .control input[type="search"] {
+    background: var(--surface); border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm); padding: 4px 8px;
+    font: inherit; color: var(--ink); height: 26px;
+  }
+  .control select { padding-right: 22px; appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'><path fill='%238a8275' d='M2 4l3 3 3-3z'/></svg>");
+    background-repeat: no-repeat; background-position: right 6px center;
+  }
+  .control input[type="search"] { width: 200px; }
+  .control input:focus, .control select:focus { outline: 2px solid var(--accent-soft); outline-offset: 1px; border-color: var(--accent); }
+  .toggle {
+    display: inline-flex; align-items: center; gap: 7px; cursor: pointer; user-select: none;
+    padding: 4px 10px; border-radius: 14px; border: 1px solid var(--border-strong);
+    background: var(--surface); font-size: 12px; color: var(--ink-2);
+  }
+  .toggle input { display: none; }
+  .toggle:has(input:checked) { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+  .toggle .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ink-3); }
+  .toggle:has(input:checked) .dot { background: var(--accent); }
+
+  .pane { display: none; }
+  .pane.active { display: block; }
+
+  .list { display: flex; flex-direction: column; gap: 8px; }
+  .row {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 14px 16px 14px 14px;
+    display: grid; grid-template-columns: 32px 36px 1fr auto; gap: 14px; align-items: start;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .row:hover { border-color: var(--border-strong); box-shadow: var(--shadow-sm); }
+  @media (max-width: 640px) {
+    .row { grid-template-columns: 28px 32px 1fr; padding: 12px; gap: 10px; }
+    .row .row-stats { grid-column: 1 / -1; padding-left: 0; padding-top: 6px; border-top: 1px solid var(--border); margin-top: 4px; flex-direction: row; align-items: center; }
+  }
+  .rank {
+    font-family: var(--font-serif); font-size: 18px; font-weight: 500;
+    color: var(--ink-3); text-align: right; padding-top: 3px;
+    font-variant-numeric: tabular-nums;
+  }
+  .rank.top-3 { color: var(--accent); }
+  .avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--surface-2);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-serif); font-weight: 600; font-size: 15px;
+    color: var(--ink-2); flex-shrink: 0;
+    border: 1px solid var(--border); text-transform: uppercase;
+  }
+  @media (max-width: 640px) { .avatar { width: 32px; height: 32px; font-size: 13px; } }
+  .row-main { min-width: 0; }
+  .row-title {
+    font-size: 15px; font-weight: 600; line-height: 1.3;
+    margin-bottom: 2px;
+    display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
+  }
+  .row-title a { color: var(--ink); transition: color .15s; }
+  .row-title a:hover { color: var(--accent); }
+  .row-author { color: var(--ink-3); font-weight: 400; font-size: 13px; }
+  .row-meta {
+    display: flex; flex-wrap: wrap; gap: 4px 14px;
+    font-size: 12px; color: var(--ink-3); margin-top: 4px; align-items: center;
+  }
+  .chip {
+    font-size: 10.5px; padding: 1px 7px; border-radius: 3px;
+    font-family: var(--font-mono); letter-spacing: -0.01em;
+  }
+  .chip.type { background: var(--accent-2-soft); color: var(--accent-2); }
+  .chip.license { background: var(--surface-2); color: var(--ink-2); }
+  .chip.license.commercial { background: #fdf4ed; color: var(--accent); }
+  .chip.license.oss { background: var(--accent-2-soft); color: var(--accent-2); }
+  .row-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+  .tag {
+    background: var(--surface-2); color: var(--ink-2);
+    font-size: 11px; padding: 2px 7px; border-radius: 3px;
+    font-family: var(--font-mono); letter-spacing: -0.01em;
+  }
+  .summary {
+    font-size: 13px; color: var(--ink-2); line-height: 1.5;
+    margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border);
+    font-family: var(--font-serif);
+  }
+  .row-stats {
+    text-align: right; display: flex; flex-direction: column; gap: 4px; align-items: flex-end;
+    font-variant-numeric: tabular-nums;
+  }
+  .star-pill, .score-pill {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 999px;
+    font-variant-numeric: tabular-nums;
+  }
+  .star-pill { background: var(--surface-2); color: var(--ink-2); }
+  .score-pill { background: var(--accent-soft); color: var(--accent); }
+
+  /* Benchmark tab */
+  .bench-controls { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+  .bench-meta {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 12px 14px; margin-bottom: 14px;
+    font-size: 13px; color: var(--ink-2); line-height: 1.55;
+  }
+  .bench-meta strong { color: var(--ink); }
+  .bench-meta .bench-category {
+    display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 3px;
+    background: var(--accent-2-soft); color: var(--accent-2);
+    font-family: var(--font-mono); margin-right: 8px;
+  }
+  .bench-chart-wrap {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 18px 16px 10px; margin-bottom: 14px; position: relative;
+  }
+  .bench-h3 { font-family: var(--font-serif); font-size: 17px; font-weight: 600; letter-spacing: -0.01em; margin: 22px 0 10px; color: var(--ink); }
+  .bench-disclaimer {
+    font-size: 11.5px; color: var(--ink-3);
+    line-height: 1.5; margin-top: 18px; padding: 12px 14px;
+    background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius);
+  }
+
+  /* Papers + news */
+  .papers, .news-list { display: flex; flex-direction: column; gap: 10px; }
+  .paper, .news-item {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 14px 16px;
+    display: grid; grid-template-columns: 28px 1fr; gap: 12px;
+  }
+  .paper:hover, .news-item:hover { border-color: var(--border-strong); }
+  .paper-icon, .news-icon {
+    width: 28px; height: 28px; border-radius: 6px;
+    background: var(--accent-2-soft); color: var(--accent-2);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .news-icon { background: var(--accent-3-soft); color: var(--accent-3); }
+  .paper-title, .news-title { font-size: 14.5px; font-weight: 600; line-height: 1.3; }
+  .paper-title a, .news-title a { color: var(--ink); }
+  .paper-title a:hover { color: var(--accent-2); }
+  .news-title a:hover { color: var(--accent-3); }
+  .paper-meta, .news-meta { font-size: 12px; color: var(--ink-3); margin: 3px 0 6px; }
+  .paper-summary, .news-summary { font-size: 13px; color: var(--ink-2); line-height: 1.55; font-family: var(--font-serif); }
+
+  .empty {
+    background: var(--surface); border: 1px dashed var(--border-strong); border-radius: var(--radius);
+    padding: 36px 20px; text-align: center; color: var(--ink-3);
+  }
+  .empty-title { font-family: var(--font-serif); font-size: 16px; color: var(--ink-2); margin-bottom: 4px; }
+  .empty-sub { font-size: 12.5px; }
+  .first-run {
+    background: var(--warn-soft); border: 1px solid #efe1b1; color: var(--warn);
+    padding: 14px 16px; border-radius: var(--radius); font-size: 13px; line-height: 1.55;
+    margin-bottom: 16px;
+  }
+  .first-run code { font-family: var(--font-mono); background: rgba(0,0,0,.05); padding: 1px 6px; border-radius: 3px; font-size: 11.5px; }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <header class="masthead">
+    <div>
+      <div class="brand-mark">Daily snapshot</div>
+      <h1>The agent ecosystem, today.</h1>
+      <p class="lede">Coding agents, general agents, frameworks, MCP servers, benchmark leaderboards, recent papers, and news. Refreshed every morning by a scheduled task.</p>
+    </div>
+    <div class="updated" id="updated"><span id="updated-text">No snapshot yet</span></div>
+  </header>
+
+  <section class="stats" id="stats">
+    <div class="stat"><div class="stat-label">Coding agents</div><div class="stat-value" id="stat-coding">—</div><div class="stat-sub">tracked</div></div>
+    <div class="stat"><div class="stat-label">General agents</div><div class="stat-value" id="stat-general">—</div><div class="stat-sub">tracked</div></div>
+    <div class="stat"><div class="stat-label">Top SWE-bench</div><div class="stat-value" id="stat-swe">—</div><div class="stat-sub" id="stat-swe-sub">&nbsp;</div></div>
+    <div class="stat"><div class="stat-label">Hottest repo</div><div class="stat-value" id="stat-hot">—</div><div class="stat-sub" id="stat-hot-sub">&nbsp;</div></div>
+  </section>
+
+  <div class="tabs" role="tablist">
+    <div class="tab active" data-pane="coding" role="tab">Coding <span class="pill" id="count-coding">—</span></div>
+    <div class="tab" data-pane="general" role="tab">General <span class="pill" id="count-general">—</span></div>
+    <div class="tab" data-pane="frameworks" role="tab">Frameworks <span class="pill" id="count-frameworks">—</span></div>
+    <div class="tab" data-pane="mcps" role="tab">MCPs <span class="pill" id="count-mcps">—</span></div>
+    <div class="tab" data-pane="benchmarks" role="tab">Benchmarks <span class="pill" id="count-benchmarks">—</span></div>
+    <div class="tab" data-pane="papers" role="tab">Papers <span class="pill" id="count-papers">—</span></div>
+    <div class="tab" data-pane="news" role="tab">News <span class="pill" id="count-news">—</span></div>
+  </div>
+
+  <div class="control-bar">
+    <div class="control"><label>Search</label><input type="search" id="searchBox" placeholder="filter by name or tag…"></div>
+    <div class="control"><label>License</label>
+      <select id="licenseFilter">
+        <option value="all" selected>All</option>
+        <option value="oss">Open-source</option>
+        <option value="commercial">Commercial</option>
+      </select>
+    </div>
+    <div class="control"><label>Sort</label>
+      <select id="sortBy">
+        <option value="stars" selected>Stars</option>
+        <option value="sweBench">SWE-bench</option>
+        <option value="name">Name (A-Z)</option>
+      </select>
+    </div>
+    <label class="toggle"><input type="checkbox" id="showSummary" checked><span class="dot"></span>Summaries</label>
+  </div>
+
+  <div id="first-run-banner" class="first-run" style="display:none">
+    <strong>First run pending.</strong> No snapshot has been written yet. The daily task <code>agents-dashboard-refresh</code> will populate this view.
+  </div>
+
+  <div id="pane-coding" class="pane active"><div class="list" id="coding-content"></div></div>
+  <div id="pane-general" class="pane"><div class="list" id="general-content"></div></div>
+  <div id="pane-frameworks" class="pane"><div class="list" id="frameworks-content"></div></div>
+  <div id="pane-mcps" class="pane"><div class="list" id="mcps-content"></div></div>
+
+  <div id="pane-benchmarks" class="pane">
+    <div class="bench-controls">
+      <div class="control"><label>Benchmark</label><select id="benchSelect"></select></div>
+      <label class="toggle"><input type="checkbox" id="benchShowLabels" checked><span class="dot"></span>Labels</label>
+    </div>
+    <div class="bench-meta" id="bench-meta"></div>
+    <div class="bench-chart-wrap"><canvas id="benchChart" height="320"></canvas></div>
+    <h3 class="bench-h3">Leaderboard</h3>
+    <div id="bench-list" class="list"></div>
+    <div class="bench-disclaimer">
+      Benchmark scores are curated from official leaderboards (SWE-bench, Terminal-Bench, OSWorld, GAIA) and public reports — figures are approximate, may not reflect the latest evaluations, and SWE-bench has known contamination issues (Pro is the harder, contamination-free version). Verify against the original source before making decisions.
+    </div>
+  </div>
+
+  <div id="pane-papers" class="pane"><div class="papers" id="papers-content"></div></div>
+  <div id="pane-news" class="pane"><div class="news-list" id="news-content"></div></div>
+
+</div>
+
+<script type="application/json" id="snapshot-data">
+{
+  "lastUpdated": "2026-05-28T08:25:00-07:00",
+  "codingAgents": [
+    {"name":"OpenCode","org":"opencode-ai","url":"https://github.com/opencode-ai/opencode","type":"CLI","license":"oss","stars":150000,"sweBench":null,"tags":["cli","open-source","byom","multi-model"],"summary":"Crossed 150K stars in early 2026; the de facto open-source CLI coding agent with ~6.5M monthly active developers."},
+    {"name":"OpenHands","org":"All-Hands-AI","url":"https://github.com/All-Hands-AI/OpenHands","type":"Cloud/CLI","license":"oss","stars":74800,"sweBench":56.0,"tags":["python","autonomous","browser","shell","docker"],"summary":"Full agentic developer environment — browses the web, runs shell, and commits PRs; MIT-licensed cloud platform."},
+    {"name":"Cline","org":"cline","url":"https://github.com/cline/cline","type":"IDE extension","license":"oss","stars":61000,"sweBench":59.8,"tags":["vscode","jetbrains","zed","neovim","byom"],"summary":"Most popular open-source AI coding extension — 5M+ installs across VS Code/Cursor/JetBrains/Zed; v3.83 May 2026."},
+    {"name":"Goose","org":"block","url":"https://github.com/block/goose","type":"CLI/Desktop","license":"oss","stars":45800,"sweBench":null,"tags":["rust","block","apache-2.0","local"],"summary":"Block's open-source local AI agent with extensible toolkit — runs on your machine, your model, your data."},
+    {"name":"Aider","org":"Aider-AI","url":"https://github.com/Aider-AI/aider","type":"CLI","license":"oss","stars":41000,"sweBench":31.4,"tags":["python","cli","git","architect-mode"],"summary":"Long-running CLI pair-programmer with deep git integration; architect mode for plan/execute splits."},
+    {"name":"oobabooga/textgen","org":"oobabooga","url":"https://github.com/oobabooga/textgen","type":"Desktop","license":"oss","stars":42000,"sweBench":null,"tags":["python","gradio","local","vision","tool-calling"],"summary":"Open-source desktop app for local LLMs with OpenAI/Anthropic-compatible API, vision, and tool-calling."},
+    {"name":"Claude Code","org":"Anthropic","url":"https://docs.claude.com/en/docs/claude-code","type":"CLI","license":"commercial","stars":null,"sweBench":80.9,"tags":["anthropic","cli","plugins","skills","mcp"],"summary":"Anthropic's official CLI agent — deepest reasoning, plugin/skill ecosystem; leads SWE-bench Verified at 80.9%."},
+    {"name":"OpenAI Codex","org":"OpenAI","url":"https://openai.com/codex","type":"CLI/Cloud","license":"commercial","stars":null,"sweBench":85.0,"tags":["openai","gpt-5","cli","cloud","fast"],"summary":"OpenAI Codex with GPT-5.5 — best overall workflow; Codex CLI leads Terminal-Bench at 77.3% and 240+ tok/s."},
+    {"name":"Cursor","org":"Anysphere","url":"https://cursor.com","type":"IDE","license":"commercial","stars":null,"sweBench":null,"tags":["ide","fork-of-vscode","completions","tab","composer"],"summary":"Benchmark IDE for AI-augmented coding — 360K paying users; tab completions and Composer agent."},
+    {"name":"Devin","org":"Cognition","url":"https://devin.ai","type":"Cloud","license":"commercial","stars":null,"sweBench":45.8,"tags":["cognition","autonomous","cloud","long-horizon"],"summary":"Long-horizon autonomous coding agent (Devin 2.0) with cloud workspaces; 45.8% on SWE-bench Verified."},
+    {"name":"Hermes Agent","org":"NousResearch","url":"https://github.com/nousresearch/hermes-agent","type":"CLI/Multi-channel","license":"oss","stars":null,"sweBench":null,"tags":["nous","persistent-memory","skill-creation","sqlite","300-models"],"summary":"Nous Research's self-improving CLI agent with persistent memory, auto-skill creation, and 300+ model support."},
+    {"name":"ForgeCode","org":"forgecode","url":"https://forgecode.dev","type":"CLI","license":"commercial","stars":null,"sweBench":null,"tags":["pair-programmer","300-models","refactor","custom-agents"],"summary":"AI pair programmer supporting 300+ models with task management, custom agents, and large-scale refactor tooling."},
+    {"name":"Roo Code","org":"RooCodeInc","url":"https://github.com/RooCodeInc/Roo-Code","type":"IDE extension","license":"oss","stars":24100,"sweBench":null,"tags":["fork-of-cline","vscode","shutting-down"],"summary":"Cline fork popular in VS Code; the Roo Code product family is shutting down May 15, 2026."},
+    {"name":"Kilo Code","org":"Kilo-Org","url":"https://github.com/Kilo-Org/kilocode","type":"IDE extension","license":"oss","stars":19600,"sweBench":null,"tags":["fork-of-cline","vscode","byom","apache-2.0"],"summary":"Cline fork focused on bring-your-own-model flexibility; Apache 2.0 licensed VS Code extension."},
+    {"name":"Continue","org":"continuedev","url":"https://github.com/continuedev/continue","type":"IDE extension","license":"oss","stars":31000,"sweBench":null,"tags":["vscode","jetbrains","customizable","apache-2.0"],"summary":"Customizable AI coding extension for VS Code and JetBrains; Apache 2.0 licensed."},
+    {"name":"Tabby","org":"TabbyML","url":"https://github.com/TabbyML/tabby","type":"Self-hosted","license":"oss","stars":33000,"sweBench":null,"tags":["self-hosted","completions","rust","apache-2.0"],"summary":"Self-hostable open-source code completion server — privacy-preserving alternative to Copilot."},
+    {"name":"GitHub Copilot","org":"GitHub","url":"https://github.com/features/copilot","type":"IDE extension","license":"commercial","stars":null,"sweBench":null,"tags":["github","ide","completions","agent-mode"],"summary":"GitHub's flagship coding assistant — completions plus Copilot Agent mode for multi-step tasks; $10/month."},
+    {"name":"Windsurf","org":"Codeium","url":"https://windsurf.com","type":"IDE","license":"commercial","stars":null,"sweBench":null,"tags":["codeium","ide","cascade","flow"],"summary":"Codeium's AI-native IDE with Cascade agent flow — $15/month Pro tier."},
+    {"name":"bolt.diy","org":"stackblitz-labs","url":"https://github.com/stackblitz-labs/bolt.diy","type":"Web","license":"oss","stars":19000,"sweBench":null,"tags":["webcontainer","in-browser","stackblitz","mit"],"summary":"In-browser full-stack agent powered by WebContainer; community fork of bolt.new under MIT license."},
+    {"name":"Grok Build","org":"xAI","url":"https://x.ai/grok-build","type":"CLI","license":"commercial","stars":null,"sweBench":null,"tags":["xai","grok","cli","beta","supergrok-heavy"],"summary":"xAI's agentic CLI coding agent (May 2026 beta) powered by grok-code-fast-1 for SuperGrok Heavy subscribers."},
+    {"name":"Antigravity CLI","org":"Google","url":"https://github.com/google/antigravity","type":"CLI","license":"commercial","stars":null,"sweBench":null,"tags":["google","cli","harness","gemini"],"summary":"Google's lightweight CLI companion (May 19, 2026) for creating and interacting with Gemini agent harnesses."},
+    {"name":"Gemini CLI","org":"Google","url":"https://github.com/google-gemini/gemini-cli","type":"CLI","license":"commercial","stars":null,"sweBench":null,"tags":["google","gemini","cli","tool-calling"],"summary":"Google's official Gemini CLI agent — terminal-native coding with Gemini 3.x models."},
+    {"name":"Jules","org":"Google","url":"https://jules.google","type":"Cloud","license":"commercial","stars":null,"sweBench":null,"tags":["google","async","github-pr","cloud"],"summary":"Google's async cloud coding agent — assigns issues, opens PRs in the background using Gemini."},
+    {"name":"pi-mono","org":"diskd-ai","url":"https://github.com/diskd-ai/pi-mono","type":"CLI/Toolkit","license":"oss","stars":44300,"sweBench":null,"tags":["typescript","minimal","coding-agent","unified-api","powers-openclaw"],"summary":"Minimal TypeScript agent toolkit (44.3K stars) — powers OpenClaw and Feynman; CLI, unified LLM API, TUI/web UI, Slack bot."},
+    {"name":"Warp","org":"warpdotdev","url":"https://github.com/warpdotdev/warp","type":"Terminal IDE","license":"oss","stars":null,"sweBench":null,"tags":["rust","agpl","oz","cloud-orchestration","multi-agent"],"summary":"Open-sourced agentic terminal — Agent Mode runs multi-step plans; Oz cloud layer orchestrates hundreds of parallel agents."},
+    {"name":"Feynman","org":"companion-inc","url":"https://github.com/companion-inc/feynman","type":"CLI","license":"oss","stars":null,"sweBench":null,"tags":["research","alphaxiv","pi-runtime","cli","v0.2.17"],"summary":"Open-source research CLI built on Pi runtime + alphaXiv — Researcher/Reviewer/Writer/Verifier subagents; v0.2.17 (Apr 2026)."},
+    {"name":"Sentrux","org":"sentrux","url":"https://github.com/sentrux/sentrux","type":"Sensor/Library","license":"oss","stars":null,"sweBench":null,"tags":["rust","tree-sitter","architecture","feedback-loop","quality-gate"],"summary":"Real-time architectural sensor for AI coding agents — measures modularity/acyclicity/depth/equality/redundancy; 52 languages, pure Rust."},
+    {"name":"RTK (Rust Token Killer)","org":"rtk-ai","url":"https://www.rtk-ai.app/","type":"CLI proxy","license":"oss","stars":55400,"sweBench":null,"tags":["rust","proxy","token-reduction","cost-cutting"],"summary":"CLI proxy that cuts LLM token consumption 60-90% on common dev commands; 55K stars in early 2026."},
+    {"name":"Claude Code (source leak note)","org":"Anthropic","url":"https://claudefa.st/blog/guide/mechanics/claude-code-source-leak","type":"Advisory","license":"commercial","stars":null,"sweBench":null,"tags":["security","source-leak","npm","trojanized","malware-warning"],"summary":"On Mar 31 2026 Anthropic accidentally shipped Claude Code's full TS source via npm sourcemap; trojanized 'leaked' repos spread Vidar+GhostSocks malware."}
+  ],
+  "generalAgents": [
+    {"name":"OpenClaw","org":"openclaw","url":"https://github.com/openclaw/openclaw","type":"Personal AI","license":"oss","stars":350000,"sweBench":null,"tags":["multi-channel","whatsapp","telegram","slack","discord","cron","canvas"],"summary":"Personal AI assistant connecting WhatsApp/Telegram/Slack/Discord/iMessage; >350K stars by April 2026 — top-5 GitHub repo."},
+    {"name":"NanoClaw","org":"nanocoai","url":"https://github.com/nanocoai/nanoclaw","type":"Personal AI","license":"oss","stars":null,"sweBench":null,"tags":["container","security","anthropic-sdk","lightweight","docker"],"summary":"Security-first OpenClaw alternative — each session runs in its own self-destructing Docker container; built on Anthropic Agent SDK."},
+    {"name":"Manus AI","org":"Manus","url":"https://manus.im","type":"General autonomous","license":"commercial","stars":null,"sweBench":null,"tags":["meta-acquired","sandbox-vm","browser","terminal","autonomous"],"summary":"General-purpose autonomous agent with sandbox VM (real browser + terminal + filesystem); Meta acquired Dec 2025 for ~$2-3B."},
+    {"name":"Browser Use","org":"browser-use","url":"https://github.com/browser-use/browser-use","type":"Browser agent","license":"oss","stars":92000,"sweBench":null,"tags":["python","playwright","browser","scraping","mit"],"summary":"De-facto open-source browser automation agent in 2026; 92K stars, Python + Playwright stack under MIT license."},
+    {"name":"Gemini Spark","org":"Google","url":"https://gemini.google.com/spark","type":"In-app agent","license":"commercial","stars":null,"sweBench":null,"tags":["google","gemini","multi-step","preview"],"summary":"Google's branded agent capability inside the Gemini app for autonomously running multi-step processes; previewed May 14, 2026."},
+    {"name":"Gemini Intelligence","org":"Google","url":"https://blog.google/products/gemini","type":"On-device agent","license":"commercial","stars":null,"sweBench":null,"tags":["google","android","wear-os","samsung","pixel","proactive"],"summary":"Proactive agentic AI integrated into Android/Wear OS/Galaxy/Pixel; auto-creates shopping carts and books classes (May 12, 2026)."},
+    {"name":"QwenPaw","org":"Alibaba","url":"https://qwenpaw.com","type":"Personal AI","license":"oss","stars":null,"sweBench":null,"tags":["qwen","self-hosted","local-first","memory","discord","telegram"],"summary":"Self-hostable personal assistant (rebranded from CoPaw, May 2026) with local-first memory and multi-channel support."},
+    {"name":"OpenAI Operator","org":"OpenAI","url":"https://openai.com/operator","type":"Browser agent","license":"commercial","stars":null,"sweBench":null,"tags":["openai","cua","browser","web-task"],"summary":"OpenAI's Computer-Using Agent that operates a remote browser to complete tasks autonomously."},
+    {"name":"Claude Computer Use","org":"Anthropic","url":"https://www.anthropic.com/news/3-5-models-and-computer-use","type":"Computer-use","license":"commercial","stars":null,"sweBench":null,"tags":["anthropic","desktop-control","claude","api"],"summary":"Anthropic's computer-use API — Claude controls a real desktop via screenshots and mouse/keyboard actions."},
+    {"name":"Grok 4.3","org":"xAI","url":"https://x.ai","type":"Agent platform","license":"commercial","stars":null,"sweBench":null,"tags":["xai","grok","tool-calling","long-horizon","azure-foundry"],"summary":"xAI flagship for agentic workloads — GA on Microsoft Foundry & OCI Generative AI (May 2026)."},
+    {"name":"AI Scientist","org":"SakanaAI","url":"https://github.com/SakanaAI/AI-Scientist","type":"Research","license":"oss","stars":null,"sweBench":null,"tags":["sakana","autonomous-discovery","papers","experiments","foundation-models"],"summary":"First comprehensive system for fully automatic scientific discovery — autonomous LLM research from idea to manuscript."},
+    {"name":"AI Scientist v2","org":"SakanaAI","url":"https://github.com/SakanaAI/AI-Scientist-v2","type":"Research","license":"oss","stars":null,"sweBench":null,"tags":["sakana","agentic-tree-search","workshop-paper","peer-reviewed"],"summary":"Generalized AI Scientist with progressive agentic tree search — generated the first workshop paper accepted through peer review."},
+    {"name":"AI-Researcher","org":"HKUDS","url":"https://github.com/HKUDS/AI-Researcher","type":"Research","license":"oss","stars":null,"sweBench":null,"tags":["neurips2025","autonomous-pipeline","novix","gap-detection"],"summary":"NeurIPS 2025 autonomous research agent — identifies research gaps, proposes approaches, runs the full research pipeline."},
+    {"name":"OpenAGS","org":"openags","url":"https://github.com/openags/OpenAGS","type":"Research","license":"oss","stars":null,"sweBench":null,"tags":["multi-agent","lit-review","hypothesis","peer-review","collaborative"],"summary":"Autonomous Generalist Scientist — team of agents across literature review, hypothesis, experiments, manuscript, peer review."},
+    {"name":"ml-intern","org":"huggingface","url":"https://github.com/huggingface/ml-intern","type":"Research","license":"oss","stars":6300,"sweBench":null,"tags":["huggingface","post-training","fine-tuning","sandbox","gpqa"],"summary":"HF's open ML engineer agent — pushed Qwen3-1.7B from 10% to 32% GPQA in 10h on one H100; hit #1 trending April 2026."},
+    {"name":"OpenShell","org":"NVIDIA","url":"https://github.com/NVIDIA/OpenShell","type":"Runtime","license":"oss","stars":null,"sweBench":null,"tags":["nvidia","sandbox","yaml-policies","enterprise","langchain"],"summary":"NVIDIA's safe private runtime for autonomous agents — YAML-policy sandboxing on RTX/DGX; LangChain contributes to repo."},
+    {"name":"NemoClaw","org":"NVIDIA","url":"https://github.com/NVIDIA/NemoClaw","type":"Personal AI","license":"oss","stars":null,"sweBench":null,"tags":["nvidia","openshell","enterprise","preview","managed-inference"],"summary":"NVIDIA's secure OpenClaw — adds OpenShell sandboxing, privacy router, YAML policy enforcement; preview from Mar 16, 2026."},
+    {"name":"OpenSandbox","org":"alibaba","url":"https://github.com/alibaba/OpenSandbox","type":"Runtime","license":"oss","stars":null,"sweBench":null,"tags":["alibaba","sandbox","docker","kubernetes","multi-language-sdk"],"summary":"Alibaba's sandbox runtime — isolated execution for Claude Code/Gemini CLI/Codex, Chrome+Playwright workloads, RL training."},
+    {"name":"OpenGauss","org":"math-inc","url":"https://github.com/math-inc/OpenGauss","type":"Math agent","license":"oss","stars":null,"sweBench":null,"tags":["math-inc","lean","autoformalization","subagents","aristotle-beating"],"summary":"State-of-the-art Lean autoformalization harness — beats Harmonic's Aristotle on FormalQualBench; coordinates parallel subagents."},
+    {"name":"Open Notebook","org":"lfnovo","url":"https://github.com/lfnovo/open-notebook","type":"Knowledge agent","license":"oss","stars":23800,"sweBench":null,"tags":["notebooklm-alt","self-hosted","podcasts","18-providers","privacy"],"summary":"Self-hosted NotebookLM alternative — 23.8K stars; 18+ AI providers, podcast generation, vector search; v1.8.5 (Apr 2026)."},
+    {"name":"DeerFlow","org":"bytedance","url":"https://github.com/bytedance/deer-flow","type":"SuperAgent","license":"oss","stars":25000,"sweBench":null,"tags":["bytedance","langgraph","subagents","memory","tools","skills"],"summary":"ByteDance's long-horizon super-agent harness on LangGraph — orchestrates subagents, memory, sandboxes; #1 trending Feb 27, 2026."},
+    {"name":"OpenWhispr","org":"OpenWhispr","url":"https://github.com/OpenWhispr/openwhispr","type":"Voice agent","license":"oss","stars":null,"sweBench":null,"tags":["voice","whisper","parakeet","local","meeting-transcription"],"summary":"Local voice-to-text dictation agent — Whisper/Parakeet local, BYOK cloud, meetings transcription, semantic-search notes."},
+    {"name":"Openwork","org":"langchain-ai","url":"https://github.com/langchain-ai/openwork","type":"Desktop harness","license":"oss","stars":null,"sweBench":null,"tags":["langchain","deepagentsjs","filesystem","subagents","node-18"],"summary":"LangChain's desktop interface for deepagentsjs — opinionated harness for deep agents with planning, filesystem, subagents."}
+  ],
+  "frameworks": [
+    {"name":"CrewAI","org":"crewAIInc","url":"https://github.com/crewAIInc/crewAI","type":"Multi-agent","license":"oss","stars":45400,"sweBench":null,"tags":["python","role-based","crews","v1.10.1"],"summary":"Role-playing multi-agent framework — 45.4K stars, v1.10.1 March 2026; popular for orchestrated agent crews."},
+    {"name":"AutoGen","org":"microsoft","url":"https://github.com/microsoft/autogen","type":"Multi-agent","license":"oss","stars":42000,"sweBench":null,"tags":["microsoft","python","conversational","stale"],"summary":"Microsoft's multi-agent conversation framework — leads in stars (42K+) but hasn't shipped a release in six months."},
+    {"name":"smolagents","org":"huggingface","url":"https://github.com/huggingface/smolagents","type":"Code-agents","license":"oss","stars":14800,"sweBench":null,"tags":["huggingface","python","code-as-action","minimal"],"summary":"Hugging Face's minimal code-action agent library — grew from 0 to 14.8K stars in 15 months."},
+    {"name":"LangGraph","org":"langchain-ai","url":"https://github.com/langchain-ai/langgraph","type":"Graph orchestration","license":"oss","stars":12800,"sweBench":null,"tags":["langchain","graph","stateful","enterprise"],"summary":"LangChain's stateful graph orchestration library — 12.8K stars, fastest enterprise adoption in early 2026."},
+    {"name":"OpenAI Agents SDK","org":"openai","url":"https://github.com/openai/openai-agents-python","type":"Agent SDK","license":"oss","stars":null,"sweBench":null,"tags":["openai","python","handoffs","tracing","fast-shipping"],"summary":"OpenAI's official agent SDK — fewest stars but shipping multiple releases per week."},
+    {"name":"Claude Agent SDK","org":"anthropics","url":"https://github.com/anthropics/claude-agent-sdk","type":"Agent SDK","license":"oss","stars":null,"sweBench":null,"tags":["anthropic","python","typescript","skills","mcp"],"summary":"Anthropic's SDK for building Claude-powered agents — same primitives that power Claude Code."},
+    {"name":"Pydantic AI","org":"pydantic","url":"https://github.com/pydantic/pydantic-ai","type":"Agent SDK","license":"oss","stars":null,"sweBench":null,"tags":["pydantic","python","type-safe","typed-tools"],"summary":"Type-safe Python agent framework built on Pydantic — typed tools and structured output by default."},
+    {"name":"AG2","org":"ag2ai","url":"https://github.com/ag2ai/ag2","type":"Multi-agent","license":"oss","stars":null,"sweBench":null,"tags":["fork-of-autogen","python","conversational"],"summary":"Community fork of AutoGen — more active release cadence than its parent project."},
+    {"name":"LangChain","org":"langchain-ai","url":"https://github.com/langchain-ai/langchain","type":"Toolkit","license":"oss","stars":null,"sweBench":null,"tags":["python","javascript","chains","tools","integrations"],"summary":"Foundational LLM toolkit — extensive integrations across models, vector stores, and tools."},
+    {"name":"DSPy","org":"stanfordnlp","url":"https://github.com/stanfordnlp/dspy","type":"Compiler","license":"oss","stars":null,"sweBench":null,"tags":["stanford","python","programmatic","optimization"],"summary":"Programmatic framework for LLM pipelines that auto-optimizes prompts and weights."}
+  ],
+  "mcps": [
+    {"name":"modelcontextprotocol/servers","org":"modelcontextprotocol","url":"https://github.com/modelcontextprotocol/servers","type":"Reference","license":"oss","stars":null,"sweBench":null,"tags":["official","filesystem","git","fetch","memory","time"],"summary":"Official reference MCP servers — Everything, Fetch, Filesystem, Git, Memory, Sequential Thinking, Time."},
+    {"name":"K2view MCP","org":"k2view","url":"https://www.k2view.com/products/mcp","type":"Enterprise data","license":"commercial","stars":null,"sweBench":null,"tags":["enterprise","data","secure","gen-ai"],"summary":"Leading MCP revolution by providing secure access to enterprise data for generative AI workflows."},
+    {"name":"Zapier MCP","org":"zapier","url":"https://zapier.com/mcp","type":"Automation","license":"commercial","stars":null,"sweBench":null,"tags":["zapier","workflows","integrations","triggers"],"summary":"Exposes Zapier workflows, triggers, and automations to LLMs across thousands of apps."},
+    {"name":"Notion MCP","org":"notion","url":"https://github.com/makenotion/notion-mcp-server","type":"Knowledge","license":"oss","stars":null,"sweBench":null,"tags":["notion","docs","databases","apache-2.0"],"summary":"Official Notion MCP server — read/write Notion pages and databases from agents."},
+    {"name":"Supabase MCP","org":"supabase","url":"https://github.com/supabase-community/supabase-mcp","type":"Database","license":"oss","stars":null,"sweBench":null,"tags":["supabase","postgres","sql","auth"],"summary":"Supabase MCP server — connect agents to Postgres databases, auth, and storage."},
+    {"name":"Cloudflare MCP","org":"cloudflare","url":"https://github.com/cloudflare/mcp-server-cloudflare","type":"Edge","license":"oss","stars":null,"sweBench":null,"tags":["cloudflare","edge","r2","workers","durable-objects"],"summary":"Edge orchestration MCP — distributes computation and context across Cloudflare's edge network."},
+    {"name":"Vectara MCP","org":"vectara","url":"https://github.com/vectara/vectara-mcp","type":"RAG","license":"oss","stars":null,"sweBench":null,"tags":["semantic-search","rag","embeddings"],"summary":"Commercial MCP server for semantic search and RAG with custom domain embeddings."},
+    {"name":"Pinecone MCP","org":"pinecone-io","url":"https://github.com/pinecone-io/pinecone-mcp","type":"Vector DB","license":"oss","stars":null,"sweBench":null,"tags":["pinecone","vector-db","embeddings"],"summary":"Pinecone vector database MCP — query and write embeddings from agents."},
+    {"name":"Salesforce MCP","org":"salesforce","url":"https://www.salesforce.com/mcp","type":"CRM","license":"commercial","stars":null,"sweBench":null,"tags":["salesforce","crm","apex","data-cloud"],"summary":"Salesforce's official MCP — agents read/write Salesforce records, run reports, query Data Cloud."},
+    {"name":"awesome-openclaw-agents","org":"mergisi","url":"https://github.com/mergisi/awesome-openclaw-agents","type":"Marketplace","license":"oss","stars":null,"sweBench":null,"tags":["openclaw","templates","soul-md","marketplace"],"summary":"162 production-ready OpenClaw agent templates (SOUL.md configs) across 19 categories — community marketplace."}
+  ],
+  "benchmarks": [
+    {
+      "id": "swe_verified",
+      "name": "SWE-bench Verified",
+      "category": "Software engineering",
+      "description": "500 hand-validated GitHub issues from 12 Python repos. The standard test for autonomous coding agents — known to have contamination concerns vs. Pro.",
+      "source": "swebench.com",
+      "url": "https://www.swebench.com/",
+      "scale": "% resolved",
+      "scores": [
+        {"agent":"Claude Mythos Preview","org":"Anthropic","score":93.9,"open":false,"url":"https://www.anthropic.com","note":"May 2026 preview"},
+        {"agent":"Claude Opus 4.7 (Adaptive)","org":"Anthropic","score":87.6,"open":false,"url":"https://www.anthropic.com/claude"},
+        {"agent":"GPT-5.3 Codex","org":"OpenAI","score":85.0,"open":false,"url":"https://openai.com"},
+        {"agent":"Claude Opus 4.6","org":"Anthropic","score":80.9,"open":false,"url":"https://www.anthropic.com/claude"},
+        {"agent":"GPT-5.2","org":"OpenAI","score":80.0,"open":false,"url":"https://openai.com"},
+        {"agent":"Claude Code (Opus 4.5)","org":"Anthropic","score":80.9,"open":false,"url":"https://docs.claude.com/en/docs/claude-code"},
+        {"agent":"Cline (Sonnet 4.5)","org":"Cline","score":59.8,"open":true,"url":"https://github.com/cline/cline"},
+        {"agent":"OpenHands","org":"All-Hands-AI","score":56.0,"open":true,"url":"https://github.com/All-Hands-AI/OpenHands"},
+        {"agent":"Devin 2.0","org":"Cognition","score":45.8,"open":false,"url":"https://devin.ai"},
+        {"agent":"Aider (architect mode)","org":"Aider-AI","score":31.4,"open":true,"url":"https://github.com/Aider-AI/aider"}
+      ]
+    },
+    {
+      "id": "swe_pro",
+      "name": "SWE-bench Pro",
+      "category": "Software engineering",
+      "description": "Harder, contamination-free SWE-bench variant. Same models score dramatically lower here — Mythos drops from 93.9% to 45.9%.",
+      "source": "morphllm.com/swe-bench-pro",
+      "url": "https://www.morphllm.com/swe-bench-pro",
+      "scale": "% resolved",
+      "scores": [
+        {"agent":"Claude Mythos Preview","org":"Anthropic","score":45.9,"open":false,"url":"https://www.anthropic.com","note":"Best public score"},
+        {"agent":"Claude Opus 4.7","org":"Anthropic","score":41.0,"open":false,"url":"https://www.anthropic.com/claude"},
+        {"agent":"GPT-5.3 Codex","org":"OpenAI","score":38.5,"open":false,"url":"https://openai.com"},
+        {"agent":"Claude Opus 4.6","org":"Anthropic","score":36.0,"open":false,"url":"https://www.anthropic.com/claude"},
+        {"agent":"OpenHands","org":"All-Hands-AI","score":28.0,"open":true,"url":"https://github.com/All-Hands-AI/OpenHands"},
+        {"agent":"Cline","org":"Cline","score":24.0,"open":true,"url":"https://github.com/cline/cline"}
+      ]
+    },
+    {
+      "id": "terminal_bench",
+      "name": "Terminal-Bench Core",
+      "category": "Shell agent",
+      "description": "~89 Linux shell tasks; agent receives a natural-language prompt and must complete it via bash. Scored on exit codes, file diffs, output strings.",
+      "source": "benchmarkingagents.com/terminal-bench",
+      "url": "https://benchmarkingagents.com/terminal-bench/",
+      "scale": "% complete",
+      "scores": [
+        {"agent":"Codex CLI (GPT-5.5)","org":"OpenAI","score":77.3,"open":false,"url":"https://openai.com/codex"},
+        {"agent":"Claude Code","org":"Anthropic","score":72.0,"open":false,"url":"https://docs.claude.com/en/docs/claude-code"},
+        {"agent":"OpenHands","org":"All-Hands-AI","score":58.0,"open":true,"url":"https://github.com/All-Hands-AI/OpenHands"},
+        {"agent":"Aider","org":"Aider-AI","score":42.0,"open":true,"url":"https://github.com/Aider-AI/aider"},
+        {"agent":"Goose","org":"block","score":38.0,"open":true,"url":"https://github.com/block/goose"}
+      ]
+    },
+    {
+      "id": "osworld",
+      "name": "OSWorld",
+      "category": "Desktop GUI",
+      "description": "369 tasks; agent receives a screenshot of Ubuntu/Windows/macOS and a natural-language instruction. Controls the desktop via mouse/keyboard.",
+      "source": "os-world.github.io",
+      "url": "https://os-world.github.io/",
+      "scale": "% complete",
+      "scores": [
+        {"agent":"Claude Computer Use (Opus 4.6)","org":"Anthropic","score":38.5,"open":false,"url":"https://www.anthropic.com/news/3-5-models-and-computer-use"},
+        {"agent":"OpenAI Operator (GPT-5)","org":"OpenAI","score":36.0,"open":false,"url":"https://openai.com/operator"},
+        {"agent":"Gemini Computer Use","org":"Google","score":31.0,"open":false,"url":"https://deepmind.google"},
+        {"agent":"Manus AI","org":"Manus","score":28.0,"open":false,"url":"https://manus.im"}
+      ]
+    },
+    {
+      "id": "gaia",
+      "name": "GAIA",
+      "category": "General assistant",
+      "description": "466 tasks requiring web tools, file parsers, calculators. Answers scored against human-annotated ground truth.",
+      "source": "huggingface.co/gaia-benchmark",
+      "url": "https://huggingface.co/gaia-benchmark",
+      "scale": "% accuracy",
+      "scores": [
+        {"agent":"Manus AI","org":"Manus","score":86.0,"open":false,"url":"https://manus.im"},
+        {"agent":"Claude (Opus 4.6) + tools","org":"Anthropic","score":78.0,"open":false,"url":"https://www.anthropic.com/claude"},
+        {"agent":"GPT-5.3 (Codex agent)","org":"OpenAI","score":75.0,"open":false,"url":"https://openai.com"},
+        {"agent":"OpenHands","org":"All-Hands-AI","score":62.0,"open":true,"url":"https://github.com/All-Hands-AI/OpenHands"},
+        {"agent":"smolagents (CodeAct)","org":"huggingface","score":55.0,"open":true,"url":"https://github.com/huggingface/smolagents"}
+      ]
+    }
+  ],
+  "papers": [
+    {"title":"SWE-WebDevBench: Evaluating Coding Agent Application Platforms as Virtual Software Agencies","authors":"Siddhant Saxena, Nilesh Trivedi, Vinayaka Jyothi","published":"2026-05-06","summary":"Evaluation framework assessing AI-powered application development platforms across requirement understanding, architectural decisions, code quality, and production readiness.","url":"https://hf.co/papers/2605.04637"},
+    {"title":"ceLLMate: Sandboxing Browser AI Agents","authors":"Luoxi Meng, Henry Feng, Ilia Shumailov, Earlence Fernandes","published":"2026-03-04","summary":"Browser-level sandboxing framework that mitigates prompt injection vulnerabilities by restricting ambient authority at the HTTP layer.","url":"https://hf.co/papers/2512.12594"},
+    {"title":"SWE-AGI: Benchmarking Specification-Driven Software Construction with MoonBit","authors":"Zhirui Zhang, Hongbo Zhang, Haoxiang Fei, et al.","published":"2026-02-10","summary":"Benchmark evaluating LLM agents' capability to construct large-scale software systems from specifications; reveals challenges in autonomous production-level development.","url":"https://hf.co/papers/2602.09447"},
+    {"title":"Advances and Frontiers of LLM-based Issue Resolution: A Survey","authors":"Caihua Li, Lianghong Guo, Yanlin Wang, et al.","published":"2026-01-15","summary":"Comprehensive survey of autonomous coding agents through training-free and training-based methodologies for software issue resolution.","url":"https://hf.co/papers/2601.11655"},
+    {"title":"InfiniteWeb: Scalable Web Environment Synthesis for GUI Agent Training","authors":"Ziyun Zhang, Zezhou Wang, Xiaoyi Zhang, et al.","published":"2026-01-07","summary":"Automates scalable generation of functional web environments for GUI agent training through unified specification and task-driven development.","url":"https://hf.co/papers/2601.04126"},
+    {"title":"Live-SWE-agent: Can Software Engineering Agents Self-Evolve on the Fly?","authors":"Chunqiu Steven Xia, Zhe Wang, Yan Yang, Yuxiang Wei, Lingming Zhang","published":"2025-11-17","summary":"Live-evolving SWE agent that adapts strategies on the fly during issue resolution.","url":"https://hf.co/papers/2511.13646"},
+    {"title":"ProBench: Benchmarking GUI Agents with Accurate Process Information","authors":"Leyang Yang, Ziwei Wang, Xiaoxuan Tang, et al.","published":"2025-11-12","summary":"Mobile benchmark evaluating both state and process performance of GUI agents; reveals real-world limitations.","url":"https://hf.co/papers/2511.09157"},
+    {"title":"BrowserAgent: Building Web Agents with Human-Inspired Web Browsing Actions","authors":"Zhengbo Zhang, Zhiheng Lyu, Junhao Gong, et al.","published":"2025-10-12","summary":"Interactive web agent using human-like browser actions and two-stage training; competitive on Open-QA with less data.","url":"https://hf.co/papers/2510.10666"}
+  ],
+  "news": [
+    {"date":"2026-05-27","title":"OpenAI named Leader in enterprise coding agents (Gartner)","summary":"Gartner's first Magic Quadrant for enterprise coding agents puts OpenAI Codex in the leader position; Anthropic and Microsoft also in the upper-right.","url":"https://openai.com/news/","source":"OpenAI"},
+    {"date":"2026-05-26","title":"Anthropic appoints KiYoung Choi as Korea representative","summary":"Anthropic readies a Seoul office and grows APAC presence ahead of an expected Korea-region Claude offering.","url":"https://www.anthropic.com/news","source":"Anthropic"},
+    {"date":"2026-05-26","title":"X buzz: Anthropic ships scheduled tasks for Claude Code","summary":"Viral 'Claude's own OpenClaw' thread — Claude Code now runs scheduled tasks autonomously without user prompting.","url":"https://x.com/CodeByPoonam/status/2030192545976963147","source":"X / @CodeByPoonam"},
+    {"date":"2026-05-25","title":"X buzz: 'nanobot' fork ships OpenClaw in ~4K LoC","summary":"99%-smaller community fork emerges as OpenClaw codebase balloons from 400K to 1M LoC under heavy AI-driven contributions.","url":"https://x.com/GenAI_is_real/status/2029995299972993458","source":"X"},
+    {"date":"2026-05-24","title":"X buzz: NanoClaw walkthrough goes viral","summary":"TuringPost's 8-minute walkthrough of NanoClaw — minimal container-isolated Claude personal assistant — racks up shares.","url":"https://x.com/TheTuringPost/status/2025876086035464512","source":"X / @TheTuringPost"},
+    {"date":"2026-05-20","title":"Camunda announces ProcessOS (closed beta)","summary":"AI intelligence layer that discovers, re-engineers, and optimizes business processes as agentic workflows.","url":"https://camunda.com","source":"Camunda"},
+    {"date":"2026-05-19","title":"Anthropic ships MCP tunnels (research preview)","summary":"Claude Managed Agents gains public-beta self-hosted sandboxes and 'MCP tunnels' for outbound-only encrypted gateway to internal MCP servers.","url":"https://www.anthropic.com/news","source":"Anthropic"},
+    {"date":"2026-05-19","title":"Google releases Antigravity CLI","summary":"Lightweight CLI companion for creating and interacting with Google agent harnesses directly from the terminal.","url":"https://github.com/google/antigravity","source":"Google"},
+    {"date":"2026-05-15","title":"Roo Code product family shutdown","summary":"Roo Code Extension, Cloud, and Router all shut down today; users migrating to Cline or Kilo Code.","url":"https://github.com/RooCodeInc/Roo-Code","source":"RooCodeInc"},
+    {"date":"2026-05-14","title":"xAI launches Grok Build (early beta)","summary":"Agentic CLI coding agent powered by grok-code-fast-1, available to SuperGrok Heavy subscribers.","url":"https://x.ai/grok-build","source":"xAI"},
+    {"date":"2026-05-12","title":"Google announces Gemini Intelligence at I/O","summary":"Proactive agentic AI integrated into Android/Wear OS/Galaxy/Pixel — auto-creates shopping carts, books spin classes.","url":"https://blog.google/products/gemini","source":"Google"},
+    {"date":"2026-05-02","title":"Warp ships agentic terminal v2","summary":"Open-sources its terminal under AGPLv3 and introduces an agent-first contribution model powered by Oz and OpenAI.","url":"https://www.warp.dev/warp-ai","source":"Warp"}
+  ]
+}
+</script>
+
+<script>
+(() => {
+  const ICO = {
+    star: '<svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1.5l2.06 4.18 4.62.67-3.34 3.26.79 4.6L8 12.04l-4.13 2.17.79-4.6L1.32 6.35l4.62-.67z"/></svg>',
+    trend: '<svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l4-4 3 3 4-5"/><path d="M10 5h4v4"/></svg>',
+    paper: '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2.5h6l3 3V13a.5.5 0 0 1-.5.5h-8.5a.5.5 0 0 1-.5-.5V3a.5.5 0 0 1 .5-.5z"/><path d="M10 2.5V6h3"/></svg>',
+    news: '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h12v9H2z"/><path d="M5 7h6M5 10h4"/></svg>',
+  };
+
+  const state = {
+    license: localStorage.getItem('agents.license') || 'all',
+    sortBy: localStorage.getItem('agents.sortBy') || 'stars',
+    search: '',
+    showSummary: localStorage.getItem('agents.showSummary') !== '0',
+    snapshot: { lastUpdated: null, codingAgents: [], generalAgents: [], frameworks: [], mcps: [], benchmarks: [], papers: [], news: [] },
+  };
+
+  const $ = sel => document.querySelector(sel);
+  const els = {
+    license: $('#licenseFilter'), sortBy: $('#sortBy'),
+    search: $('#searchBox'), showSummary: $('#showSummary'),
+    coding: $('#coding-content'), general: $('#general-content'),
+    frameworks: $('#frameworks-content'), mcps: $('#mcps-content'),
+    papers: $('#papers-content'), news: $('#news-content'),
+    countCoding: $('#count-coding'), countGeneral: $('#count-general'),
+    countFrameworks: $('#count-frameworks'), countMcps: $('#count-mcps'),
+    countBench: $('#count-benchmarks'), countPapers: $('#count-papers'), countNews: $('#count-news'),
+    statCoding: $('#stat-coding'), statGeneral: $('#stat-general'),
+    statSwe: $('#stat-swe'), statSweSub: $('#stat-swe-sub'),
+    statHot: $('#stat-hot'), statHotSub: $('#stat-hot-sub'),
+    updated: $('#updated'), updatedText: $('#updated-text'),
+    firstRun: $('#first-run-banner'),
+  };
+
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function fmt(n) {
+    n = +n || 0;
+    if (n >= 1e6) return (n/1e6).toFixed(n>=1e7?0:1).replace(/\.0$/,'') + 'M';
+    if (n >= 1e3) return (n/1e3).toFixed(n>=1e4?0:1).replace(/\.0$/,'') + 'K';
+    return String(n);
+  }
+  function parseDate(v) { if (!v) return null; const d = new Date(v); return isNaN(d.getTime()) ? null : d; }
+  function avatarFor(seed) {
+    if (!seed) return { initial: '?', bg: '#f5f5f1', fg: '#8a8275' };
+    const ch = seed.charAt(0).toUpperCase();
+    let h = 0; for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+    const hue = h % 360;
+    return { initial: ch, bg: `hsl(${hue} 32% 92%)`, fg: `hsl(${hue} 38% 32%)` };
+  }
+
+  function loadSnapshot() {
+    try {
+      const node = document.getElementById('snapshot-data');
+      if (!node) return;
+      const d = JSON.parse(node.textContent || '{}');
+      state.snapshot = {
+        lastUpdated: d.lastUpdated || null,
+        codingAgents: Array.isArray(d.codingAgents) ? d.codingAgents : [],
+        generalAgents: Array.isArray(d.generalAgents) ? d.generalAgents : [],
+        frameworks: Array.isArray(d.frameworks) ? d.frameworks : [],
+        mcps: Array.isArray(d.mcps) ? d.mcps : [],
+        benchmarks: Array.isArray(d.benchmarks) ? d.benchmarks : [],
+        papers: Array.isArray(d.papers) ? d.papers : [],
+        news: Array.isArray(d.news) ? d.news : [],
+      };
+    } catch (e) { console.warn('Bad snapshot JSON', e); }
+  }
+
+  function applyFilters(items) {
+    const q = state.search.trim().toLowerCase();
+    let out = items.filter(it => {
+      if (state.license === 'oss' && it.license !== 'oss') return false;
+      if (state.license === 'commercial' && it.license !== 'commercial') return false;
+      if (q) {
+        const hay = ((it.name || '') + ' ' + (it.org || '') + ' ' + (it.tags || []).join(' ') + ' ' + (it.summary || '')).toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+    out.sort((a, b) => {
+      if (state.sortBy === 'name') return (a.name || '').localeCompare(b.name || '');
+      if (state.sortBy === 'sweBench') return (+b.sweBench || 0) - (+a.sweBench || 0);
+      return (+b.stars || 0) - (+a.stars || 0);
+    });
+    return out;
+  }
+
+  function renderItem(it, rank) {
+    const av = avatarFor(it.org || it.name);
+    const tags = (it.tags || []).slice(0, 5);
+    const licClass = it.license === 'oss' ? 'oss' : (it.license === 'commercial' ? 'commercial' : '');
+    const licLabel = it.license === 'oss' ? 'open' : (it.license === 'commercial' ? 'commercial' : '');
+    return `
+      <div class="row">
+        <div class="rank ${rank <= 3 ? 'top-3' : ''}">${rank}</div>
+        <div class="avatar" style="background:${av.bg};color:${av.fg}">${esc(av.initial)}</div>
+        <div class="row-main">
+          <div class="row-title">
+            <a href="${esc(it.url || '#')}" target="_blank" rel="noopener">${esc(it.name || '')}</a>
+            ${it.org ? `<span class="row-author">${esc(it.org)}</span>` : ''}
+            ${it.type ? `<span class="chip type">${esc(it.type)}</span>` : ''}
+            ${licLabel ? `<span class="chip license ${licClass}">${licLabel}</span>` : ''}
+          </div>
+          ${tags.length ? `<div class="row-tags">${tags.map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>` : ''}
+          ${state.showSummary && it.summary ? `<div class="summary">${esc(it.summary)}</div>` : ''}
+        </div>
+        <div class="row-stats">
+          ${it.stars ? `<div class="star-pill">${ICO.star} ${fmt(it.stars)}</div>` : ''}
+          ${it.sweBench != null ? `<div class="score-pill">SWE ${it.sweBench}%</div>` : ''}
+        </div>
+      </div>
+    `;
+  }
+
+  function renderPane(target, items, label) {
+    const filtered = applyFilters(items);
+    if (!filtered.length) {
+      target.innerHTML = `<div class="empty"><div class="empty-title">No ${esc(label)} match.</div><div class="empty-sub">Try a different filter.</div></div>`;
+      return filtered;
+    }
+    target.innerHTML = filtered.map((it, i) => renderItem(it, i + 1)).join('');
+    return filtered;
+  }
+
+  function renderPapers() {
+    const list = state.snapshot.papers;
+    els.countPapers.textContent = list.length;
+    if (!list.length) {
+      els.papers.innerHTML = `<div class="empty"><div class="empty-title">No papers in snapshot.</div></div>`;
+      return;
+    }
+    els.papers.innerHTML = list.map(p => `
+      <div class="paper">
+        <div class="paper-icon">${ICO.paper}</div>
+        <div>
+          <div class="paper-title"><a href="${esc(p.url || '#')}" target="_blank" rel="noopener">${esc(p.title || '')}</a></div>
+          <div class="paper-meta">${esc(p.published || '')}${p.authors ? ' · ' + esc(p.authors.length > 110 ? p.authors.slice(0, 110) + '…' : p.authors) : ''}</div>
+          ${p.summary ? `<div class="paper-summary">${esc(p.summary)}</div>` : ''}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function renderNews() {
+    const list = state.snapshot.news;
+    els.countNews.textContent = list.length;
+    if (!list.length) {
+      els.news.innerHTML = `<div class="empty"><div class="empty-title">No news in snapshot.</div></div>`;
+      return;
+    }
+    els.news.innerHTML = list.map(n => `
+      <div class="news-item">
+        <div class="news-icon">${ICO.news}</div>
+        <div>
+          <div class="news-title"><a href="${esc(n.url || '#')}" target="_blank" rel="noopener">${esc(n.title || '')}</a></div>
+          <div class="news-meta">${esc(n.date || '')}${n.source ? ' · ' + esc(n.source) : ''}</div>
+          ${n.summary ? `<div class="news-summary">${esc(n.summary)}</div>` : ''}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function updateStats(codingF, generalF) {
+    const allCoding = state.snapshot.codingAgents;
+    const all = [...state.snapshot.codingAgents, ...state.snapshot.generalAgents];
+    els.statCoding.textContent = codingF.length;
+    els.statGeneral.textContent = generalF.length;
+    els.countCoding.textContent = codingF.length;
+    els.countGeneral.textContent = generalF.length;
+    els.countFrameworks.textContent = state.snapshot.frameworks.length;
+    els.countMcps.textContent = state.snapshot.mcps.length;
+    els.countBench.textContent = state.snapshot.benchmarks.length;
+
+    // Top SWE
+    const withSwe = allCoding.filter(a => a.sweBench != null).sort((a, b) => b.sweBench - a.sweBench);
+    if (withSwe.length) {
+      const top = withSwe[0];
+      els.statSwe.textContent = top.sweBench + '%';
+      els.statSweSub.textContent = top.name;
+    }
+    // Hottest by stars across all
+    const hot = [...all, ...state.snapshot.frameworks].filter(a => a.stars).sort((a, b) => b.stars - a.stars)[0];
+    if (hot) {
+      const nm = hot.name || '';
+      els.statHot.textContent = nm.length > 14 ? nm.slice(0, 14) + '…' : nm;
+      els.statHotSub.textContent = '★ ' + fmt(hot.stars);
+    }
+  }
+
+  function updateUpdatedLabel() {
+    const last = parseDate(state.snapshot.lastUpdated);
+    if (!last) {
+      els.updatedText.textContent = 'No snapshot yet — run the scheduled task';
+      els.updated.classList.add('stale');
+      els.firstRun.style.display = 'block';
+      return;
+    }
+    const stale = (Date.now() - last.getTime()) > 36 * 3600 * 1000;
+    els.updatedText.textContent = (stale ? 'Stale · ' : 'Snapshot · ') +
+      last.toLocaleString(undefined, { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' });
+    els.updated.classList.toggle('stale', stale);
+    els.firstRun.style.display = 'none';
+  }
+
+  function renderAll() {
+    updateUpdatedLabel();
+    const codingF = renderPane(els.coding, state.snapshot.codingAgents, 'coding agents');
+    const generalF = renderPane(els.general, state.snapshot.generalAgents, 'general agents');
+    renderPane(els.frameworks, state.snapshot.frameworks, 'frameworks');
+    renderPane(els.mcps, state.snapshot.mcps, 'MCPs');
+    renderPapers();
+    renderNews();
+    updateStats(codingF, generalF);
+  }
+
+  // Controls
+  els.license.value = state.license;
+  els.sortBy.value = state.sortBy;
+  els.showSummary.checked = state.showSummary;
+  els.license.addEventListener('change', () => { state.license = els.license.value; localStorage.setItem('agents.license', state.license); renderAll(); });
+  els.sortBy.addEventListener('change', () => { state.sortBy = els.sortBy.value; localStorage.setItem('agents.sortBy', state.sortBy); renderAll(); });
+  els.showSummary.addEventListener('change', () => { state.showSummary = els.showSummary.checked; localStorage.setItem('agents.showSummary', state.showSummary ? '1' : '0'); renderAll(); });
+  els.search.addEventListener('input', () => { state.search = els.search.value || ''; renderAll(); });
+
+  document.querySelectorAll('.tab').forEach(el => {
+    el.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
+      el.classList.add('active');
+      document.getElementById('pane-' + el.dataset.pane).classList.add('active');
+      if (el.dataset.pane === 'benchmarks') maybeInitBenchmarks();
+    });
+  });
+
+  // -------------------- BENCHMARKS --------------------
+  let benchChart = null;
+  let benchState = {
+    selectedId: localStorage.getItem('agents.benchId') || 'swe_verified',
+    showLabels: localStorage.getItem('agents.benchLabels') !== '0',
+  };
+
+  function populateBenchSelector() {
+    const sel = document.getElementById('benchSelect');
+    sel.innerHTML = '';
+    for (const b of state.snapshot.benchmarks) {
+      const opt = document.createElement('option');
+      opt.value = b.id; opt.textContent = `${b.name} — ${b.category}`;
+      sel.appendChild(opt);
+    }
+    sel.value = benchState.selectedId;
+    if (sel.value !== benchState.selectedId) {
+      benchState.selectedId = sel.value || (state.snapshot.benchmarks[0] && state.snapshot.benchmarks[0].id);
+    }
+  }
+  function getActiveBench() { return state.snapshot.benchmarks.find(b => b.id === benchState.selectedId) || state.snapshot.benchmarks[0]; }
+
+  function renderBenchMeta(b) {
+    const meta = document.getElementById('bench-meta');
+    if (!b) { meta.textContent = ''; return; }
+    meta.innerHTML = `
+      <span class="bench-category">${esc(b.category)}</span>
+      <strong>${esc(b.name)}</strong> · ${esc(b.scale)} · ${esc(b.description)}
+      <div style="margin-top:6px; font-size:11.5px; color:var(--ink-3);">Source: <a href="${esc(b.url||'#')}" target="_blank" rel="noopener" style="color:var(--accent-2); text-decoration:underline;">${esc(b.source)}</a></div>
+    `;
+  }
+
+  function renderBenchList(b) {
+    const list = document.getElementById('bench-list');
+    const scores = [...(b.scores || [])].sort((a, b) => b.score - a.score);
+    list.innerHTML = scores.map((s, i) => {
+      const av = avatarFor(s.org || s.agent);
+      return `
+        <div class="row">
+          <div class="rank ${i < 3 ? 'top-3' : ''}">${i + 1}</div>
+          <div class="avatar" style="background:${av.bg};color:${av.fg}">${esc(av.initial)}</div>
+          <div class="row-main">
+            <div class="row-title">
+              <a href="${esc(s.url || '#')}" target="_blank" rel="noopener">${esc(s.agent)}</a>
+              ${s.org ? `<span class="row-author">${esc(s.org)}</span>` : ''}
+              ${s.open === false ? `<span class="chip license commercial">commercial</span>` : `<span class="chip license oss">open</span>`}
+            </div>
+            <div class="row-meta">
+              <span><strong style="color:var(--accent);">${s.score}${b.scale && b.scale.includes('%') ? '%' : ''}</strong> on ${esc(b.name)}</span>
+              ${s.note ? `<span style="color:var(--ink-3); font-style:italic;">${esc(s.note)}</span>` : ''}
+            </div>
+          </div>
+          <div class="row-stats"><div class="score-pill">▲ ${s.score}</div></div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function renderBenchChart() {
+    const b = getActiveBench();
+    if (!b) return;
+    renderBenchMeta(b);
+    renderBenchList(b);
+
+    const scores = [...(b.scores || [])].sort((a, b) => b.score - a.score);
+    const labels = scores.map(s => s.agent);
+    const data = scores.map(s => s.score);
+    const colors = scores.map(s => s.open === false ? '#8a8275' : '#1d4e3f');
+
+    if (benchChart) benchChart.destroy();
+    const ctx = document.getElementById('benchChart').getContext('2d');
+    benchChart = new Chart(ctx, {
+      type: 'bar',
+      data: { labels, datasets: [{ label: b.name, data, backgroundColor: colors, borderColor: colors, borderRadius: 3, barThickness: 18 }] },
+      options: {
+        indexAxis: 'y',
+        responsive: true, maintainAspectRatio: false,
+        animation: { duration: 250 },
+        onClick: (evt, items) => { if (items && items[0]) { const s = scores[items[0].index]; if (s && s.url) window.open(s.url, '_blank', 'noopener'); } },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: 'rgba(26,23,20,0.95)', titleFont: { size: 12, weight: '600' }, bodyFont: { size: 11.5 }, padding: 10, cornerRadius: 6, displayColors: false,
+            callbacks: {
+              title: (ctxs) => ctxs[0].label,
+              label: (ctx) => {
+                const s = scores[ctx.dataIndex];
+                const lines = [`${b.name}: ${s.score}${b.scale && b.scale.includes('%') ? '%' : ''}`];
+                if (s.org) lines.push(s.org);
+                if (s.note) lines.push(s.note);
+                lines.push(s.open === false ? 'commercial' : 'open');
+                return lines;
+              }
+            }
+          }
+        },
+        scales: {
+          x: { title: { display: true, text: b.scale, color: '#524d44', font: { size: 12 } }, ticks: { color: '#8a8275' }, grid: { color: 'rgba(0,0,0,0.05)' }, beginAtZero: true },
+          y: { ticks: { color: '#524d44', font: { size: 11.5 } }, grid: { display: false } }
+        }
+      }
+    });
+  }
+
+  function bindBenchControls() {
+    const selBench = document.getElementById('benchSelect');
+    const cbLabels = document.getElementById('benchShowLabels');
+    cbLabels.checked = benchState.showLabels;
+    selBench.addEventListener('change', () => { benchState.selectedId = selBench.value; localStorage.setItem('agents.benchId', benchState.selectedId); renderBenchChart(); });
+    cbLabels.addEventListener('change', () => { benchState.showLabels = cbLabels.checked; localStorage.setItem('agents.benchLabels', benchState.showLabels ? '1' : '0'); });
+  }
+
+  let benchmarksInitialized = false;
+  function maybeInitBenchmarks() {
+    if (benchmarksInitialized) return;
+    if (typeof Chart === 'undefined') { document.getElementById('bench-meta').textContent = 'Chart library failed to load.'; return; }
+    benchmarksInitialized = true;
+    populateBenchSelector();
+    bindBenchControls();
+    renderBenchChart();
+  }
+
+  // Boot
+  loadSnapshot();
+  renderAll();
+})();
+</script>
+</body>
+</html>

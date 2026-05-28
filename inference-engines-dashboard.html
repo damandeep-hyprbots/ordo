@@ -1,0 +1,661 @@
+<!doctype html><html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LLM Inference Engines — Daily Snapshot</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js" integrity="sha384-iU8HYtnGQ8Cy4zl7gbNMOhsDTTKX02BTXptVP/vqAWIaTfM7isw76iyZCsjL2eVi" crossorigin="anonymous"></script>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #fafaf7; --surface: #ffffff; --surface-2: #f5f5f1;
+    --border: #ece9e3; --border-strong: #d8d4cb;
+    --ink: #1a1714; --ink-2: #524d44; --ink-3: #8a8275;
+    --accent: #b8460e; --accent-soft: #fdf4ed;
+    --accent-2: #1d4e3f; --accent-2-soft: #ecf3f0;
+    --accent-3: #5b4ea8; --accent-3-soft: #f0eef8;
+    --warn: #8a6d1a; --warn-soft: #fdf8e8;
+    --radius: 10px; --radius-sm: 6px;
+    --shadow-sm: 0 1px 2px rgba(17, 14, 10, 0.04);
+    --shadow-md: 0 4px 14px -6px rgba(17, 14, 10, 0.10), 0 1px 2px rgba(17, 14, 10, 0.04);
+    --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-serif: "Iowan Old Style", "Charter", "Georgia", serif;
+    --font-mono: "SF Mono", "Menlo", "Consolas", monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--font-sans); font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-rendering: optimizeLegibility; }
+  a { color: inherit; text-decoration: none; }
+  .shell { max-width: 1180px; margin: 0 auto; padding: 28px 28px 80px; }
+  @media (max-width: 640px) { .shell { padding: 20px 16px 60px; } }
+  .masthead { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; flex-wrap: wrap; padding-bottom: 18px; border-bottom: 1px solid var(--border); }
+  .brand-mark { display: inline-flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
+  .brand-mark::before { content: ""; width: 24px; height: 1px; background: var(--accent); }
+  h1 { font-family: var(--font-serif); font-size: clamp(28px, 4vw, 36px); font-weight: 600; letter-spacing: -0.02em; line-height: 1.1; margin: 0; color: var(--ink); }
+  .lede { margin-top: 8px; font-size: 14px; color: var(--ink-2); max-width: 580px; }
+  .updated { font-size: 12px; color: var(--ink-3); display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .updated::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: #1d8a4f; box-shadow: 0 0 0 3px rgba(29, 138, 79, 0.15); animation: pulse 2.4s ease-in-out infinite; }
+  .updated.stale::before { background: var(--warn); box-shadow: 0 0 0 3px var(--warn-soft); animation: none; }
+  @keyframes pulse { 50% { box-shadow: 0 0 0 6px rgba(29, 138, 79, 0); } }
+
+  .stats { display: grid; gap: 1px; grid-template-columns: repeat(4, 1fr); background: var(--border); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin: 22px 0 26px; }
+  @media (max-width: 640px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+  .stat { background: var(--surface); padding: 14px 16px; }
+  .stat-label { font-size: 11px; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 500; margin-bottom: 4px; }
+  .stat-value { font-family: var(--font-serif); font-size: 22px; font-weight: 600; letter-spacing: -0.01em; color: var(--ink); line-height: 1.1; }
+  .stat-sub { font-size: 11px; color: var(--ink-3); margin-top: 2px; }
+
+  .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 18px; flex-wrap: wrap; }
+  .tab { padding: 10px 0; margin-right: 22px; font-size: 13px; font-weight: 500; color: var(--ink-3); cursor: pointer; user-select: none; border-bottom: 2px solid transparent; transition: color .15s, border-color .15s; display: inline-flex; align-items: center; gap: 7px; }
+  .tab:hover { color: var(--ink-2); }
+  .tab.active { color: var(--ink); border-bottom-color: var(--accent); }
+  .tab .pill { background: var(--surface-2); color: var(--ink-2); font-size: 11px; padding: 1px 7px; border-radius: 10px; font-weight: 500; min-width: 20px; text-align: center; }
+  .tab.active .pill { background: var(--accent-soft); color: var(--accent); }
+
+  .control-bar { position: sticky; top: 0; z-index: 5; background: rgba(250, 250, 247, 0.92); backdrop-filter: saturate(140%) blur(8px); -webkit-backdrop-filter: saturate(140%) blur(8px); margin: 0 -28px 16px; padding: 10px 28px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  @media (max-width: 640px) { .control-bar { margin: 0 -16px 12px; padding: 10px 16px; } }
+  .control { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; color: var(--ink-2); }
+  .control label { font-weight: 500; color: var(--ink-3); }
+  .control select, .control input[type="search"] { background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius-sm); padding: 4px 8px; font: inherit; color: var(--ink); height: 26px; }
+  .control select { padding-right: 22px; appearance: none; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'><path fill='%238a8275' d='M2 4l3 3 3-3z'/></svg>"); background-repeat: no-repeat; background-position: right 6px center; }
+  .control input[type="search"] { width: 200px; }
+  .control input:focus, .control select:focus { outline: 2px solid var(--accent-soft); outline-offset: 1px; border-color: var(--accent); }
+  .toggle { display: inline-flex; align-items: center; gap: 7px; cursor: pointer; user-select: none; padding: 4px 10px; border-radius: 14px; border: 1px solid var(--border-strong); background: var(--surface); font-size: 12px; color: var(--ink-2); }
+  .toggle input { display: none; }
+  .toggle:has(input:checked) { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+  .toggle .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ink-3); }
+  .toggle:has(input:checked) .dot { background: var(--accent); }
+
+  .pane { display: none; }
+  .pane.active { display: block; }
+
+  .list { display: flex; flex-direction: column; gap: 8px; }
+  .row { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px 14px 14px; display: grid; grid-template-columns: 32px 36px 1fr auto; gap: 14px; align-items: start; transition: border-color .15s, box-shadow .15s; }
+  .row:hover { border-color: var(--border-strong); box-shadow: var(--shadow-sm); }
+  @media (max-width: 640px) {
+    .row { grid-template-columns: 28px 32px 1fr; padding: 12px; gap: 10px; }
+    .row .row-stats { grid-column: 1 / -1; padding-left: 0; padding-top: 6px; border-top: 1px solid var(--border); margin-top: 4px; flex-direction: row; align-items: center; }
+  }
+  .rank { font-family: var(--font-serif); font-size: 18px; font-weight: 500; color: var(--ink-3); text-align: right; padding-top: 3px; font-variant-numeric: tabular-nums; }
+  .rank.top-3 { color: var(--accent); }
+  .avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--surface-2); display: flex; align-items: center; justify-content: center; font-family: var(--font-serif); font-weight: 600; font-size: 15px; color: var(--ink-2); flex-shrink: 0; border: 1px solid var(--border); text-transform: uppercase; }
+  @media (max-width: 640px) { .avatar { width: 32px; height: 32px; font-size: 13px; } }
+  .row-main { min-width: 0; }
+  .row-title { font-size: 15px; font-weight: 600; line-height: 1.3; margin-bottom: 2px; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .row-title a { color: var(--ink); transition: color .15s; }
+  .row-title a:hover { color: var(--accent); }
+  .row-author { color: var(--ink-3); font-weight: 400; font-size: 13px; }
+  .row-meta { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--ink-3); margin-top: 4px; align-items: center; }
+  .chip { font-size: 10.5px; padding: 1px 7px; border-radius: 3px; font-family: var(--font-mono); letter-spacing: -0.01em; }
+  .chip.type { background: var(--accent-2-soft); color: var(--accent-2); }
+  .chip.license { background: var(--surface-2); color: var(--ink-2); }
+  .chip.license.commercial { background: #fdf4ed; color: var(--accent); }
+  .chip.license.oss { background: var(--accent-2-soft); color: var(--accent-2); }
+  .row-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+  .tag { background: var(--surface-2); color: var(--ink-2); font-size: 11px; padding: 2px 7px; border-radius: 3px; font-family: var(--font-mono); letter-spacing: -0.01em; }
+  .summary { font-size: 13px; color: var(--ink-2); line-height: 1.5; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border); font-family: var(--font-serif); }
+  .row-stats { text-align: right; display: flex; flex-direction: column; gap: 4px; align-items: flex-end; font-variant-numeric: tabular-nums; }
+  .star-pill, .score-pill, .tps-pill { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 999px; font-variant-numeric: tabular-nums; }
+  .star-pill { background: var(--surface-2); color: var(--ink-2); }
+  .score-pill { background: var(--accent-soft); color: var(--accent); }
+  .tps-pill { background: var(--accent-3-soft); color: var(--accent-3); }
+
+  .bench-controls { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+  .bench-meta { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 14px; font-size: 13px; color: var(--ink-2); line-height: 1.55; }
+  .bench-meta strong { color: var(--ink); }
+  .bench-meta .bench-category { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 3px; background: var(--accent-2-soft); color: var(--accent-2); font-family: var(--font-mono); margin-right: 8px; }
+  .bench-chart-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 16px 10px; margin-bottom: 14px; position: relative; }
+  .bench-h3 { font-family: var(--font-serif); font-size: 17px; font-weight: 600; letter-spacing: -0.01em; margin: 22px 0 10px; color: var(--ink); }
+  .bench-disclaimer { font-size: 11.5px; color: var(--ink-3); line-height: 1.5; margin-top: 18px; padding: 12px 14px; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); }
+
+  .news-list { display: flex; flex-direction: column; gap: 10px; }
+  .news-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; display: grid; grid-template-columns: 28px 1fr; gap: 12px; }
+  .news-item:hover { border-color: var(--border-strong); }
+  .news-icon { width: 28px; height: 28px; border-radius: 6px; background: var(--accent-3-soft); color: var(--accent-3); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .news-title { font-size: 14.5px; font-weight: 600; line-height: 1.3; }
+  .news-title a { color: var(--ink); }
+  .news-title a:hover { color: var(--accent-3); }
+  .news-meta { font-size: 12px; color: var(--ink-3); margin: 3px 0 6px; }
+  .news-summary { font-size: 13px; color: var(--ink-2); line-height: 1.55; font-family: var(--font-serif); }
+
+  .empty { background: var(--surface); border: 1px dashed var(--border-strong); border-radius: var(--radius); padding: 36px 20px; text-align: center; color: var(--ink-3); }
+  .empty-title { font-family: var(--font-serif); font-size: 16px; color: var(--ink-2); margin-bottom: 4px; }
+  .empty-sub { font-size: 12.5px; }
+  .first-run { background: var(--warn-soft); border: 1px solid #efe1b1; color: var(--warn); padding: 14px 16px; border-radius: var(--radius); font-size: 13px; line-height: 1.55; margin-bottom: 16px; }
+  .first-run code { font-family: var(--font-mono); background: rgba(0,0,0,.05); padding: 1px 6px; border-radius: 3px; font-size: 11.5px; }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <header class="masthead">
+    <div>
+      <div class="brand-mark">Daily snapshot</div>
+      <h1>LLM inference engines, today.</h1>
+      <p class="lede">Production servers, local/edge engines, quantization formats, throughput benchmarks, and news from the inference-runtime ecosystem. Refreshed each morning by a scheduled task.</p>
+    </div>
+    <div class="updated" id="updated"><span id="updated-text">No snapshot yet</span></div>
+  </header>
+
+  <section class="stats" id="stats">
+    <div class="stat"><div class="stat-label">Production engines</div><div class="stat-value" id="stat-prod">—</div><div class="stat-sub">tracked</div></div>
+    <div class="stat"><div class="stat-label">Local engines</div><div class="stat-value" id="stat-local">—</div><div class="stat-sub">tracked</div></div>
+    <div class="stat"><div class="stat-label">Top H100 throughput</div><div class="stat-value" id="stat-tps">—</div><div class="stat-sub" id="stat-tps-sub">&nbsp;</div></div>
+    <div class="stat"><div class="stat-label">Hottest repo</div><div class="stat-value" id="stat-hot">—</div><div class="stat-sub" id="stat-hot-sub">&nbsp;</div></div>
+  </section>
+
+  <div class="tabs" role="tablist">
+    <div class="tab active" data-pane="production" role="tab">Production <span class="pill" id="count-production">—</span></div>
+    <div class="tab" data-pane="local" role="tab">Local / Edge <span class="pill" id="count-local">—</span></div>
+    <div class="tab" data-pane="quant" role="tab">Quantization <span class="pill" id="count-quant">—</span></div>
+    <div class="tab" data-pane="benchmarks" role="tab">Benchmarks <span class="pill" id="count-benchmarks">—</span></div>
+    <div class="tab" data-pane="news" role="tab">News <span class="pill" id="count-news">—</span></div>
+  </div>
+
+  <div class="control-bar">
+    <div class="control"><label>Search</label><input type="search" id="searchBox" placeholder="filter by name or tag…"></div>
+    <div class="control"><label>License</label>
+      <select id="licenseFilter">
+        <option value="all" selected>All</option>
+        <option value="oss">Open-source</option>
+        <option value="commercial">Commercial</option>
+      </select>
+    </div>
+    <div class="control"><label>Sort</label>
+      <select id="sortBy">
+        <option value="stars" selected>Stars</option>
+        <option value="tps">Throughput</option>
+        <option value="name">Name (A-Z)</option>
+      </select>
+    </div>
+    <label class="toggle"><input type="checkbox" id="showSummary" checked><span class="dot"></span>Summaries</label>
+  </div>
+
+  <div id="first-run-banner" class="first-run" style="display:none">
+    <strong>First run pending.</strong> No snapshot has been written yet. The daily task <code>inference-engines-refresh</code> will populate this view.
+  </div>
+
+  <div id="pane-production" class="pane active"><div class="list" id="production-content"></div></div>
+  <div id="pane-local" class="pane"><div class="list" id="local-content"></div></div>
+  <div id="pane-quant" class="pane"><div class="list" id="quant-content"></div></div>
+
+  <div id="pane-benchmarks" class="pane">
+    <div class="bench-controls">
+      <div class="control"><label>Benchmark</label><select id="benchSelect"></select></div>
+    </div>
+    <div class="bench-meta" id="bench-meta"></div>
+    <div class="bench-chart-wrap"><canvas id="benchChart" height="320"></canvas></div>
+    <h3 class="bench-h3">Leaderboard</h3>
+    <div id="bench-list" class="list"></div>
+    <div class="bench-disclaimer">
+      Numbers are approximate. Throughput depends heavily on model, batch size, hardware, and request shape — verify against the original source before making infrastructure decisions. TTFT and total throughput are different races and most engines optimize for one or the other.
+    </div>
+  </div>
+
+  <div id="pane-news" class="pane"><div class="news-list" id="news-content"></div></div>
+
+</div>
+
+<script type="application/json" id="snapshot-data">
+{
+  "lastUpdated": "2026-05-28T08:30:00-07:00",
+  "production": [
+    {"name":"vLLM","org":"vllm-project","url":"https://github.com/vllm-project/vllm","type":"Server","license":"oss","stars":77000,"tps":12500,"hardware":"H100","model":"Llama 3.1 8B","tags":["python","paged-attention","openai-compatible","throughput","2k-contributors"],"summary":"High-throughput serving engine with PagedAttention; 77K stars, 2K+ contributors; balanced performance, OpenAI-compatible API."},
+    {"name":"SGLang","org":"sgl-project","url":"https://github.com/sgl-project/sglang","type":"Server","license":"oss","stars":null,"tps":16200,"hardware":"H100","model":"Llama 3.1 8B","tags":["python","structured-generation","radix-cache","fastest-tied","400k-gpus"],"summary":"High-performance serving framework with structured generation; ~16.2K tok/s H100; runs on 400K+ production GPUs."},
+    {"name":"LMDeploy","org":"InternLM","url":"https://github.com/InternLM/lmdeploy","type":"Server","license":"oss","stars":null,"tps":16100,"hardware":"H100","model":"Llama 3.1 8B","tags":["turbomind","python","internlm","quantized-latency","fastest-tied"],"summary":"InternLM's serving engine; matches SGLang throughput (~16.1K tok/s on H100), standout latency on quantized models."},
+    {"name":"TensorRT-LLM","org":"NVIDIA","url":"https://github.com/NVIDIA/TensorRT-LLM","type":"Server","license":"oss","stars":null,"tps":4500,"hardware":"H100","model":"Llama 70B","tags":["nvidia","cuda","compiled","low-level","best-throughput-70b"],"summary":"NVIDIA's hardware-tuned LLM inference; 4,500 tok/s on Llama 70B H100, 20-50ms p50 latency on 7B — best throughput in class."},
+    {"name":"TGI","org":"huggingface","url":"https://github.com/huggingface/text-generation-inference","type":"Server","license":"oss","stars":11000,"tps":null,"hardware":null,"model":null,"tags":["rust","python","huggingface","production","openai-compatible"],"summary":"Hugging Face's production-grade Rust+Python serving toolkit for open-source LLMs — used at HF inference endpoints."},
+    {"name":"NVIDIA Triton","org":"NVIDIA","url":"https://github.com/triton-inference-server/server","type":"Server","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["nvidia","multi-framework","grpc","kubernetes","tensorrt-backend"],"summary":"NVIDIA's general-purpose inference server with TensorRT-LLM backend — multi-framework, gRPC, Kubernetes-ready."},
+    {"name":"TokenSpeed","org":"lightseekorg","url":"https://github.com/lightseekorg/tokenspeed","type":"Server","license":"oss","stars":null,"tps":580,"hardware":"H100","model":"Qwen3.5-397B-A17B","tags":["lightseek","preview","agentic","trt-llm-perf","vllm-usability"],"summary":"LightSeek's preview engine for agentic workloads — TensorRT-LLM-level perf with vLLM-level usability; 580 TPS on Qwen3.5-397B."},
+    {"name":"Modular MAX","org":"modular","url":"https://www.modular.com/max","type":"Server","license":"commercial","stars":null,"tps":null,"hardware":null,"model":null,"tags":["mojo","graph-compiled","cpu-gpu","custom-kernels"],"summary":"Modular's serving framework with graph-compiled Mojo kernels; outperforms vLLM on dense models at high concurrency."},
+    {"name":"DeepSpeed-FastGen","org":"microsoft","url":"https://github.com/microsoft/DeepSpeed-MII","type":"Server","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["microsoft","mii","dynamic-splitfuse","throughput"],"summary":"Microsoft's MII-based high-throughput text generation engine on top of DeepSpeed-Inference."},
+    {"name":"Fireworks FireAttention","org":"Fireworks AI","url":"https://fireworks.ai","type":"Cloud","license":"commercial","stars":null,"tps":null,"hardware":null,"model":null,"tags":["proprietary","cloud","4x-lower-latency","multimodal"],"summary":"Fireworks' proprietary engine — 4× lower latency than open-source vLLM; powers text, image, and audio inference."},
+    {"name":"LightLLM","org":"ModelTC","url":"https://github.com/ModelTC/lightllm","type":"Server","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["python","triton","lightweight","tokenattention"],"summary":"Lightweight pure-Python+Triton serving framework; TokenAttention paged KV-cache for memory efficiency."},
+    {"name":"Aphrodite Engine","org":"aphrodite-engine","url":"https://github.com/aphrodite-engine/aphrodite-engine","type":"Server","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["pygmalion","gptq-kernels","large-scale","forked-vllm"],"summary":"PygmalionAI's large-scale inference engine for thousands of concurrent users; ExLlamaV2 GPTQ kernels for batch throughput."},
+    {"name":"LoRAX","org":"predibase","url":"https://github.com/predibase/lorax","type":"Server","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["predibase","lora-multiplexing","batched-loras","multi-tenant"],"summary":"Multi-LoRA serving engine — batches requests for many different LoRA adapters on a single base model."}
+  ],
+  "local": [
+    {"name":"Ollama","org":"ollama","url":"https://github.com/ollama/ollama","type":"Daemon","license":"oss","stars":162000,"tps":null,"hardware":null,"model":null,"tags":["go","llama-cpp","cli","easy-install","openai-compatible"],"summary":"Run local LLMs with one command — wraps llama.cpp into a developer-friendly daemon; 162K stars, 282M+ downloads."},
+    {"name":"llama.cpp","org":"ggml-org","url":"https://github.com/ggml-org/llama.cpp","type":"Library","license":"oss","stars":98600,"tps":null,"hardware":null,"model":null,"tags":["c++","ggml","gguf","cpu","metal","cuda"],"summary":"Plain C/C++ LLM inference; foundation for Ollama, LM Studio, GPT4All, KoboldCpp — 98.6K stars."},
+    {"name":"MLX-LM","org":"ml-explore","url":"https://github.com/ml-explore/mlx-lm","type":"Library","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["apple","mlx","metal","apple-silicon","python"],"summary":"Apple's MLX-based LLM toolkit — fast inference on M-series Macs via the MLX array framework."},
+    {"name":"Rapid-MLX","org":"raullenchai","url":"https://github.com/raullenchai/Rapid-MLX","type":"Daemon","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["mlx","apple-silicon","openai-compatible","ttft","tool-calling"],"summary":"Fastest local AI engine for Apple Silicon — 4.2× faster than Ollama, 0.08s cached TTFT, drop-in OpenAI replacement."},
+    {"name":"KTransformers","org":"kvcache-ai","url":"https://github.com/kvcache-ai/ktransformers","type":"Framework","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["heterogeneous","cpu-gpu","moe","amd-epyc","v0.6.1"],"summary":"Heterogeneous LLM inference with CPU+GPU offload; v0.6.1 April 2026 — strong on MoE models with AMD Epyc NPS0."},
+    {"name":"ik_llama.cpp","org":"ikawrakow","url":"https://github.com/ikawrakow/ik_llama.cpp","type":"Library","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["llama-cpp-fork","quantization","cpu-perf","iqmatrix"],"summary":"Performance-focused llama.cpp fork by quantization expert iKawrakow; advanced i-quants and CPU kernels."},
+    {"name":"ExLlamaV2","org":"turboderp-org","url":"https://github.com/turboderp-org/exllamav2","type":"Library","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["consumer-gpu","exl2","gptq","python","fast-decode"],"summary":"Fast inference library for consumer GPUs; supports EXL2 (2-8 bit) and GPTQ 4-bit quantization formats."},
+    {"name":"MLC-LLM","org":"mlc-ai","url":"https://github.com/mlc-ai/mlc-llm","type":"Compiler","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["tvm","compiler","multi-platform","ios","android","web"],"summary":"ML-compiled LLM deployment via Apache TVM — runs on AMD/NVIDIA/Apple/Intel GPUs plus iOS, Android, browsers."},
+    {"name":"Web-LLM","org":"mlc-ai","url":"https://github.com/mlc-ai/web-llm","type":"Browser","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["webgpu","browser","client-side","javascript","tvm"],"summary":"In-browser LLM inference via WebGPU — runs models entirely client-side; built on MLC-LLM's TVM pipeline."},
+    {"name":"LM Studio","org":"LMStudio","url":"https://lmstudio.ai","type":"Desktop","license":"commercial","stars":null,"tps":null,"hardware":null,"model":null,"tags":["desktop","gui","llama-cpp","mlx","mac-windows-linux"],"summary":"Cross-platform desktop GUI for local LLMs powered by llama.cpp + MLX — point-and-click model running."},
+    {"name":"llamafile","org":"Mozilla-Ocho","url":"https://github.com/Mozilla-Ocho/llamafile","type":"Executable","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["mozilla","single-binary","cross-platform","cosmopolitan","portable"],"summary":"Distribute and run LLMs as a single executable file via Cosmopolitan libc — runs on six OSes from one binary."},
+    {"name":"KoboldCpp","org":"LostRuins","url":"https://github.com/LostRuins/koboldcpp","type":"Desktop","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["llama-cpp","gui","creative-writing","horde","fork"],"summary":"Single-file llama.cpp distribution with built-in UI optimized for creative writing and Horde compatibility."},
+    {"name":"GPT4All","org":"nomic-ai","url":"https://github.com/nomic-ai/gpt4all","type":"Desktop","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["nomic","desktop","local-docs","privacy","mit"],"summary":"Nomic AI's open-source desktop app for local LLM chat with LocalDocs RAG — privacy-focused."}
+  ],
+  "quant": [
+    {"name":"GGUF","org":"ggml-org","url":"https://github.com/ggml-org/llama.cpp","type":"Format","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["llama-cpp","unified","metadata","versioned","de-facto"],"summary":"De-facto local-LLM file format from llama.cpp — versioned, self-describing, supports all bit-widths from 1-bit to FP16."},
+    {"name":"GPTQ","org":"IST-DASLab","url":"https://github.com/IST-DASLab/gptq","type":"Method","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["4-bit","post-training","one-shot","layer-wise","2022"],"summary":"Post-training one-shot 4-bit weight quantization via approximate second-order info; the classic compressed format."},
+    {"name":"AWQ","org":"mit-han-lab","url":"https://github.com/mit-han-lab/llm-awq","type":"Method","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["4-bit","activation-aware","mit","accuracy"],"summary":"Activation-aware Weight Quantization — preserves accuracy by protecting weights aligned with high-magnitude activations."},
+    {"name":"EXL2","org":"turboderp-org","url":"https://github.com/turboderp-org/exllamav2","type":"Format","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["exllamav2","2-8bit","mixed-precision","gpu-only"],"summary":"ExLlamaV2's mixed-precision format (2-8 bit) — per-layer bit allocation tuned for GPU inference."},
+    {"name":"MXFP4","org":"open-compute","url":"https://www.opencompute.org/documents/ocp-microscaling-formats-mx-v1-0-spec-final.pdf","type":"Format","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["microscaling","4-bit-fp","openai-gpt-oss","mxfp","blackwell"],"summary":"Microscaling FP4 — Open Compute spec; OpenAI gpt-oss ships in MXFP4, Blackwell adds hardware acceleration."},
+    {"name":"FP8","org":"NVIDIA","url":"https://docs.nvidia.com/deeplearning/tensorrt-llm/index.html","type":"Format","license":"commercial","stars":null,"tps":null,"hardware":null,"model":null,"tags":["nvidia","hopper","blackwell","native","e4m3"],"summary":"Native FP8 on Hopper/Blackwell — DeepSeek V4, Qwen3.6, MiMo, MiniMax M2 ship FP8 weights for top throughput."},
+    {"name":"bitsandbytes","org":"bitsandbytes-foundation","url":"https://github.com/bitsandbytes-foundation/bitsandbytes","type":"Library","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["python","8-bit","4-bit","nf4","training-friendly"],"summary":"Python library for 4/8-bit quant — NF4 (QLoRA), training-friendly; widely used via the transformers integration."},
+    {"name":"AQLM","org":"Vahe1994","url":"https://github.com/Vahe1994/AQLM","type":"Method","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["extreme","2-bit","additive","ymsu"],"summary":"Additive Quantization for Language Models — extreme 2-bit compression with competitive quality vs full precision."},
+    {"name":"HQQ","org":"mobiusml","url":"https://github.com/mobiusml/hqq","type":"Method","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["calibration-free","fast","2-8bit","mobius"],"summary":"Half-Quadratic Quantization — calibration-free fast post-training quant from 2 to 8 bits."},
+    {"name":"IQ-Quants (i-quants)","org":"ggml-org","url":"https://github.com/ggml-org/llama.cpp","type":"Format","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["llama-cpp","iq2_xxs","iq3","imatrix","extreme"],"summary":"llama.cpp's importance-matrix quantizations (IQ2_XXS, IQ3, …) — best <4-bit options for GGUF on CPU and GPU."}
+  ],
+  "benchmarks": [
+    {
+      "id": "h100_throughput_8b",
+      "name": "H100 Throughput — Llama 3.1 8B",
+      "category": "Throughput (server)",
+      "description": "Tokens/sec on a single H100 GPU serving Llama 3.1 8B, batched. Higher is better. Numbers are approximate from public benchmarks.",
+      "source": "Spheron / Yotta Labs / DEV community",
+      "url": "https://www.spheron.network/blog/vllm-vs-tensorrt-llm-vs-sglang-benchmarks/",
+      "scale": "tokens/sec",
+      "scores": [
+        {"engine":"SGLang","org":"sgl-project","score":16200,"open":true,"url":"https://github.com/sgl-project/sglang","note":"Tied with LMDeploy"},
+        {"engine":"LMDeploy","org":"InternLM","score":16100,"open":true,"url":"https://github.com/InternLM/lmdeploy","note":"TurboMind kernel"},
+        {"engine":"vLLM","org":"vllm-project","score":12500,"open":true,"url":"https://github.com/vllm-project/vllm","note":"~29% behind tied leaders"},
+        {"engine":"TensorRT-LLM","org":"NVIDIA","score":11000,"open":true,"url":"https://github.com/NVIDIA/TensorRT-LLM","note":"Faster on 70B, slightly behind on 8B batch"},
+        {"engine":"TGI","org":"huggingface","score":9000,"open":true,"url":"https://github.com/huggingface/text-generation-inference"}
+      ]
+    },
+    {
+      "id": "h100_throughput_70b",
+      "name": "H100 Throughput — Llama 70B",
+      "category": "Throughput (server)",
+      "description": "Tokens/sec for Llama 70B on H100. TensorRT-LLM's compiled CUDA kernels lead at this size.",
+      "source": "Yotta Labs",
+      "url": "https://www.yottalabs.ai/post/best-llm-inference-engines-in-2026-vllm-tensorrt-llm-tgi-and-sglang-compared",
+      "scale": "tokens/sec",
+      "scores": [
+        {"engine":"TensorRT-LLM","org":"NVIDIA","score":4500,"open":true,"url":"https://github.com/NVIDIA/TensorRT-LLM","note":"Best in class"},
+        {"engine":"SGLang","org":"sgl-project","score":3900,"open":true,"url":"https://github.com/sgl-project/sglang"},
+        {"engine":"LMDeploy","org":"InternLM","score":3800,"open":true,"url":"https://github.com/InternLM/lmdeploy"},
+        {"engine":"vLLM","org":"vllm-project","score":3200,"open":true,"url":"https://github.com/vllm-project/vllm"}
+      ]
+    },
+    {
+      "id": "ttft_7b",
+      "name": "p50 Latency — 7B single request",
+      "category": "Latency (TTFT)",
+      "description": "Time to first token on a single request for a 7B model. Lower is better. TensorRT-LLM dominates single-request latency.",
+      "source": "Yotta Labs",
+      "url": "https://www.yottalabs.ai/post/best-llm-inference-engines-in-2026-vllm-tensorrt-llm-tgi-and-sglang-compared",
+      "scale": "ms (p50)",
+      "scores": [
+        {"engine":"TensorRT-LLM","org":"NVIDIA","score":30,"open":true,"url":"https://github.com/NVIDIA/TensorRT-LLM","note":"20-50ms range"},
+        {"engine":"SGLang","org":"sgl-project","score":45,"open":true,"url":"https://github.com/sgl-project/sglang"},
+        {"engine":"LMDeploy","org":"InternLM","score":50,"open":true,"url":"https://github.com/InternLM/lmdeploy"},
+        {"engine":"vLLM","org":"vllm-project","score":75,"open":true,"url":"https://github.com/vllm-project/vllm","note":"50-100ms range"}
+      ]
+    },
+    {
+      "id": "apple_silicon",
+      "name": "Apple Silicon (M3 Max) — Llama 3.1 8B",
+      "category": "Throughput (local)",
+      "description": "Tokens/sec for Llama 3.1 8B on Apple Silicon M3 Max. Rapid-MLX leads by 4.2× over Ollama on Apple's accelerators.",
+      "source": "Rapid-MLX repo",
+      "url": "https://github.com/raullenchai/Rapid-MLX",
+      "scale": "tokens/sec",
+      "scores": [
+        {"engine":"Rapid-MLX","org":"raullenchai","score":210,"open":true,"url":"https://github.com/raullenchai/Rapid-MLX","note":"4.2× Ollama"},
+        {"engine":"MLX-LM","org":"ml-explore","score":120,"open":true,"url":"https://github.com/ml-explore/mlx-lm"},
+        {"engine":"Ollama","org":"ollama","score":50,"open":true,"url":"https://github.com/ollama/ollama","note":"via llama.cpp Metal"},
+        {"engine":"llama.cpp (Metal)","org":"ggml-org","score":48,"open":true,"url":"https://github.com/ggml-org/llama.cpp"},
+        {"engine":"LM Studio","org":"LMStudio","score":50,"open":false,"url":"https://lmstudio.ai"}
+      ]
+    },
+    {
+      "id": "agentic_long_context",
+      "name": "Agentic long-context — Qwen3.5-397B-A17B",
+      "category": "Agentic workloads",
+      "description": "Per-user tokens/sec on long-context agent workloads (50K+ context, multi-turn). TokenSpeed is purpose-built for this.",
+      "source": "TokenSpeed launch post",
+      "url": "https://lightseek.org/blog/lightseek-tokenspeed.html",
+      "scale": "tokens/sec/user",
+      "scores": [
+        {"engine":"TokenSpeed","org":"lightseekorg","score":580,"open":true,"url":"https://github.com/lightseekorg/tokenspeed","note":"Target floor 70-200 TPS"},
+        {"engine":"vLLM","org":"vllm-project","score":140,"open":true,"url":"https://github.com/vllm-project/vllm","note":"Drops under long context"},
+        {"engine":"SGLang","org":"sgl-project","score":210,"open":true,"url":"https://github.com/sgl-project/sglang","note":"Radix cache helps"},
+        {"engine":"TensorRT-LLM","org":"NVIDIA","score":260,"open":true,"url":"https://github.com/NVIDIA/TensorRT-LLM"}
+      ]
+    }
+  ],
+  "news": [
+    {"date":"2026-05-27","title":"llama.cpp ships ggml-webgpu updates","summary":"Latest llama.cpp release rolls in a refreshed WebGPU backend for browser-native inference; better Vulkan parity.","url":"https://github.com/ggml-org/llama.cpp/releases","source":"ggml-org"},
+    {"date":"2026-05-26","title":"vLLM × EAGLE ship EAGLE 3.1 speculative decoding","summary":"Collaboration between the EAGLE team, vLLM core, and TorchSpec lands EAGLE 3.1 in vLLM — larger speedups on decode-bound workloads.","url":"https://blog.vllm.ai/","source":"vLLM Blog"},
+    {"date":"2026-05-25","title":"tokenspeed-smg-grpc-servicer v0.5.3 lands","summary":"Cross-engine gRPC servicer (vLLM/SGLang/MLX/TokenSpeed) hits 0.5.3 — closer to a portable inference protocol.","url":"https://pypi.org/project/tokenspeed-smg-grpc-servicer/0.5.3.post20260525/","source":"PyPI"},
+    {"date":"2026-05-22","title":"TokenSpeed MLA backend adopted by vLLM + SGLang","summary":"TokenSpeed's MLA attention backend lands in both vLLM and SGLang for DeepSeek-R1/Kimi-K25 prefill+decode on Blackwell SM100 with FP8 KV cache.","url":"https://lightseek.org/blog/lightseek-tokenspeed.html","source":"LightSeek Foundation"},
+    {"date":"2026-05-20","title":"Qwen3.7-Max + Qwen3.7-Plus-Preview ship","summary":"Alibaba ships flagship Qwen3.7-Max (agentic/coding) and Qwen3.7-Plus-Preview (multimodal/vision) at Alibaba Cloud Summit.","url":"https://renovateqr.com/blog/qwen-3-7-review-benchmarks-2026","source":"Alibaba Cloud"},
+    {"date":"2026-05-18","title":"vLLM × Novita PegaFlow released","summary":"Production-grade external KV cache for vLLM — disaggregated KV across Novita's network with low overhead.","url":"https://blog.vllm.ai/","source":"vLLM Blog"},
+    {"date":"2026-05-11","title":"Jina embeds v5-omni ships","summary":"Single embedding model for text+image+video+audio into one Elasticsearch index — searchable across modalities.","url":"https://www.elastic.co/search-labs/blog/visual-language-model-jina-vlm","source":"Jina / Elastic"},
+    {"date":"2026-05-10","title":"SGLang surpasses 400K production GPUs deployed","summary":"SGLang now runs on over 400,000 GPUs in production — top-tier serving framework momentum.","url":"https://github.com/sgl-project/sglang","source":"sgl-project"},
+    {"date":"2026-04-30","title":"KTransformers v0.6.1 refreshes kt-kernel","summary":"New heterogeneous CPU+GPU kernel; strong fit for MoE models with AMD Epyc NPS0 mode.","url":"https://github.com/kvcache-ai/ktransformers/releases","source":"kvcache-ai"},
+    {"date":"2026-04-28","title":"DigitalOcean launches Inference Engine","summary":"Inference Router + Batch + Serverless + Dedicated tiers; aimed at agentic workloads needing per-request routing.","url":"https://www.businesswire.com/news/home/20260428279648/en/","source":"DigitalOcean"}
+  ]
+}
+</script>
+
+<script>
+(() => {
+  const ICO = {
+    star: '<svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1.5l2.06 4.18 4.62.67-3.34 3.26.79 4.6L8 12.04l-4.13 2.17.79-4.6L1.32 6.35l4.62-.67z"/></svg>',
+    bolt: '<svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><path d="M9 1L3 9h4l-1 6 6-8H8z"/></svg>',
+    news: '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h12v9H2z"/><path d="M5 7h6M5 10h4"/></svg>',
+  };
+
+  const state = {
+    license: localStorage.getItem('iie.license') || 'all',
+    sortBy: localStorage.getItem('iie.sortBy') || 'stars',
+    search: '',
+    showSummary: localStorage.getItem('iie.showSummary') !== '0',
+    snapshot: { lastUpdated: null, production: [], local: [], quant: [], benchmarks: [], news: [] },
+  };
+
+  const $ = sel => document.querySelector(sel);
+  const els = {
+    license: $('#licenseFilter'), sortBy: $('#sortBy'),
+    search: $('#searchBox'), showSummary: $('#showSummary'),
+    production: $('#production-content'), local: $('#local-content'),
+    quant: $('#quant-content'), news: $('#news-content'),
+    countProduction: $('#count-production'), countLocal: $('#count-local'),
+    countQuant: $('#count-quant'), countBench: $('#count-benchmarks'), countNews: $('#count-news'),
+    statProd: $('#stat-prod'), statLocal: $('#stat-local'),
+    statTps: $('#stat-tps'), statTpsSub: $('#stat-tps-sub'),
+    statHot: $('#stat-hot'), statHotSub: $('#stat-hot-sub'),
+    updated: $('#updated'), updatedText: $('#updated-text'),
+    firstRun: $('#first-run-banner'),
+  };
+
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function fmt(n) {
+    n = +n || 0;
+    if (n >= 1e6) return (n/1e6).toFixed(n>=1e7?0:1).replace(/\.0$/,'') + 'M';
+    if (n >= 1e3) return (n/1e3).toFixed(n>=1e4?0:1).replace(/\.0$/,'') + 'K';
+    return String(n);
+  }
+  function parseDate(v) { if (!v) return null; const d = new Date(v); return isNaN(d.getTime()) ? null : d; }
+  function avatarFor(seed) {
+    if (!seed) return { initial: '?', bg: '#f5f5f1', fg: '#8a8275' };
+    const ch = seed.charAt(0).toUpperCase();
+    let h = 0; for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+    const hue = h % 360;
+    return { initial: ch, bg: `hsl(${hue} 32% 92%)`, fg: `hsl(${hue} 38% 32%)` };
+  }
+
+  function loadSnapshot() {
+    try {
+      const node = document.getElementById('snapshot-data');
+      if (!node) return;
+      const d = JSON.parse(node.textContent || '{}');
+      state.snapshot = {
+        lastUpdated: d.lastUpdated || null,
+        production: Array.isArray(d.production) ? d.production : [],
+        local: Array.isArray(d.local) ? d.local : [],
+        quant: Array.isArray(d.quant) ? d.quant : [],
+        benchmarks: Array.isArray(d.benchmarks) ? d.benchmarks : [],
+        news: Array.isArray(d.news) ? d.news : [],
+      };
+    } catch (e) { console.warn('Bad snapshot JSON', e); }
+  }
+
+  function applyFilters(items) {
+    const q = state.search.trim().toLowerCase();
+    let out = items.filter(it => {
+      if (state.license === 'oss' && it.license !== 'oss') return false;
+      if (state.license === 'commercial' && it.license !== 'commercial') return false;
+      if (q) {
+        const hay = ((it.name || '') + ' ' + (it.org || '') + ' ' + (it.tags || []).join(' ') + ' ' + (it.summary || '')).toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+    out.sort((a, b) => {
+      if (state.sortBy === 'name') return (a.name || '').localeCompare(b.name || '');
+      if (state.sortBy === 'tps') return (+b.tps || 0) - (+a.tps || 0);
+      return (+b.stars || 0) - (+a.stars || 0);
+    });
+    return out;
+  }
+
+  function renderItem(it, rank) {
+    const av = avatarFor(it.org || it.name);
+    const tags = (it.tags || []).slice(0, 5);
+    const licClass = it.license === 'oss' ? 'oss' : (it.license === 'commercial' ? 'commercial' : '');
+    const licLabel = it.license === 'oss' ? 'open' : (it.license === 'commercial' ? 'commercial' : '');
+    const tpsLine = it.tps ? `<div class="tps-pill">${ICO.bolt} ${fmt(it.tps)} t/s</div>` : '';
+    const hwLine = it.hardware ? `<span style="color:var(--ink-3);">${esc(it.hardware)}${it.model ? ' · ' + esc(it.model) : ''}</span>` : '';
+    return `
+      <div class="row">
+        <div class="rank ${rank <= 3 ? 'top-3' : ''}">${rank}</div>
+        <div class="avatar" style="background:${av.bg};color:${av.fg}">${esc(av.initial)}</div>
+        <div class="row-main">
+          <div class="row-title">
+            <a href="${esc(it.url || '#')}" target="_blank" rel="noopener">${esc(it.name || '')}</a>
+            ${it.org ? `<span class="row-author">${esc(it.org)}</span>` : ''}
+            ${it.type ? `<span class="chip type">${esc(it.type)}</span>` : ''}
+            ${licLabel ? `<span class="chip license ${licClass}">${licLabel}</span>` : ''}
+          </div>
+          ${hwLine ? `<div class="row-meta">${hwLine}</div>` : ''}
+          ${tags.length ? `<div class="row-tags">${tags.map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>` : ''}
+          ${state.showSummary && it.summary ? `<div class="summary">${esc(it.summary)}</div>` : ''}
+        </div>
+        <div class="row-stats">
+          ${tpsLine}
+          ${it.stars ? `<div class="star-pill">${ICO.star} ${fmt(it.stars)}</div>` : ''}
+        </div>
+      </div>
+    `;
+  }
+
+  function renderPane(target, items, label) {
+    const filtered = applyFilters(items);
+    if (!filtered.length) {
+      target.innerHTML = `<div class="empty"><div class="empty-title">No ${esc(label)} match.</div><div class="empty-sub">Try a different filter.</div></div>`;
+      return filtered;
+    }
+    target.innerHTML = filtered.map((it, i) => renderItem(it, i + 1)).join('');
+    return filtered;
+  }
+
+  function renderNews() {
+    const list = state.snapshot.news;
+    els.countNews.textContent = list.length;
+    if (!list.length) { els.news.innerHTML = `<div class="empty"><div class="empty-title">No news in snapshot.</div></div>`; return; }
+    els.news.innerHTML = list.map(n => `
+      <div class="news-item">
+        <div class="news-icon">${ICO.news}</div>
+        <div>
+          <div class="news-title"><a href="${esc(n.url || '#')}" target="_blank" rel="noopener">${esc(n.title || '')}</a></div>
+          <div class="news-meta">${esc(n.date || '')}${n.source ? ' · ' + esc(n.source) : ''}</div>
+          ${n.summary ? `<div class="news-summary">${esc(n.summary)}</div>` : ''}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function updateStats(prodF, localF) {
+    const allEngines = [...state.snapshot.production, ...state.snapshot.local];
+    els.statProd.textContent = prodF.length;
+    els.statLocal.textContent = localF.length;
+    els.countProduction.textContent = prodF.length;
+    els.countLocal.textContent = localF.length;
+    els.countQuant.textContent = state.snapshot.quant.length;
+    els.countBench.textContent = state.snapshot.benchmarks.length;
+
+    const tpsRanked = allEngines.filter(e => e.tps).sort((a, b) => b.tps - a.tps);
+    if (tpsRanked.length) {
+      els.statTps.textContent = fmt(tpsRanked[0].tps);
+      els.statTpsSub.textContent = `${tpsRanked[0].name} · ${tpsRanked[0].hardware || ''}`;
+    }
+    const hot = allEngines.filter(e => e.stars).sort((a, b) => b.stars - a.stars)[0];
+    if (hot) {
+      const nm = hot.name || '';
+      els.statHot.textContent = nm.length > 14 ? nm.slice(0, 14) + '…' : nm;
+      els.statHotSub.textContent = '★ ' + fmt(hot.stars);
+    }
+  }
+
+  function updateUpdatedLabel() {
+    const last = parseDate(state.snapshot.lastUpdated);
+    if (!last) {
+      els.updatedText.textContent = 'No snapshot yet — run the scheduled task';
+      els.updated.classList.add('stale');
+      els.firstRun.style.display = 'block';
+      return;
+    }
+    const stale = (Date.now() - last.getTime()) > 36 * 3600 * 1000;
+    els.updatedText.textContent = (stale ? 'Stale · ' : 'Snapshot · ') +
+      last.toLocaleString(undefined, { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' });
+    els.updated.classList.toggle('stale', stale);
+    els.firstRun.style.display = 'none';
+  }
+
+  function renderAll() {
+    updateUpdatedLabel();
+    const prodF = renderPane(els.production, state.snapshot.production, 'production engines');
+    const localF = renderPane(els.local, state.snapshot.local, 'local engines');
+    renderPane(els.quant, state.snapshot.quant, 'quantization formats');
+    renderNews();
+    updateStats(prodF, localF);
+  }
+
+  els.license.value = state.license;
+  els.sortBy.value = state.sortBy;
+  els.showSummary.checked = state.showSummary;
+  els.license.addEventListener('change', () => { state.license = els.license.value; localStorage.setItem('iie.license', state.license); renderAll(); });
+  els.sortBy.addEventListener('change', () => { state.sortBy = els.sortBy.value; localStorage.setItem('iie.sortBy', state.sortBy); renderAll(); });
+  els.showSummary.addEventListener('change', () => { state.showSummary = els.showSummary.checked; localStorage.setItem('iie.showSummary', state.showSummary ? '1' : '0'); renderAll(); });
+  els.search.addEventListener('input', () => { state.search = els.search.value || ''; renderAll(); });
+
+  document.querySelectorAll('.tab').forEach(el => {
+    el.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
+      el.classList.add('active');
+      document.getElementById('pane-' + el.dataset.pane).classList.add('active');
+      if (el.dataset.pane === 'benchmarks') maybeInitBenchmarks();
+    });
+  });
+
+  // Benchmarks
+  let benchChart = null;
+  let benchState = { selectedId: localStorage.getItem('iie.benchId') || 'h100_throughput_8b' };
+
+  function populateBenchSelector() {
+    const sel = document.getElementById('benchSelect');
+    sel.innerHTML = '';
+    for (const b of state.snapshot.benchmarks) {
+      const opt = document.createElement('option');
+      opt.value = b.id; opt.textContent = `${b.name} — ${b.category}`;
+      sel.appendChild(opt);
+    }
+    sel.value = benchState.selectedId;
+    if (sel.value !== benchState.selectedId) benchState.selectedId = sel.value || (state.snapshot.benchmarks[0] && state.snapshot.benchmarks[0].id);
+  }
+  function getActiveBench() { return state.snapshot.benchmarks.find(b => b.id === benchState.selectedId) || state.snapshot.benchmarks[0]; }
+
+  function renderBenchMeta(b) {
+    const meta = document.getElementById('bench-meta');
+    if (!b) { meta.textContent = ''; return; }
+    meta.innerHTML = `
+      <span class="bench-category">${esc(b.category)}</span>
+      <strong>${esc(b.name)}</strong> · ${esc(b.scale)} · ${esc(b.description)}
+      <div style="margin-top:6px; font-size:11.5px; color:var(--ink-3);">Source: <a href="${esc(b.url||'#')}" target="_blank" rel="noopener" style="color:var(--accent-2); text-decoration:underline;">${esc(b.source)}</a></div>
+    `;
+  }
+
+  function renderBenchList(b) {
+    const list = document.getElementById('bench-list');
+    const lowerIsBetter = (b.category || '').toLowerCase().includes('latency');
+    const scores = [...(b.scores || [])].sort((a, b) => lowerIsBetter ? a.score - b.score : b.score - a.score);
+    list.innerHTML = scores.map((s, i) => {
+      const av = avatarFor(s.org || s.engine);
+      const unit = b.scale && b.scale.includes('/sec') ? ' t/s' : (b.scale && b.scale.includes('ms') ? ' ms' : '');
+      return `
+        <div class="row">
+          <div class="rank ${i < 3 ? 'top-3' : ''}">${i + 1}</div>
+          <div class="avatar" style="background:${av.bg};color:${av.fg}">${esc(av.initial)}</div>
+          <div class="row-main">
+            <div class="row-title">
+              <a href="${esc(s.url || '#')}" target="_blank" rel="noopener">${esc(s.engine)}</a>
+              ${s.org ? `<span class="row-author">${esc(s.org)}</span>` : ''}
+              ${s.open === false ? `<span class="chip license commercial">commercial</span>` : `<span class="chip license oss">open</span>`}
+            </div>
+            <div class="row-meta">
+              <span><strong style="color:var(--accent);">${fmt(s.score)}${unit}</strong></span>
+              ${s.note ? `<span style="color:var(--ink-3); font-style:italic;">${esc(s.note)}</span>` : ''}
+            </div>
+          </div>
+          <div class="row-stats"><div class="tps-pill">${ICO.bolt} ${fmt(s.score)}${unit}</div></div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function renderBenchChart() {
+    const b = getActiveBench();
+    if (!b) return;
+    renderBenchMeta(b);
+    renderBenchList(b);
+
+    const lowerIsBetter = (b.category || '').toLowerCase().includes('latency');
+    const scores = [...(b.scores || [])].sort((a, b) => lowerIsBetter ? a.score - b.score : b.score - a.score);
+    const labels = scores.map(s => s.engine);
+    const data = scores.map(s => s.score);
+    const colors = scores.map(s => s.open === false ? '#8a8275' : '#5b4ea8');
+
+    if (benchChart) benchChart.destroy();
+    const ctx = document.getElementById('benchChart').getContext('2d');
+    benchChart = new Chart(ctx, {
+      type: 'bar',
+      data: { labels, datasets: [{ label: b.name, data, backgroundColor: colors, borderColor: colors, borderRadius: 3, barThickness: 18 }] },
+      options: {
+        indexAxis: 'y',
+        responsive: true, maintainAspectRatio: false,
+        animation: { duration: 250 },
+        onClick: (evt, items) => { if (items && items[0]) { const s = scores[items[0].index]; if (s && s.url) window.open(s.url, '_blank', 'noopener'); } },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: 'rgba(26,23,20,0.95)', titleFont: { size: 12, weight: '600' }, bodyFont: { size: 11.5 }, padding: 10, cornerRadius: 6, displayColors: false,
+            callbacks: {
+              title: (ctxs) => ctxs[0].label,
+              label: (ctx) => {
+                const s = scores[ctx.dataIndex];
+                const lines = [`${b.name}: ${fmt(s.score)} ${b.scale}`];
+                if (s.org) lines.push(s.org);
+                if (s.note) lines.push(s.note);
+                lines.push(s.open === false ? 'commercial' : 'open-source');
+                return lines;
+              }
+            }
+          }
+        },
+        scales: {
+          x: { title: { display: true, text: b.scale, color: '#524d44', font: { size: 12 } }, ticks: { color: '#8a8275' }, grid: { color: 'rgba(0,0,0,0.05)' }, beginAtZero: true },
+          y: { ticks: { color: '#524d44', font: { size: 11.5 } }, grid: { display: false } }
+        }
+      }
+    });
+  }
+
+  function bindBenchControls() {
+    const selBench = document.getElementById('benchSelect');
+    selBench.addEventListener('change', () => { benchState.selectedId = selBench.value; localStorage.setItem('iie.benchId', benchState.selectedId); renderBenchChart(); });
+  }
+
+  let benchmarksInitialized = false;
+  function maybeInitBenchmarks() {
+    if (benchmarksInitialized) return;
+    if (typeof Chart === 'undefined') { document.getElementById('bench-meta').textContent = 'Chart library failed to load.'; return; }
+    benchmarksInitialized = true;
+    populateBenchSelector();
+    bindBenchControls();
+    renderBenchChart();
+  }
+
+  loadSnapshot();
+  renderAll();
+})();
+</script>
+</body>
+</html>
