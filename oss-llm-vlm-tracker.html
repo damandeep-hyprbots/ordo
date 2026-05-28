@@ -1,0 +1,1695 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Open-Source LLM / VLM Tracker</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js" integrity="sha384-iU8HYtnGQ8Cy4zl7gbNMOhsDTTKX02BTXptVP/vqAWIaTfM7isw76iyZCsjL2eVi" crossorigin="anonymous"></script>
+<style>
+/* ============================================================
+   DESIGN SYSTEM — TOKENS
+   Single source of truth. All components read from here.
+   ============================================================ */
+:root {
+  color-scheme: light;
+
+  /* Color — warm grayscale + single blue accent + 2 semantic */
+  --c-bg:            #fbfaf7;
+  --c-surface:       #ffffff;
+  --c-surface-2:     #f4f3ee;
+  --c-surface-3:     #ebe9e1;
+  --c-border:        #e6e3da;
+  --c-border-strong: #c9c5b8;
+  --c-text:          #18171b;
+  --c-text-2:        #5b585f;
+  --c-text-3:        #8c8990;
+  --c-text-4:        #b3b0b6;
+  --c-link:          #2349b8;
+  --c-link-hover:    #1a3a99;
+
+  --c-accent:        #2349b8;     /* indigo blue, sparingly */
+  --c-accent-soft:   #ecf0fb;
+  --c-accent-line:   #c9d4ef;
+
+  --c-llm:           #1f5e57;     /* deep teal */
+  --c-llm-soft:      #ebf2f0;
+  --c-vlm:           #6b3b8e;     /* deep plum */
+  --c-vlm-soft:      #f1ebf5;
+
+  --c-pos:           #16704a;
+  --c-pos-soft:      #ebf6f0;
+  --c-warn:          #8a5a07;
+  --c-warn-soft:     #fbf3e2;
+
+  /* Type — single sans family, modular scale */
+  --font:            -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI Variable", "Segoe UI", Roboto, sans-serif;
+  --font-mono:       ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --fs-11:           11px;
+  --fs-12:           12px;
+  --fs-13:           13px;
+  --fs-14:           14px;
+  --fs-16:           16px;
+  --fs-20:           20px;
+  --fs-26:           26px;
+  --lh-tight:        1.25;
+  --lh-snug:         1.4;
+  --lh-normal:       1.55;
+  --w-regular:       400;
+  --w-medium:        500;
+  --w-semibold:      600;
+
+  /* Space — 4px base, used at 1/2/3/4/5/6/8/10/12/16 */
+  --s-1:  4px;
+  --s-2:  8px;
+  --s-3:  12px;
+  --s-4:  16px;
+  --s-5:  20px;
+  --s-6:  24px;
+  --s-8:  32px;
+  --s-10: 40px;
+  --s-12: 48px;
+  --s-16: 64px;
+
+  /* Radius */
+  --r-sm: 4px;
+  --r-md: 6px;
+  --r-lg: 8px;
+
+  /* Borders */
+  --bw: 1px;
+
+  /* Shadow — single elevation, used only on hover */
+  --shadow: 0 1px 2px rgba(24, 23, 27, 0.04), 0 2px 8px -2px rgba(24, 23, 27, 0.06);
+
+  /* Layout */
+  --max-w: 1180px;
+  --gutter: 28px;
+  --pane-pad-y: 24px;
+}
+
+/* ============================================================
+   BASE
+   ============================================================ */
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--c-bg);
+  color: var(--c-text);
+  font-family: var(--font);
+  font-size: var(--fs-13);
+  line-height: var(--lh-normal);
+  font-feature-settings: "cv11", "ss01", "ss03";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+a { color: inherit; text-decoration: none; }
+button { font: inherit; cursor: pointer; }
+input, select, textarea { font: inherit; color: inherit; }
+
+/* ============================================================
+   LAYOUT
+   ============================================================ */
+.shell {
+  max-width: var(--max-w);
+  margin: 0 auto;
+  padding: var(--s-8) var(--gutter) var(--s-16);
+}
+@media (max-width: 720px) {
+  .shell { padding: var(--s-6) var(--s-4) var(--s-12); }
+  :root { --gutter: 16px; }
+}
+
+/* ============================================================
+   TYPOGRAPHY UTILITIES
+   ============================================================ */
+.t-h1 { font-size: var(--fs-26); font-weight: var(--w-semibold); line-height: var(--lh-tight); letter-spacing: -0.015em; color: var(--c-text); margin: 0; }
+.t-h2 { font-size: var(--fs-16); font-weight: var(--w-semibold); line-height: var(--lh-snug); letter-spacing: -0.005em; color: var(--c-text); margin: 0; }
+.t-h3 { font-size: var(--fs-13); font-weight: var(--w-semibold); text-transform: uppercase; letter-spacing: 0.06em; color: var(--c-text-2); margin: 0; }
+.t-body { font-size: var(--fs-13); color: var(--c-text-2); margin: 0; line-height: var(--lh-normal); }
+.t-meta { font-size: var(--fs-12); color: var(--c-text-3); }
+.t-num  { font-variant-numeric: tabular-nums; }
+.t-mono { font-family: var(--font-mono); font-size: var(--fs-12); letter-spacing: -0.01em; }
+
+/* ============================================================
+   COMPONENT — STATUS DOT
+   ============================================================ */
+.status {
+  display: inline-flex; align-items: center; gap: var(--s-2);
+  font-size: var(--fs-12); color: var(--c-text-2);
+}
+.status::before {
+  content: ""; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--c-pos);
+}
+.status--stale::before { background: var(--c-warn); }
+.status--empty::before { background: var(--c-text-4); }
+
+/* ============================================================
+   COMPONENT — CARD / PANEL
+   ============================================================ */
+.card {
+  background: var(--c-surface);
+  border: var(--bw) solid var(--c-border);
+  border-radius: var(--r-lg);
+  padding: var(--s-4) var(--s-5);
+}
+.card--clickable { cursor: pointer; transition: border-color .15s; }
+.card--clickable:hover { border-color: var(--c-border-strong); }
+
+/* ============================================================
+   COMPONENT — STAT (label + value + sub)
+   ============================================================ */
+.stat { display: flex; flex-direction: column; gap: 2px; }
+.stat__label {
+  font-size: var(--fs-11);
+  font-weight: var(--w-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--c-text-3);
+}
+.stat__value {
+  font-size: var(--fs-20);
+  font-weight: var(--w-semibold);
+  line-height: 1.1;
+  color: var(--c-text);
+  font-variant-numeric: tabular-nums;
+}
+.stat__sub { font-size: var(--fs-11); color: var(--c-text-3); }
+
+/* ============================================================
+   COMPONENT — BADGE / CHIP
+   ============================================================ */
+.badge {
+  display: inline-flex; align-items: center; gap: var(--s-1);
+  font-size: var(--fs-11);
+  font-weight: var(--w-medium);
+  padding: 1px 6px;
+  border-radius: var(--r-sm);
+  background: var(--c-surface-2);
+  color: var(--c-text-2);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.badge--accent  { background: var(--c-accent-soft); color: var(--c-accent); }
+.badge--llm     { background: var(--c-llm-soft);    color: var(--c-llm); }
+.badge--vlm     { background: var(--c-vlm-soft);    color: var(--c-vlm); }
+.badge--pos     { background: var(--c-pos-soft);    color: var(--c-pos); }
+.badge--warn    { background: var(--c-warn-soft);   color: var(--c-warn); }
+.badge--outline { background: transparent; border: var(--bw) solid var(--c-border-strong); color: var(--c-text-3); }
+.badge--mono    { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: -0.01em; }
+
+/* ============================================================
+   COMPONENT — INPUT / SELECT
+   ============================================================ */
+.field {
+  display: inline-flex; align-items: center; gap: var(--s-2);
+  font-size: var(--fs-12); color: var(--c-text-2);
+}
+.field__label { font-weight: var(--w-medium); color: var(--c-text-3); }
+.input, .select {
+  background: var(--c-surface);
+  border: var(--bw) solid var(--c-border-strong);
+  border-radius: var(--r-sm);
+  padding: 4px 8px;
+  height: 28px;
+  color: var(--c-text);
+  font-size: var(--fs-13);
+  font-variant-numeric: tabular-nums;
+}
+.input:focus, .select:focus {
+  outline: 2px solid var(--c-accent-soft);
+  outline-offset: 0;
+  border-color: var(--c-accent);
+}
+.input { width: 84px; }
+.select {
+  appearance: none;
+  padding-right: 22px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'><path fill='%238c8990' d='M2 4l3 3 3-3z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 6px center;
+}
+
+/* ============================================================
+   COMPONENT — CHECKBOX TOGGLE (chip-style)
+   ============================================================ */
+.check {
+  display: inline-flex; align-items: center; gap: 6px;
+  user-select: none; cursor: pointer;
+  font-size: var(--fs-12); color: var(--c-text-2);
+  padding: 4px 10px;
+  border: var(--bw) solid var(--c-border-strong);
+  border-radius: var(--r-sm);
+  background: var(--c-surface);
+  transition: background .12s, border-color .12s, color .12s;
+}
+.check input { display: none; }
+.check:hover { border-color: var(--c-text-3); }
+.check:has(input:checked) { background: var(--c-accent-soft); border-color: var(--c-accent-line); color: var(--c-accent); }
+
+/* ============================================================
+   COMPONENT — TABS (underline-only)
+   ============================================================ */
+.tabs {
+  display: flex; align-items: stretch;
+  gap: var(--s-6);
+  border-bottom: var(--bw) solid var(--c-border);
+  margin-bottom: var(--s-4);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.tabs::-webkit-scrollbar { display: none; }
+.tab {
+  background: none;
+  border: none;
+  padding: var(--s-3) 0;
+  font-size: var(--fs-13);
+  font-weight: var(--w-medium);
+  color: var(--c-text-3);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  white-space: nowrap;
+  transition: color .12s, border-color .12s;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.tab:hover { color: var(--c-text); }
+.tab--active { color: var(--c-text); border-bottom-color: var(--c-accent); }
+.tab__count {
+  background: var(--c-surface-2);
+  color: var(--c-text-3);
+  font-size: var(--fs-11);
+  padding: 0 6px;
+  border-radius: 999px;
+  font-variant-numeric: tabular-nums;
+  min-width: 18px;
+  height: 16px;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.tab--active .tab__count { background: var(--c-accent-soft); color: var(--c-accent); }
+
+/* ============================================================
+   COMPONENT — CONTROLS BAR
+   ============================================================ */
+.controls {
+  display: flex; align-items: center; gap: var(--s-4);
+  flex-wrap: wrap;
+  padding: var(--s-3) 0;
+  margin-bottom: var(--s-4);
+}
+
+/* ============================================================
+   COMPONENT — TABLE (model lists)
+   ============================================================ */
+.table-wrap {
+  border: var(--bw) solid var(--c-border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  background: var(--c-surface);
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-13);
+}
+.table th, .table td {
+  text-align: left;
+  padding: 10px var(--s-3);
+  vertical-align: middle;
+}
+.table thead {
+  background: var(--c-surface-2);
+  border-bottom: var(--bw) solid var(--c-border);
+}
+.table thead th {
+  font-size: var(--fs-11);
+  font-weight: var(--w-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--c-text-3);
+  padding-top: var(--s-2);
+  padding-bottom: var(--s-2);
+  white-space: nowrap;
+}
+.table tbody tr {
+  border-top: var(--bw) solid var(--c-border);
+  transition: background .1s;
+}
+.table tbody tr:first-child { border-top: none; }
+.table tbody tr:hover { background: var(--c-surface-2); }
+.table .col-num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--c-text-2); }
+.table .col-num--strong { color: var(--c-text); font-weight: var(--w-medium); }
+.table .col-rank { text-align: right; color: var(--c-text-3); font-variant-numeric: tabular-nums; width: 36px; padding-right: var(--s-2); }
+.table .col-model { min-width: 280px; }
+.table .col-trend { width: 80px; }
+.table .col-when { white-space: nowrap; color: var(--c-text-3); font-size: var(--fs-12); width: 100px; }
+.table .col-task { width: 140px; }
+
+.table .model-cell {
+  display: flex; flex-direction: column; gap: 2px;
+  min-width: 0;
+}
+.table .model-cell__name {
+  font-size: var(--fs-13);
+  font-weight: var(--w-medium);
+  color: var(--c-text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.table .model-cell__name a:hover { color: var(--c-link); text-decoration: underline; text-underline-offset: 2px; }
+.table .model-cell__org { font-size: var(--fs-11); color: var(--c-text-3); }
+.table .model-cell__summary {
+  font-size: var(--fs-12);
+  color: var(--c-text-2);
+  margin-top: 2px;
+  line-height: var(--lh-snug);
+  max-width: 560px;
+}
+.table .tag-row { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+
+/* Trend arrow indicator */
+.trend {
+  display: inline-flex; align-items: baseline; gap: 2px;
+  font-size: var(--fs-12);
+  font-weight: var(--w-medium);
+  font-variant-numeric: tabular-nums;
+  color: var(--c-text-2);
+}
+.trend--up { color: var(--c-accent); }
+
+/* ============================================================
+   COMPONENT — PAPER CARDS (different from model rows)
+   ============================================================ */
+.paper-list { display: flex; flex-direction: column; gap: var(--s-3); }
+.paper {
+  border: var(--bw) solid var(--c-border);
+  border-radius: var(--r-lg);
+  background: var(--c-surface);
+  padding: var(--s-4) var(--s-5);
+}
+.paper__title { font-size: var(--fs-14); font-weight: var(--w-semibold); color: var(--c-text); line-height: var(--lh-snug); }
+.paper__title a:hover { color: var(--c-link); text-decoration: underline; }
+.paper__meta { font-size: var(--fs-12); color: var(--c-text-3); margin: var(--s-1) 0 var(--s-2); }
+.paper__summary { font-size: var(--fs-13); color: var(--c-text-2); line-height: var(--lh-normal); }
+
+/* ============================================================
+   STATES — EMPTY, NOTICE
+   ============================================================ */
+.empty {
+  border: var(--bw) dashed var(--c-border-strong);
+  border-radius: var(--r-lg);
+  padding: var(--s-8) var(--s-5);
+  text-align: center;
+  background: var(--c-surface);
+}
+.empty__title { font-size: var(--fs-14); font-weight: var(--w-medium); color: var(--c-text-2); margin-bottom: var(--s-1); }
+.empty__sub { font-size: var(--fs-12); color: var(--c-text-3); }
+
+.notice {
+  background: var(--c-warn-soft);
+  border: var(--bw) solid #efe0bc;
+  color: var(--c-warn);
+  padding: var(--s-3) var(--s-4);
+  border-radius: var(--r-md);
+  font-size: var(--fs-12);
+  line-height: var(--lh-normal);
+  margin-bottom: var(--s-4);
+}
+.notice code {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  background: rgba(0,0,0,0.04);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+/* ============================================================
+   MASTHEAD
+   ============================================================ */
+.masthead {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  gap: var(--s-6); flex-wrap: wrap;
+  padding-bottom: var(--s-5);
+  border-bottom: var(--bw) solid var(--c-border);
+  margin-bottom: var(--s-6);
+}
+.masthead__title { max-width: 640px; }
+.masthead__title p { margin-top: var(--s-2); }
+.masthead__meta { display: flex; flex-direction: column; align-items: flex-end; gap: var(--s-1); }
+
+/* ============================================================
+   STATS GRID
+   ============================================================ */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  border: var(--bw) solid var(--c-border);
+  border-radius: var(--r-lg);
+  background: var(--c-surface);
+  margin-bottom: var(--s-6);
+  overflow: hidden;
+}
+.stats .stat { padding: var(--s-4) var(--s-5); border-left: var(--bw) solid var(--c-border); }
+.stats .stat:first-child { border-left: none; }
+@media (max-width: 720px) {
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  .stats .stat:nth-child(3) { border-left: none; }
+  .stats .stat:nth-child(3), .stats .stat:nth-child(4) { border-top: var(--bw) solid var(--c-border); }
+}
+
+/* ============================================================
+   PANES
+   ============================================================ */
+.pane { display: none; }
+.pane--active { display: block; }
+
+/* ============================================================
+   BENCHMARK PANE
+   ============================================================ */
+.bench-header {
+  border: var(--bw) solid var(--c-border);
+  border-radius: var(--r-lg);
+  padding: var(--s-4) var(--s-5);
+  background: var(--c-surface);
+  margin-bottom: var(--s-3);
+}
+.bench-header__title { display: flex; align-items: baseline; gap: var(--s-2); flex-wrap: wrap; margin-bottom: var(--s-1); }
+.bench-header__desc { font-size: var(--fs-13); color: var(--c-text-2); line-height: var(--lh-normal); }
+.bench-header__source { margin-top: var(--s-2); font-size: var(--fs-11); color: var(--c-text-3); }
+
+.chart-wrap {
+  border: var(--bw) solid var(--c-border);
+  border-radius: var(--r-lg);
+  background: var(--c-surface);
+  padding: var(--s-5);
+  margin-bottom: var(--s-3);
+}
+.chart-canvas { position: relative; height: 380px; }
+.chart-legend {
+  display: flex; gap: var(--s-5); flex-wrap: wrap;
+  font-size: var(--fs-12); color: var(--c-text-2);
+  margin-top: var(--s-3);
+  padding-top: var(--s-3);
+  border-top: var(--bw) solid var(--c-border);
+}
+.legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.legend-mark { width: 12px; height: 12px; display: inline-block; flex-shrink: 0; }
+.legend-mark--llm  { background: var(--c-llm); border-radius: 50%; }
+.legend-mark--vlm  { background: var(--c-vlm); transform: rotate(45deg); }
+.legend-mark--pareto { background: var(--c-accent); border-radius: 50%; }
+.legend-mark--prop { background: transparent; border: 1.5px dashed var(--c-text-3); border-radius: 50%; }
+
+.section-head {
+  font-size: var(--fs-11);
+  font-weight: var(--w-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--c-text-3);
+  margin: var(--s-6) 0 var(--s-3);
+}
+
+.disclaimer {
+  margin-top: var(--s-5);
+  padding: var(--s-3) var(--s-4);
+  background: var(--c-surface-2);
+  border: var(--bw) solid var(--c-border);
+  border-radius: var(--r-md);
+  font-size: var(--fs-11);
+  color: var(--c-text-3);
+  line-height: var(--lh-normal);
+}
+
+/* ============================================================
+   FOCUS RING (accessibility)
+   ============================================================ */
+button:focus-visible, .tab:focus-visible, .check:focus-within {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 2px;
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <header class="masthead">
+    <div class="masthead__title">
+      <h1 class="t-h1">Open-source models</h1>
+      <p class="t-body">Trending text-to-text LLMs and image+text-to-text VLMs across Hugging Face, ModelScope, and GitHub. Daily snapshot.</p>
+    </div>
+    <div class="masthead__meta">
+      <span class="status" id="status-indicator"><span id="status-text">No snapshot yet</span></span>
+      <span class="t-meta" id="status-sub"></span>
+    </div>
+  </header>
+
+  <section class="stats">
+    <div class="stat"><div class="stat__label">Text → text</div><div class="stat__value t-num" id="stat-llm">—</div><div class="stat__sub">trending models</div></div>
+    <div class="stat"><div class="stat__label">Image + text → text</div><div class="stat__value t-num" id="stat-vlm">—</div><div class="stat__sub">trending models</div></div>
+    <div class="stat"><div class="stat__label">Top trending</div><div class="stat__value t-num" id="stat-top">—</div><div class="stat__sub" id="stat-top-sub">&nbsp;</div></div>
+    <div class="stat"><div class="stat__label">Most active org</div><div class="stat__value t-num" id="stat-org">—</div><div class="stat__sub" id="stat-org-sub">&nbsp;</div></div>
+  </section>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab tab--active" data-pane="llm" role="tab">LLMs <span class="tab__count" id="count-llm">—</span></button>
+    <button class="tab" data-pane="vlm" role="tab">VLMs <span class="tab__count" id="count-vlm">—</span></button>
+    <button class="tab" data-pane="papers" role="tab">Papers <span class="tab__count" id="count-papers">—</span></button>
+    <button class="tab" data-pane="modelscope" role="tab">ModelScope <span class="tab__count" id="count-modelscope">—</span></button>
+    <button class="tab" data-pane="github" role="tab">GitHub <span class="tab__count" id="count-github">—</span></button>
+    <button class="tab" data-pane="benchmarks" role="tab">Benchmarks <span class="tab__count" id="count-benchmarks">—</span></button>
+  </nav>
+
+  <div class="controls" id="model-controls">
+    <div class="field"><label class="field__label" for="minDownloads">Min downloads</label><input type="number" id="minDownloads" class="input t-num" value="500" min="0" step="100"></div>
+    <div class="field"><label class="field__label" for="windowDays">Window</label>
+      <select id="windowDays" class="select">
+        <option value="7">Past 7 days</option>
+        <option value="30" selected>Past 30 days</option>
+        <option value="90">Past 90 days</option>
+        <option value="0">All time</option>
+      </select>
+    </div>
+    <div class="field"><label class="field__label" for="sortBy">Sort</label>
+      <select id="sortBy" class="select">
+        <option value="trendingScore" selected>Trending</option>
+        <option value="downloads">Downloads</option>
+        <option value="likes">Likes</option>
+        <option value="created">Newest</option>
+      </select>
+    </div>
+    <label class="check"><input type="checkbox" id="showSummary" checked>Show summaries</label>
+  </div>
+
+  <div id="first-run-banner" class="notice" style="display:none">
+    No snapshot has been written yet. Open <strong>Scheduled</strong> in the sidebar and click <strong>Run now</strong> on <code>oss-llm-vlm-daily-digest</code> to populate the dashboard. It otherwise runs daily at 8 AM.
+  </div>
+
+  <div id="pane-llm" class="pane pane--active"><div id="llm-content"></div></div>
+  <div id="pane-vlm" class="pane"><div id="vlm-content"></div></div>
+  <div id="pane-papers" class="pane"><div class="paper-list" id="papers-content"></div></div>
+  <div id="pane-modelscope" class="pane"><div id="modelscope-content"></div></div>
+  <div id="pane-github" class="pane"><div id="github-content"></div></div>
+
+  <div id="pane-benchmarks" class="pane">
+    <div class="controls">
+      <div class="field"><label class="field__label" for="benchSelect">Benchmark</label><select id="benchSelect" class="select" style="min-width:240px;"></select></div>
+      <div class="field"><label class="field__label" for="benchModelType">Type</label>
+        <select id="benchModelType" class="select">
+          <option value="all">All</option>
+          <option value="LLM">LLMs only</option>
+          <option value="VLM">VLMs only</option>
+        </select>
+      </div>
+      <label class="check"><input type="checkbox" id="benchOpenOnly">Open-weight only</label>
+      <label class="check"><input type="checkbox" id="benchShowLabels" checked>Labels</label>
+    </div>
+
+    <div class="bench-header" id="bench-header"></div>
+
+    <div class="chart-wrap">
+      <div class="chart-canvas"><canvas id="benchChart"></canvas></div>
+      <div class="chart-legend">
+        <span class="legend-item"><span class="legend-mark legend-mark--pareto"></span>Pareto frontier (open-weight)</span>
+        <span class="legend-item"><span class="legend-mark legend-mark--llm"></span>Open LLM</span>
+        <span class="legend-item"><span class="legend-mark legend-mark--vlm"></span>Open VLM</span>
+        <span class="legend-item"><span class="legend-mark legend-mark--prop"></span>Proprietary (reference)</span>
+      </div>
+    </div>
+
+    <div class="section-head">Frontier models</div>
+    <div id="frontier-list"></div>
+
+    <div class="disclaimer">
+      Benchmark scores are curated from published model cards, papers, and public leaderboards (OpenCompass, Open VLM Leaderboard, LMArena). Figures are approximate and may not reflect the very latest evaluations. Arena Elo numbers are May 2026 estimates. Parameter counts use total parameters; MoE active-parameter counts are shown in tooltips and notes.
+    </div>
+  </div>
+
+</div>
+
+<!-- Curated benchmark data -->
+<script type="application/json" id="benchmark-data">
+{
+  "benchmarks": [
+    {
+      "id": "arena_text",
+      "name": "Chatbot Arena Elo",
+      "category": "Human preference",
+      "appliesTo": ["LLM"],
+      "scale": "Elo (~1000-1500)",
+      "description": "Crowdsourced pairwise preference votes converted to Elo ratings via the LMArena platform. Captures real-world chat quality. Open and proprietary models compared side-by-side. Error bars show 95% confidence intervals.",
+      "source": "lmarena.ai (May 2026 snapshot, approximate)",
+      "showCI": true,
+      "scores": [
+        {"model":"Claude Opus 4.6","params":250,"score":1418,"eloCI":7,"type":"LLM","open":false,"org":"Anthropic","url":"https://anthropic.com/claude","note":"Proprietary reference"},
+        {"model":"Gemini 3.1 Pro","params":300,"score":1405,"eloCI":7,"type":"LLM","open":false,"org":"Google","url":"https://deepmind.google","note":"Proprietary reference"},
+        {"model":"GPT-5.2","params":400,"score":1400,"eloCI":7,"type":"LLM","open":false,"org":"OpenAI","url":"https://openai.com","note":"Proprietary reference"},
+        {"model":"Grok 4","params":314,"score":1380,"eloCI":8,"type":"LLM","open":false,"org":"xAI","url":"https://x.ai","note":"Proprietary reference"},
+        {"model":"DeepSeek-V3.2","params":671,"score":1380,"eloCI":9,"type":"LLM","open":true,"org":"DeepSeek","url":"https://hf.co/deepseek-ai/DeepSeek-V3.2","note":"MoE, 37B active · MIT license"},
+        {"model":"DeepSeek-V3","params":671,"score":1350,"eloCI":9,"type":"LLM","open":true,"org":"DeepSeek","url":"https://hf.co/deepseek-ai/DeepSeek-V3","note":"MoE, 37B active · MIT license"},
+        {"model":"gpt-oss-120b","params":120,"score":1320,"eloCI":10,"type":"LLM","open":true,"org":"OpenAI","url":"https://hf.co/openai/gpt-oss-120b","note":"MoE, ~5B active · Apache-2.0"},
+        {"model":"Llama-3.1-405B-Instruct","params":405,"score":1255,"eloCI":8,"type":"LLM","open":true,"org":"Meta","url":"https://hf.co/meta-llama/Llama-3.1-405B-Instruct","note":"Llama 3.1 community license"},
+        {"model":"Qwen2.5-72B-Instruct","params":72,"score":1265,"eloCI":8,"type":"LLM","open":true,"org":"Alibaba","url":"https://hf.co/Qwen/Qwen2.5-72B-Instruct","note":"Apache-2.0"},
+        {"model":"gpt-oss-20b","params":20,"score":1230,"eloCI":11,"type":"LLM","open":true,"org":"OpenAI","url":"https://hf.co/openai/gpt-oss-20b","note":"Apache-2.0"},
+        {"model":"DeepSeek-V2.5","params":236,"score":1230,"eloCI":9,"type":"LLM","open":true,"org":"DeepSeek","url":"https://hf.co/deepseek-ai/DeepSeek-V2.5","note":"MoE, 21B active"},
+        {"model":"gemma-2-27b-it","params":27,"score":1220,"eloCI":8,"type":"LLM","open":true,"org":"Google","url":"https://hf.co/google/gemma-2-27b-it","note":"Gemma license"},
+        {"model":"Llama-3.1-70B-Instruct","params":70,"score":1210,"eloCI":8,"type":"LLM","open":true,"org":"Meta","url":"https://hf.co/meta-llama/Llama-3.1-70B-Instruct"},
+        {"model":"Qwen2.5-32B-Instruct","params":32,"score":1200,"eloCI":9,"type":"LLM","open":true,"org":"Alibaba","url":"https://hf.co/Qwen/Qwen2.5-32B-Instruct","note":"Apache-2.0"},
+        {"model":"gemma-2-9b-it","params":9,"score":1190,"eloCI":9,"type":"LLM","open":true,"org":"Google","url":"https://hf.co/google/gemma-2-9b-it"},
+        {"model":"Qwen2.5-14B-Instruct","params":14,"score":1180,"eloCI":10,"type":"LLM","open":true,"org":"Alibaba","url":"https://hf.co/Qwen/Qwen2.5-14B-Instruct"},
+        {"model":"Llama-3.1-8B-Instruct","params":8,"score":1175,"eloCI":10,"type":"LLM","open":true,"org":"Meta","url":"https://hf.co/meta-llama/Llama-3.1-8B-Instruct"},
+        {"model":"Mixtral-8x22B-Instruct","params":141,"score":1155,"eloCI":11,"type":"LLM","open":true,"org":"Mistral","url":"https://hf.co/mistralai/Mixtral-8x22B-Instruct-v0.1","note":"MoE, 39B active · Apache-2.0"},
+        {"model":"Qwen2.5-7B-Instruct","params":7,"score":1160,"eloCI":11,"type":"LLM","open":true,"org":"Alibaba","url":"https://hf.co/Qwen/Qwen2.5-7B-Instruct"},
+        {"model":"Mistral-7B-Instruct","params":7,"score":1100,"eloCI":12,"type":"LLM","open":true,"org":"Mistral","url":"https://hf.co/mistralai/Mistral-7B-Instruct-v0.3","note":"Apache-2.0"},
+        {"model":"Llama-3.2-3B-Instruct","params":3,"score":1110,"eloCI":12,"type":"LLM","open":true,"org":"Meta","url":"https://hf.co/meta-llama/Llama-3.2-3B-Instruct"},
+        {"model":"Llama-3.2-1B-Instruct","params":1,"score":1040,"eloCI":14,"type":"LLM","open":true,"org":"Meta","url":"https://hf.co/meta-llama/Llama-3.2-1B-Instruct"}
+      ]
+    },
+    {
+      "id": "arena_vision",
+      "name": "Vision Arena Elo",
+      "category": "Human preference",
+      "appliesTo": ["VLM"],
+      "scale": "Elo (~1000-1500)",
+      "description": "LMArena Vision — crowdsourced preferences on image+text tasks. Error bars show 95% CI. As of May 2026, top open VLMs are within ~150 Elo of the frontier.",
+      "source": "lmarena.ai/leaderboard/vision (May 2026 snapshot, approximate)",
+      "showCI": true,
+      "scores": [
+        {"model":"Gemini 3 Pro Vision","params":300,"score":1486,"eloCI":7,"type":"VLM","open":false,"org":"Google","url":"https://deepmind.google","note":"Proprietary reference"},
+        {"model":"GPT-5.2 Vision","params":400,"score":1471,"eloCI":7,"type":"VLM","open":false,"org":"OpenAI","url":"https://openai.com","note":"Proprietary reference"},
+        {"model":"Claude Opus 4.6 Vision","params":250,"score":1465,"eloCI":7,"type":"VLM","open":false,"org":"Anthropic","url":"https://anthropic.com","note":"Proprietary reference"},
+        {"model":"Qwen2.5-VL-72B-Instruct","params":72,"score":1340,"eloCI":9,"type":"VLM","open":true,"org":"Alibaba","url":"https://hf.co/Qwen/Qwen2.5-VL-72B-Instruct","note":"Frontier open VLM · Apache-2.0"},
+        {"model":"InternVL3-78B","params":78,"score":1330,"eloCI":10,"type":"VLM","open":true,"org":"OpenGVLab","url":"https://hf.co/OpenGVLab/InternVL3-78B","note":"MIT license"},
+        {"model":"GLM-4.6V","params":40,"score":1325,"eloCI":11,"type":"VLM","open":true,"org":"Zhipu","url":"https://hf.co/zai-org/GLM-4.6V","note":"Apache-2.0"},
+        {"model":"Qwen2-VL-72B-Instruct","params":72,"score":1290,"eloCI":9,"type":"VLM","open":true,"org":"Alibaba","url":"https://hf.co/Qwen/Qwen2-VL-72B-Instruct"},
+        {"model":"InternVL2.5-78B","params":78,"score":1280,"eloCI":10,"type":"VLM","open":true,"org":"OpenGVLab","url":"https://hf.co/OpenGVLab/InternVL2_5-78B"},
+        {"model":"Qwen2.5-VL-32B-Instruct","params":32,"score":1260,"eloCI":11,"type":"VLM","open":true,"org":"Alibaba","url":"https://hf.co/Qwen/Qwen2.5-VL-32B-Instruct"},
+        {"model":"Llama-3.2-90B-Vision","params":90,"score":1240,"eloCI":10,"type":"VLM","open":true,"org":"Meta","url":"https://hf.co/meta-llama/Llama-3.2-90B-Vision-Instruct"},
+        {"model":"InternVL2-76B","params":76,"score":1230,"eloCI":10,"type":"VLM","open":true,"org":"OpenGVLab","url":"https://hf.co/OpenGVLab/InternVL2-Llama3-76B"},
+        {"model":"Qwen2.5-VL-7B-Instruct","params":7,"score":1190,"eloCI":11,"type":"VLM","open":true,"org":"Alibaba","url":"https://hf.co/Qwen/Qwen2.5-VL-7B-Instruct","note":"Best small open VLM"},
+        {"model":"MiniCPM-V-4.6","params":8,"score":1185,"eloCI":12,"type":"VLM","open":true,"org":"OpenBMB","url":"https://hf.co/openbmb/MiniCPM-V-4.6","note":"On-device · Apache-2.0"},
+        {"model":"MiniCPM-V-2.6","params":8,"score":1180,"eloCI":12,"type":"VLM","open":true,"org":"OpenBMB","url":"https://hf.co/openbmb/MiniCPM-V-2_6"},
+        {"model":"Qwen2-VL-7B-Instruct","params":7,"score":1170,"eloCI":12,"type":"VLM","open":true,"org":"Alibaba","url":"https://hf.co/Qwen/Qwen2-VL-7B-Instruct"},
+        {"model":"Llama-3.2-11B-Vision","params":11,"score":1140,"eloCI":12,"type":"VLM","open":true,"org":"Meta","url":"https://hf.co/meta-llama/Llama-3.2-11B-Vision-Instruct"},
+        {"model":"Pixtral-12B","params":12,"score":1130,"eloCI":13,"type":"VLM","open":true,"org":"Mistral","url":"https://hf.co/mistralai/Pixtral-12B-2409","note":"Apache-2.0"},
+        {"model":"gemma-3-27b-it","params":27,"score":1175,"eloCI":12,"type":"VLM","open":true,"org":"Google","url":"https://hf.co/google/gemma-3-27b-it"},
+        {"model":"Phi-3.5-vision","params":4.2,"score":1080,"eloCI":14,"type":"VLM","open":true,"org":"Microsoft","url":"https://hf.co/microsoft/Phi-3.5-vision-instruct","note":"MIT license"}
+      ]
+    },
+    {
+      "id": "ocrbench",
+      "name": "OCRBench",
+      "category": "OCR",
+      "appliesTo": ["VLM"],
+      "scale": "0-100 (raw /1000 × 10)",
+      "description": "Multi-task OCR benchmark covering text recognition, scene text VQA, document VQA, key information extraction, and handwritten math.",
+      "source": "github.com/Yuliang-Liu/MultimodalOCR",
+      "scores": [
+        {"model":"zai-org/GLM-OCR","params":9,"score":89.0,"type":"VLM","url":"https://hf.co/zai-org/GLM-OCR","note":"OCR-specialist"},
+        {"model":"Qwen2.5-VL-72B-Instruct","params":72,"score":88.5,"type":"VLM","url":"https://hf.co/Qwen/Qwen2.5-VL-72B-Instruct"},
+        {"model":"InternVL3-78B","params":78,"score":88.0,"type":"VLM","url":"https://hf.co/OpenGVLab/InternVL3-78B"},
+        {"model":"Qwen2.5-VL-32B-Instruct","params":32,"score":87.8,"type":"VLM","url":"https://hf.co/Qwen/Qwen2.5-VL-32B-Instruct"},
+        {"model":"Qwen2-VL-72B-Instruct","params":72,"score":87.7,"type":"VLM","url":"https://hf.co/Qwen/Qwen2-VL-72B-Instruct"},
+        {"model":"MiniCPM-V-4.6","params":8,"score":87.0,"type":"VLM","url":"https://hf.co/openbmb/MiniCPM-V-4.6"},
+        {"model":"Qwen2.5-VL-7B-Instruct","params":7,"score":86.4,"type":"VLM","url":"https://hf.co/Qwen/Qwen2.5-VL-7B-Instruct"},
+        {"model":"InternVL2.5-78B","params":78,"score":85.1,"type":"VLM","url":"https://hf.co/OpenGVLab/InternVL2_5-78B"},
+        {"model":"MiniCPM-V-2.6","params":8,"score":85.2,"type":"VLM","url":"https://hf.co/openbmb/MiniCPM-V-2_6"},
+        {"model":"Qwen2-VL-7B-Instruct","params":7,"score":84.5,"type":"VLM","url":"https://hf.co/Qwen/Qwen2-VL-7B-Instruct"},
+        {"model":"InternVL2-76B","params":76,"score":83.9,"type":"VLM","url":"https://hf.co/OpenGVLab/InternVL2-Llama3-76B"},
+        {"model":"Qwen2-VL-2B-Instruct","params":2,"score":80.9,"type":"VLM","url":"https://hf.co/Qwen/Qwen2-VL-2B-Instruct"},
+        {"model":"NuExtract3","params":4,"score":80.0,"type":"VLM","url":"https://hf.co/numind/NuExtract3","note":"Extraction-specialist"},
+        {"model":"InternVL2-8B","params":8,"score":79.4,"type":"VLM","url":"https://hf.co/OpenGVLab/InternVL2-8B"},
+        {"model":"gemma-3-27b-it","params":27,"score":75.3,"type":"VLM","url":"https://hf.co/google/gemma-3-27b-it"},
+        {"model":"Llama-3.2-90B-Vision","params":90,"score":75.3,"type":"VLM","url":"https://hf.co/meta-llama/Llama-3.2-90B-Vision-Instruct"},
+        {"model":"gemma-3-12b-it","params":12,"score":73.0,"type":"VLM","url":"https://hf.co/google/gemma-3-12b-it"},
+        {"model":"Llama-3.2-11B-Vision","params":11,"score":69.3,"type":"VLM","url":"https://hf.co/meta-llama/Llama-3.2-11B-Vision-Instruct"},
+        {"model":"Pixtral-12B","params":12,"score":68.5,"type":"VLM","url":"https://hf.co/mistralai/Pixtral-12B-2409"},
+        {"model":"gemma-3-4b-it","params":4,"score":65.0,"type":"VLM","url":"https://hf.co/google/gemma-3-4b-it"},
+        {"model":"Phi-3.5-vision","params":4.2,"score":59.9,"type":"VLM","url":"https://hf.co/microsoft/Phi-3.5-vision-instruct"}
+      ]
+    },
+    {
+      "id": "docvqa",
+      "name": "DocVQA",
+      "category": "Document QA",
+      "appliesTo": ["VLM"],
+      "scale": "ANLS 0-100",
+      "description": "Visual question answering over document images. Average normalized Levenshtein similarity on the test set.",
+      "source": "rrc.cvc.uab.es/?ch=17",
+      "scores": [
+        {"model":"Qwen2-VL-72B-Instruct","params":72,"score":96.5,"type":"VLM","url":"https://hf.co/Qwen/Qwen2-VL-72B-Instruct"},
+        {"model":"Qwen2.5-VL-72B-Instruct","params":72,"score":96.4,"type":"VLM","url":"https://hf.co/Qwen/Qwen2.5-VL-72B-Instruct"},
+        {"model":"Qwen2.5-VL-7B-Instruct","params":7,"score":95.7,"type":"VLM","url":"https://hf.co/Qwen/Qwen2.5-VL-7B-Instruct"},
+        {"model":"InternVL3-78B","params":78,"score":95.7,"type":"VLM","url":"https://hf.co/OpenGVLab/InternVL3-78B"},
+        {"model":"InternVL2.5-78B","params":78,"score":95.1,"type":"VLM","url":"https://hf.co/OpenGVLab/InternVL2_5-78B"},
+        {"model":"Qwen2.5-VL-32B-Instruct","params":32,"score":94.8,"type":"VLM","url":"https://hf.co/Qwen/Qwen2.5-VL-32B-Instruct"},
+        {"model":"Qwen2-VL-7B-Instruct","params":7,"score":94.5,"type":"VLM","url":"https://hf.co/Qwen/Qwen2-VL-7B-Instruct"},
+        {"model":"InternVL2-76B","params":76,"score":94.1,"type":"VLM","url":"https://hf.co/OpenGVLab/InternVL2-Llama3-76B"},
+        {"model":"MiniCPM-V-4.6","params":8,"score":92.0,"type":"VLM","url":"https://hf.co/openbmb/MiniCPM-V-4.6"},
+        {"model":"NuExtract3","params":4,"score":92.0,"type":"VLM","url":"https://hf.co/numind/NuExtract3","note":"Extraction-specialist"},
+        {"model":"InternVL2-8B","params":8,"score":91.6,"type":"VLM","url":"https://hf.co/OpenGVLab/InternVL2-8B"},
+        {"model":"MiniCPM-V-2.6","params":8,"score":90.8,"type":"VLM","url":"https://hf.co/openbmb/MiniCPM-V-2_6"},
+        {"model":"Pixtral-12B","params":12,"score":90.7,"type":"VLM","url":"https://hf.co/mistralai/Pixtral-12B-2409"},
+        {"model":"Qwen2-VL-2B-Instruct","params":2,"score":90.1,"type":"VLM","url":"https://hf.co/Qwen/Qwen2-VL-2B-Instruct"},
+        {"model":"Llama-3.2-90B-Vision","params":90,"score":90.1,"type":"VLM","url":"https://hf.co/meta-llama/Llama-3.2-90B-Vision-Instruct"},
+        {"model":"Llama-3.2-11B-Vision","params":11,"score":88.4,"type":"VLM","url":"https://hf.co/meta-llama/Llama-3.2-11B-Vision-Instruct"},
+        {"model":"gemma-3-27b-it","params":27,"score":87.0,"type":"VLM","url":"https://hf.co/google/gemma-3-27b-it"},
+        {"model":"gemma-3-12b-it","params":12,"score":84.0,"type":"VLM","url":"https://hf.co/google/gemma-3-12b-it"},
+        {"model":"Phi-3.5-vision","params":4.2,"score":82.4,"type":"VLM","url":"https://hf.co/microsoft/Phi-3.5-vision-instruct"}
+      ]
+    },
+    {
+      "id": "chartqa",
+      "name": "ChartQA",
+      "category": "Chart QA",
+      "appliesTo": ["VLM"],
+      "scale": "0-100 (relaxed acc.)",
+      "description": "Question answering over charts and plots — tests visual reasoning and numerical extraction.",
+      "source": "github.com/vis-nlp/ChartQA",
+      "scores": [
+        {"model":"InternVL3-78B","params":78,"score":89.8,"type":"VLM","url":"https://hf.co/OpenGVLab/InternVL3-78B"},
+        {"model":"Qwen2.5-VL-72B-Instruct","params":72,"score":89.5,"type":"VLM","url":"https://hf.co/Qwen/Qwen2.5-VL-72B-Instruct"},
+        {"model":"InternVL2-76B","params":76,"score":88.4,"type":"VLM","url":"https://hf.co/OpenGVLab/InternVL2-Llama3-76B"},
+        {"model":"Qwen2-VL-72B-Instruct","params":72,"score":88.3,"type":"VLM","url":"https://hf.co/Qwen/Qwen2-VL-72B-Instruct"},
+        {"model":"Qwen2.5-VL-32B-Instruct","params":32,"score":88.0,"type":"VLM","url":"https://hf.co/Qwen/Qwen2.5-VL-32B-Instruct"},
+        {"model":"InternVL2.5-78B","params":78,"score":88.0,"type":"VLM","url":"https://hf.co/OpenGVLab/InternVL2_5-78B"},
+        {"model":"Qwen2.5-VL-7B-Instruct","params":7,"score":87.3,"type":"VLM","url":"https://hf.co/Qwen/Qwen2.5-VL-7B-Instruct"},
+        {"model":"Llama-3.2-90B-Vision","params":90,"score":85.5,"type":"VLM","url":"https://hf.co/meta-llama/Llama-3.2-90B-Vision-Instruct"},
+        {"model":"MiniCPM-V-4.6","params":8,"score":84.0,"type":"VLM","url":"https://hf.co/openbmb/MiniCPM-V-4.6"},
+        {"model":"Llama-3.2-11B-Vision","params":11,"score":83.4,"type":"VLM","url":"https://hf.co/meta-llama/Llama-3.2-11B-Vision-Instruct"},
+        {"model":"InternVL2-8B","params":8,"score":83.3,"type":"VLM","url":"https://hf.co/OpenGVLab/InternVL2-8B"},
+        {"model":"Qwen2-VL-7B-Instruct","params":7,"score":83.0,"type":"VLM","url":"https://hf.co/Qwen/Qwen2-VL-7B-Instruct"},
+        {"model":"MiniCPM-V-2.6","params":8,"score":82.4,"type":"VLM","url":"https://hf.co/openbmb/MiniCPM-V-2_6"},
+        {"model":"Phi-3.5-vision","params":4.2,"score":81.8,"type":"VLM","url":"https://hf.co/microsoft/Phi-3.5-vision-instruct"},
+        {"model":"Pixtral-12B","params":12,"score":81.8,"type":"VLM","url":"https://hf.co/mistralai/Pixtral-12B-2409"},
+        {"model":"gemma-3-27b-it","params":27,"score":75.0,"type":"VLM","url":"https://hf.co/google/gemma-3-27b-it"},
+        {"model":"Qwen2-VL-2B-Instruct","params":2,"score":73.5,"type":"VLM","url":"https://hf.co/Qwen/Qwen2-VL-2B-Instruct"}
+      ]
+    },
+    {
+      "id": "infovqa",
+      "name": "InfoVQA",
+      "category": "Info extraction",
+      "appliesTo": ["VLM"],
+      "scale": "ANLS 0-100",
+      "description": "Question answering over infographics — tests structured information extraction from complex visual layouts.",
+      "source": "rrc.cvc.uab.es/?ch=17",
+      "scores": [
+        {"model":"Qwen2.5-VL-72B-Instruct","params":72,"score":86.0,"type":"VLM","url":"https://hf.co/Qwen/Qwen2.5-VL-72B-Instruct"},
+        {"model":"Qwen2-VL-72B-Instruct","params":72,"score":84.5,"type":"VLM","url":"https://hf.co/Qwen/Qwen2-VL-72B-Instruct"},
+        {"model":"Qwen2.5-VL-7B-Instruct","params":7,"score":82.6,"type":"VLM","url":"https://hf.co/Qwen/Qwen2.5-VL-7B-Instruct"},
+        {"model":"InternVL3-78B","params":78,"score":82.5,"type":"VLM","url":"https://hf.co/OpenGVLab/InternVL3-78B"},
+        {"model":"InternVL2-76B","params":76,"score":82.0,"type":"VLM","url":"https://hf.co/OpenGVLab/InternVL2-Llama3-76B"},
+        {"model":"NuExtract3","params":4,"score":80.0,"type":"VLM","url":"https://hf.co/numind/NuExtract3","note":"Extraction-specialist"},
+        {"model":"Llama-3.2-90B-Vision","params":90,"score":79.0,"type":"VLM","url":"https://hf.co/meta-llama/Llama-3.2-90B-Vision-Instruct"},
+        {"model":"Qwen2-VL-7B-Instruct","params":7,"score":76.5,"type":"VLM","url":"https://hf.co/Qwen/Qwen2-VL-7B-Instruct"},
+        {"model":"Llama-3.2-11B-Vision","params":11,"score":75.9,"type":"VLM","url":"https://hf.co/meta-llama/Llama-3.2-11B-Vision-Instruct"},
+        {"model":"MiniCPM-V-4.6","params":8,"score":75.0,"type":"VLM","url":"https://hf.co/openbmb/MiniCPM-V-4.6"},
+        {"model":"InternVL2-8B","params":8,"score":74.8,"type":"VLM","url":"https://hf.co/OpenGVLab/InternVL2-8B"},
+        {"model":"MiniCPM-V-2.6","params":8,"score":71.1,"type":"VLM","url":"https://hf.co/openbmb/MiniCPM-V-2_6"},
+        {"model":"Pixtral-12B","params":12,"score":58.4,"type":"VLM","url":"https://hf.co/mistralai/Pixtral-12B-2409"}
+      ]
+    },
+    {
+      "id": "hallusion",
+      "name": "HallusionBench",
+      "category": "Non-hallucination",
+      "appliesTo": ["VLM"],
+      "scale": "0-100 (avg. all-acc)",
+      "description": "Tests visual hallucination — language-driven mistakes and visual misperception. Higher = less hallucination.",
+      "source": "github.com/tianyi-lab/HallusionBench",
+      "scores": [
+        {"model":"InternVL3-78B","params":78,"score":60.0,"type":"VLM","url":"https://hf.co/OpenGVLab/InternVL3-78B"},
+        {"model":"Qwen2-VL-72B-Instruct","params":72,"score":58.1,"type":"VLM","url":"https://hf.co/Qwen/Qwen2-VL-72B-Instruct"},
+        {"model":"InternVL2.5-78B","params":78,"score":57.4,"type":"VLM","url":"https://hf.co/OpenGVLab/InternVL2_5-78B"},
+        {"model":"Qwen2.5-VL-72B-Instruct","params":72,"score":56.7,"type":"VLM","url":"https://hf.co/Qwen/Qwen2.5-VL-72B-Instruct"},
+        {"model":"Qwen2.5-VL-7B-Instruct","params":7,"score":55.8,"type":"VLM","url":"https://hf.co/Qwen/Qwen2.5-VL-7B-Instruct"},
+        {"model":"InternVL2-76B","params":76,"score":55.2,"type":"VLM","url":"https://hf.co/OpenGVLab/InternVL2-Llama3-76B"},
+        {"model":"Llama-3.2-90B-Vision","params":90,"score":52.4,"type":"VLM","url":"https://hf.co/meta-llama/Llama-3.2-90B-Vision-Instruct"},
+        {"model":"MiniCPM-V-4.6","params":8,"score":51.0,"type":"VLM","url":"https://hf.co/openbmb/MiniCPM-V-4.6"},
+        {"model":"Qwen2-VL-7B-Instruct","params":7,"score":50.6,"type":"VLM","url":"https://hf.co/Qwen/Qwen2-VL-7B-Instruct"},
+        {"model":"gemma-3-27b-it","params":27,"score":50.0,"type":"VLM","url":"https://hf.co/google/gemma-3-27b-it"},
+        {"model":"MiniCPM-V-2.6","params":8,"score":48.1,"type":"VLM","url":"https://hf.co/openbmb/MiniCPM-V-2_6"},
+        {"model":"InternVL2-8B","params":8,"score":45.0,"type":"VLM","url":"https://hf.co/OpenGVLab/InternVL2-8B"},
+        {"model":"Phi-3.5-vision","params":4.2,"score":40.5,"type":"VLM","url":"https://hf.co/microsoft/Phi-3.5-vision-instruct"},
+        {"model":"Llama-3.2-11B-Vision","params":11,"score":40.3,"type":"VLM","url":"https://hf.co/meta-llama/Llama-3.2-11B-Vision-Instruct"},
+        {"model":"Pixtral-12B","params":12,"score":38.3,"type":"VLM","url":"https://hf.co/mistralai/Pixtral-12B-2409"}
+      ]
+    },
+    {
+      "id": "pope",
+      "name": "POPE",
+      "category": "Non-hallucination",
+      "appliesTo": ["VLM"],
+      "scale": "F1 0-100",
+      "description": "Polling-based Object Probing Evaluation — tests object hallucination in VLM responses (does the model claim to see objects that aren't there?). Higher F1 = less hallucination.",
+      "source": "github.com/RUCAIBox/POPE",
+      "scores": [
+        {"model":"Qwen2.5-VL-72B-Instruct","params":72,"score":89.0,"type":"VLM","url":"https://hf.co/Qwen/Qwen2.5-VL-72B-Instruct"},
+        {"model":"Qwen2.5-VL-7B-Instruct","params":7,"score":88.5,"type":"VLM","url":"https://hf.co/Qwen/Qwen2.5-VL-7B-Instruct"},
+        {"model":"Qwen2-VL-72B-Instruct","params":72,"score":88.4,"type":"VLM","url":"https://hf.co/Qwen/Qwen2-VL-72B-Instruct"},
+        {"model":"Qwen2-VL-7B-Instruct","params":7,"score":88.1,"type":"VLM","url":"https://hf.co/Qwen/Qwen2-VL-7B-Instruct"},
+        {"model":"InternVL2-76B","params":76,"score":87.4,"type":"VLM","url":"https://hf.co/OpenGVLab/InternVL2-Llama3-76B"},
+        {"model":"MiniCPM-V-2.6","params":8,"score":87.3,"type":"VLM","url":"https://hf.co/openbmb/MiniCPM-V-2_6"},
+        {"model":"gemma-3-27b-it","params":27,"score":87.0,"type":"VLM","url":"https://hf.co/google/gemma-3-27b-it"},
+        {"model":"InternVL2-8B","params":8,"score":86.9,"type":"VLM","url":"https://hf.co/OpenGVLab/InternVL2-8B"},
+        {"model":"Llama-3.2-90B-Vision","params":90,"score":86.5,"type":"VLM","url":"https://hf.co/meta-llama/Llama-3.2-90B-Vision-Instruct"},
+        {"model":"Llama-3.2-11B-Vision","params":11,"score":85.8,"type":"VLM","url":"https://hf.co/meta-llama/Llama-3.2-11B-Vision-Instruct"},
+        {"model":"Phi-3.5-vision","params":4.2,"score":85.4,"type":"VLM","url":"https://hf.co/microsoft/Phi-3.5-vision-instruct"},
+        {"model":"Pixtral-12B","params":12,"score":85.0,"type":"VLM","url":"https://hf.co/mistralai/Pixtral-12B-2409"}
+      ]
+    },
+    {
+      "id": "ifeval",
+      "name": "IFEval",
+      "category": "Instruction following",
+      "appliesTo": ["LLM", "VLM"],
+      "scale": "0-100 (strict prompt-level)",
+      "description": "Instruction-Following Evaluation — measures how well a model obeys verifiable formatting/length/content constraints in prompts.",
+      "source": "arxiv.org/abs/2311.07911",
+      "scores": [
+        {"model":"gpt-oss-120b","params":120,"score":89.0,"type":"LLM","url":"https://hf.co/openai/gpt-oss-120b","note":"MoE, ~5B active"},
+        {"model":"Llama-3.1-405B-Instruct","params":405,"score":88.6,"type":"LLM","url":"https://hf.co/meta-llama/Llama-3.1-405B-Instruct"},
+        {"model":"Llama-3.1-70B-Instruct","params":70,"score":87.5,"type":"LLM","url":"https://hf.co/meta-llama/Llama-3.1-70B-Instruct"},
+        {"model":"DeepSeek-V3","params":671,"score":86.1,"type":"LLM","url":"https://hf.co/deepseek-ai/DeepSeek-V3","note":"MoE, 37B active"},
+        {"model":"Qwen2.5-72B-Instruct","params":72,"score":84.1,"type":"LLM","url":"https://hf.co/Qwen/Qwen2.5-72B-Instruct"},
+        {"model":"Qwen2.5-VL-72B-Instruct","params":72,"score":81.0,"type":"VLM","url":"https://hf.co/Qwen/Qwen2.5-VL-72B-Instruct"},
+        {"model":"gpt-oss-20b","params":20,"score":81.0,"type":"LLM","url":"https://hf.co/openai/gpt-oss-20b"},
+        {"model":"Qwen2.5-14B-Instruct","params":14,"score":81.0,"type":"LLM","url":"https://hf.co/Qwen/Qwen2.5-14B-Instruct"},
+        {"model":"gemma-2-27b-it","params":27,"score":80.9,"type":"LLM","url":"https://hf.co/google/gemma-2-27b-it"},
+        {"model":"Qwen2.5-32B-Instruct","params":32,"score":79.5,"type":"LLM","url":"https://hf.co/Qwen/Qwen2.5-32B-Instruct"},
+        {"model":"Qwen2-VL-72B-Instruct","params":72,"score":78.0,"type":"VLM","url":"https://hf.co/Qwen/Qwen2-VL-72B-Instruct"},
+        {"model":"Llama-3.2-3B-Instruct","params":3,"score":77.4,"type":"LLM","url":"https://hf.co/meta-llama/Llama-3.2-3B-Instruct"},
+        {"model":"gemma-2-9b-it","params":9,"score":76.4,"type":"LLM","url":"https://hf.co/google/gemma-2-9b-it"},
+        {"model":"Llama-3.1-8B-Instruct","params":8,"score":76.0,"type":"LLM","url":"https://hf.co/meta-llama/Llama-3.1-8B-Instruct"},
+        {"model":"InternVL2-76B","params":76,"score":76.0,"type":"VLM","url":"https://hf.co/OpenGVLab/InternVL2-Llama3-76B"},
+        {"model":"Qwen2.5-7B-Instruct","params":7,"score":74.7,"type":"LLM","url":"https://hf.co/Qwen/Qwen2.5-7B-Instruct"},
+        {"model":"DeepSeek-V2.5","params":236,"score":73.3,"type":"LLM","url":"https://hf.co/deepseek-ai/DeepSeek-V2.5","note":"MoE, 21B active"},
+        {"model":"Qwen2.5-VL-7B-Instruct","params":7,"score":64.0,"type":"VLM","url":"https://hf.co/Qwen/Qwen2.5-VL-7B-Instruct"},
+        {"model":"Mixtral-8x7B-Instruct","params":47,"score":64.5,"type":"LLM","url":"https://hf.co/mistralai/Mixtral-8x7B-Instruct-v0.1","note":"MoE, 13B active"},
+        {"model":"Qwen2.5-3B-Instruct","params":3,"score":64.5,"type":"LLM","url":"https://hf.co/Qwen/Qwen2.5-3B-Instruct"},
+        {"model":"Phi-3-medium","params":14,"score":64.2,"type":"LLM","url":"https://hf.co/microsoft/Phi-3-medium-4k-instruct"},
+        {"model":"Mistral-7B-Instruct","params":7,"score":61.0,"type":"LLM","url":"https://hf.co/mistralai/Mistral-7B-Instruct-v0.3"},
+        {"model":"Llama-3.2-1B-Instruct","params":1,"score":59.5,"type":"LLM","url":"https://hf.co/meta-llama/Llama-3.2-1B-Instruct"},
+        {"model":"Qwen2.5-1.5B-Instruct","params":1.5,"score":55.3,"type":"LLM","url":"https://hf.co/Qwen/Qwen2.5-1.5B-Instruct"},
+        {"model":"gemma-2-2b-it","params":2,"score":51.0,"type":"LLM","url":"https://hf.co/google/gemma-2-2b-it"}
+      ]
+    },
+    {
+      "id": "mtbench",
+      "name": "MT-Bench",
+      "category": "Instruction following",
+      "appliesTo": ["LLM"],
+      "scale": "0-100 (×10 from /10)",
+      "description": "Multi-turn conversation benchmark scored by GPT-4 as judge. Original scale 0-10, here ×10 for plotting.",
+      "source": "arxiv.org/abs/2306.05685",
+      "scores": [
+        {"model":"DeepSeek-V3","params":671,"score":91.0,"type":"LLM","url":"https://hf.co/deepseek-ai/DeepSeek-V3","note":"MoE, 37B active"},
+        {"model":"Qwen2.5-72B-Instruct","params":72,"score":90.0,"type":"LLM","url":"https://hf.co/Qwen/Qwen2.5-72B-Instruct"},
+        {"model":"Llama-3.1-70B-Instruct","params":70,"score":89.5,"type":"LLM","url":"https://hf.co/meta-llama/Llama-3.1-70B-Instruct"},
+        {"model":"gemma-2-27b-it","params":27,"score":87.8,"type":"LLM","url":"https://hf.co/google/gemma-2-27b-it"},
+        {"model":"Phi-3-medium","params":14,"score":86.0,"type":"LLM","url":"https://hf.co/microsoft/Phi-3-medium-4k-instruct"},
+        {"model":"gemma-2-9b-it","params":9,"score":84.0,"type":"LLM","url":"https://hf.co/google/gemma-2-9b-it"},
+        {"model":"Qwen2.5-7B-Instruct","params":7,"score":84.0,"type":"LLM","url":"https://hf.co/Qwen/Qwen2.5-7B-Instruct"},
+        {"model":"Mixtral-8x7B-Instruct","params":47,"score":83.0,"type":"LLM","url":"https://hf.co/mistralai/Mixtral-8x7B-Instruct-v0.1","note":"MoE, 13B active"},
+        {"model":"Llama-3.1-8B-Instruct","params":8,"score":82.0,"type":"LLM","url":"https://hf.co/meta-llama/Llama-3.1-8B-Instruct"},
+        {"model":"Mistral-7B-Instruct","params":7,"score":76.0,"type":"LLM","url":"https://hf.co/mistralai/Mistral-7B-Instruct-v0.3"}
+      ]
+    }
+  ]
+}
+</script>
+
+<!-- Daily snapshot data -->
+<script type="application/json" id="snapshot-data">
+{
+  "lastUpdated": "2026-05-28T10:00:00-07:00",
+  "llm": [
+    {"repoId":"openbmb/MiniCPM5-1B","author":"openbmb","name":"MiniCPM5-1B","url":"https://hf.co/openbmb/MiniCPM5-1B","task":"text-generation","library":"transformers","downloads":2400,"likes":391,"trendingScore":339,"created":"2026-05-21","tags":["llama","minicpm5","long-context","tool-calling","on-device","edge-ai"],"summary":"Compact 1B on-device LLM with long-context, tool-calling, and edge-AI optimizations, built on the Llama architecture."},
+    {"repoId":"sapientinc/HRM-Text-1B","author":"sapientinc","name":"HRM-Text-1B","url":"https://hf.co/sapientinc/HRM-Text-1B","task":"text-generation","library":"transformers","downloads":103000,"likes":391,"trendingScore":217,"created":"2026-05-17","tags":["hrm","hierarchical-reasoning","prefix-lm","pre-alignment","non-chat"],"summary":"1B hierarchical-reasoning model with prefix-LM architecture; non-chat, pre-alignment research base."},
+    {"repoId":"deepseek-ai/DeepSeek-V4-Pro","author":"deepseek-ai","name":"DeepSeek-V4-Pro","url":"https://hf.co/deepseek-ai/DeepSeek-V4-Pro","task":"text-generation","library":"transformers","downloads":5000000,"likes":4354,"trendingScore":176,"created":"2026-04-22","tags":["deepseek_v4","fp8","8-bit"],"summary":"DeepSeek V4 flagship — large-scale chat model in FP8 with eval-leading benchmarks."},
+    {"repoId":"Jackrong/Qwopus3.6-27B-v2-MTP-GGUF","author":"Jackrong","name":"Qwopus3.6-27B-v2-MTP-GGUF","url":"https://hf.co/Jackrong/Qwopus3.6-27B-v2-MTP-GGUF","task":"text-generation","downloads":31600,"likes":130,"trendingScore":127,"created":"2026-05-21","tags":["qwen3_6","reasoning","chain-of-thought","mtp","speculative-decoding","coder","agent"],"summary":"Qwen 3.6 27B finetune with multi-token prediction and chain-of-thought reasoning; GGUF quantized for local use."},
+    {"repoId":"OBLITERATUS/Qwen3.6-27B-OBLITERATED","author":"OBLITERATUS","name":"Qwen3.6-27B-OBLITERATED","url":"https://hf.co/OBLITERATUS/Qwen3.6-27B-OBLITERATED","task":"text-generation","downloads":10000,"likes":105,"trendingScore":101,"created":"2026-05-19","tags":["qwen3","qwen3.6","abliterated","refusal-removal"],"summary":"Qwen 3.6 27B with refusal directions ablated — uncensored research variant for red-teaming."},
+    {"repoId":"nvidia/Nemotron-Labs-Diffusion-14B","author":"nvidia","name":"Nemotron-Labs-Diffusion-14B","url":"https://hf.co/nvidia/Nemotron-Labs-Diffusion-14B","task":"text-generation","library":"transformers","downloads":5500,"likes":119,"trendingScore":75,"created":"2026-04-22","tags":["nvidia","pytorch","diffusion"],"summary":"NVIDIA's 14B diffusion language model — non-autoregressive text generation research release."},
+    {"repoId":"Jackrong/Qwopus3.5-9B-Coder-MTP-GGUF","author":"Jackrong","name":"Qwopus3.5-9B-Coder-MTP-GGUF","url":"https://hf.co/Jackrong/Qwopus3.5-9B-Coder-MTP-GGUF","task":"text-generation","downloads":42300,"likes":112,"trendingScore":63,"created":"2026-05-18","tags":["qwen3_5","reasoning","mtp","coder","agent","multilingual"],"summary":"9B Qwen 3.5 coder finetune with multi-token prediction and chain-of-thought; GGUF for local inference."},
+    {"repoId":"jedisct1/MiMo-V2.5-coder-Q2","author":"jedisct1","name":"MiMo-V2.5-coder-Q2","url":"https://hf.co/jedisct1/MiMo-V2.5-coder-Q2","task":"text-generation","library":"llama.cpp","downloads":1100,"likes":58,"trendingScore":57,"created":"2026-05-24","tags":["code","tool-calling","agent","mixture-of-experts","long-context"],"summary":"Xiaomi MiMo V2.5 coder in heavily quantized Q2 GGUF — MoE with long context for local coding agents."},
+    {"repoId":"openbmb/BitCPM-CANN-8B","author":"openbmb","name":"BitCPM-CANN-8B","url":"https://hf.co/openbmb/BitCPM-CANN-8B","task":"text-generation","library":"transformers","downloads":1200,"likes":95,"trendingScore":55,"created":"2026-05-15","tags":["pytorch","chinese","bilingual"],"summary":"OpenBMB's bit-quantized 8B CPM optimized for Huawei Ascend (CANN) hardware; bilingual zh/en."},
+    {"repoId":"openbmb/MiniCPM5-1B-GGUF","author":"openbmb","name":"MiniCPM5-1B-GGUF","url":"https://hf.co/openbmb/MiniCPM5-1B-GGUF","task":"text-generation","library":"transformers","downloads":1700,"likes":98,"trendingScore":46,"created":"2026-05-24","tags":["minicpm5","llama","long-context","tool-calling","on-device"],"summary":"GGUF quantization of MiniCPM5-1B for local llama.cpp inference."},
+    {"repoId":"Jiunsong/supergemma4-26b-uncensored-gguf-v2","author":"Jiunsong","name":"supergemma4-26b-uncensored-gguf-v2","url":"https://hf.co/Jiunsong/supergemma4-26b-uncensored-gguf-v2","task":"text-generation","downloads":195900,"likes":688,"trendingScore":42,"created":"2026-04-11","tags":["gemma4","uncensored","apple-silicon","korean","coding","tool-use"],"summary":"Uncensored Gemma 4 26B GGUF tuned for Apple Silicon; Korean and coding focused."},
+    {"repoId":"openbmb/BitCPM-CANN-8B-gguf","author":"openbmb","name":"BitCPM-CANN-8B-gguf","url":"https://hf.co/openbmb/BitCPM-CANN-8B-gguf","task":"text-generation","library":"transformers","downloads":1300,"likes":45,"trendingScore":41,"created":"2026-05-16","tags":["chinese","bilingual"],"summary":"GGUF quantization of BitCPM-CANN-8B for local inference; bilingual zh/en."},
+    {"repoId":"antirez/deepseek-v4-gguf","author":"antirez","name":"deepseek-v4-gguf","url":"https://hf.co/antirez/deepseek-v4-gguf","task":"text-generation","library":"gguf","downloads":367800,"likes":189,"trendingScore":33,"created":"2026-04-26","tags":["deepseek-v4","moe","2-bit","iq2_xxs","apple-silicon","metal"],"summary":"Aggressive 2-bit GGUF quantizations of DeepSeek V4 from antirez — tuned for Apple Silicon Metal."},
+    {"repoId":"zai-org/GLM-5.1","author":"zai-org","name":"GLM-5.1","url":"https://hf.co/zai-org/GLM-5.1","task":"text-generation","library":"transformers","downloads":149200,"likes":1700,"trendingScore":26,"created":"2026-04-03","tags":["glm_moe_dsa"],"summary":"Zhipu's GLM-5.1 MoE flagship — bilingual zh/en chat model with strong eval results."},
+    {"repoId":"SupraLabs/Supra-50M-Instruct","author":"SupraLabs","name":"Supra-50M-Instruct","url":"https://hf.co/SupraLabs/Supra-50M-Instruct","task":"text-generation","library":"transformers","downloads":1300,"likes":23,"trendingScore":23,"created":"2026-05-21","tags":["llama","supra","tiny","slm"],"summary":"50M-parameter ultra-small instruct LLM for CPU inference — tiny SLM research release."},
+    {"repoId":"MiniMaxAI/MiniMax-M2.7","author":"MiniMaxAI","name":"MiniMax-M2.7","url":"https://hf.co/MiniMaxAI/MiniMax-M2.7","task":"text-generation","library":"transformers","downloads":1100000,"likes":1155,"trendingScore":21,"created":"2026-04-09","tags":["minimax_m2","fp8"],"summary":"MiniMax M2.7 flagship — large-scale chat model with FP8 weights and eval-leading results."},
+    {"repoId":"XiaomiMiMo/MiMo-V2.5-Pro","author":"XiaomiMiMo","name":"MiMo-V2.5-Pro","url":"https://hf.co/XiaomiMiMo/MiMo-V2.5-Pro","task":"text-generation","downloads":81900,"likes":556,"trendingScore":20,"created":"2026-04-27","tags":["mimo_v2","agent","long-context","code","fp8"],"summary":"Xiaomi's MiMo V2.5 Pro — agent-focused long-context LLM with strong code performance."}
+  ],
+  "vlm": [
+    {"repoId":"HauhauCS/Qwen3.6-35B-A3B-Uncensored-HauhauCS-Aggressive","author":"HauhauCS","name":"Qwen3.6-35B-A3B-Uncensored-Aggressive","url":"https://hf.co/HauhauCS/Qwen3.6-35B-A3B-Uncensored-HauhauCS-Aggressive","task":"image-text-to-text","downloads":1600000,"likes":942,"trendingScore":226,"created":"2026-04-17","tags":["gguf","uncensored","qwen3.6","moe","vision","multimodal","multilingual"],"summary":"Uncensored 35B MoE Qwen 3.6 VLM with aggressive abliteration — multilingual vision+text generation."},
+    {"repoId":"CohereLabs/command-a-plus-05-2026-w4a4","author":"CohereLabs","name":"command-a-plus-05-2026-w4a4","url":"https://hf.co/CohereLabs/command-a-plus-05-2026-w4a4","task":"image-text-to-text","library":"transformers","downloads":7800,"likes":212,"trendingScore":166,"created":"2026-05-18","tags":["cohere2_vision","chat","multilingual"],"summary":"Cohere's flagship Command-A+ VLM (May 2026) in W4A4 quantization — multilingual chat over images."},
+    {"repoId":"Jackrong/Qwopus3.6-27B-v2-GGUF","author":"Jackrong","name":"Qwopus3.6-27B-v2-GGUF","url":"https://hf.co/Jackrong/Qwopus3.6-27B-v2-GGUF","task":"image-text-to-text","library":"transformers","downloads":16400,"likes":157,"trendingScore":150,"created":"2026-05-16","tags":["qwen3_6","reasoning","chain-of-thought","multimodal","vision","tool-use","agent"],"summary":"Qwen 3.6 27B VLM finetune with chain-of-thought and tool-use; GGUF for local multimodal inference."},
+    {"repoId":"unsloth/Qwen3.6-27B-MTP-GGUF","author":"unsloth","name":"Qwen3.6-27B-MTP-GGUF","url":"https://hf.co/unsloth/Qwen3.6-27B-MTP-GGUF","task":"image-text-to-text","library":"transformers","downloads":735300,"likes":513,"trendingScore":142,"created":"2026-05-11","tags":["qwen3_5","unsloth","mtp"],"summary":"Unsloth's Qwen 3.6 27B VLM with multi-token prediction for faster decoding; GGUF quantized."},
+    {"repoId":"openbmb/MiniCPM-V-4.6","author":"openbmb","name":"MiniCPM-V-4.6","url":"https://hf.co/openbmb/MiniCPM-V-4.6","task":"image-text-to-text","library":"transformers","downloads":355000,"likes":997,"trendingScore":127,"created":"2026-04-13","tags":["minicpmv4_6","minicpm-v","multimodal","lightweight","on-device"],"summary":"Lightweight on-device MiniCPM-V 4.6 — efficient multimodal model for image+text reasoning on edge hardware."},
+    {"repoId":"Qwen/Qwen3.6-27B","author":"Qwen","name":"Qwen3.6-27B","url":"https://hf.co/Qwen/Qwen3.6-27B","task":"image-text-to-text","library":"transformers","downloads":4600000,"likes":1490,"trendingScore":106,"created":"2026-04-21","tags":["qwen3_5"],"summary":"Qwen 3.6 27B flagship dense VLM — Alibaba's open-source multimodal model with strong eval results."},
+    {"repoId":"unsloth/Qwen3.6-35B-A3B-MTP-GGUF","author":"unsloth","name":"Qwen3.6-35B-A3B-MTP-GGUF","url":"https://hf.co/unsloth/Qwen3.6-35B-A3B-MTP-GGUF","task":"image-text-to-text","library":"transformers","downloads":627500,"likes":396,"trendingScore":102,"created":"2026-05-11","tags":["qwen3_5_moe","unsloth","mtp"],"summary":"Unsloth's 35B Qwen 3.6 MoE VLM with multi-token prediction; GGUF quantized for local inference."},
+    {"repoId":"CohereLabs/command-a-plus-05-2026-bf16","author":"CohereLabs","name":"command-a-plus-05-2026-bf16","url":"https://hf.co/CohereLabs/command-a-plus-05-2026-bf16","task":"image-text-to-text","library":"transformers","downloads":13900,"likes":127,"trendingScore":83,"created":"2026-05-11","tags":["cohere2_vision","chat","multilingual"],"summary":"Cohere Command-A+ VLM (May 2026) at full BF16 precision — multilingual image+text chat."},
+    {"repoId":"Qwen/Qwen3.6-35B-A3B","author":"Qwen","name":"Qwen3.6-35B-A3B","url":"https://hf.co/Qwen/Qwen3.6-35B-A3B","task":"image-text-to-text","library":"transformers","downloads":5900000,"likes":1921,"trendingScore":69,"created":"2026-04-15","tags":["qwen3_5_moe"],"summary":"Qwen 3.6 35B-A3B MoE VLM — Alibaba's flagship sparse multimodal model with eval-leading benchmarks."},
+    {"repoId":"google/gemma-4-31B-it","author":"google","name":"gemma-4-31B-it","url":"https://hf.co/google/gemma-4-31B-it","task":"image-text-to-text","library":"transformers","downloads":10900000,"likes":2795,"trendingScore":61,"created":"2026-03-11","tags":["gemma4"],"summary":"Google's Gemma 4 31B instruction-tuned VLM — open-weight multimodal chat model."},
+    {"repoId":"Jackrong/Qwopus3.5-9B-Coder-GGUF","author":"Jackrong","name":"Qwopus3.5-9B-Coder-GGUF","url":"https://hf.co/Jackrong/Qwopus3.5-9B-Coder-GGUF","task":"image-text-to-text","library":"transformers","downloads":45400,"likes":200,"trendingScore":61,"created":"2026-05-15","tags":["qwen3_5","reasoning","tool-use","coder","agent","multilingual"],"summary":"9B Qwen 3.5 coder VLM with chain-of-thought and tool-use — multimodal coding agent in GGUF."},
+    {"repoId":"unsloth/Qwen3.6-35B-A3B-GGUF","author":"unsloth","name":"Qwen3.6-35B-A3B-GGUF","url":"https://hf.co/unsloth/Qwen3.6-35B-A3B-GGUF","task":"image-text-to-text","library":"transformers","downloads":2300000,"likes":1136,"trendingScore":57,"created":"2026-04-16","tags":["qwen3_5_moe","unsloth"],"summary":"Unsloth GGUF quantization of Qwen 3.6 35B-A3B VLM for local llama.cpp inference."},
+    {"repoId":"HauhauCS/Gemma-4-E4B-Uncensored-HauhauCS-Aggressive","author":"HauhauCS","name":"Gemma-4-E4B-Uncensored-Aggressive","url":"https://hf.co/HauhauCS/Gemma-4-E4B-Uncensored-HauhauCS-Aggressive","task":"image-text-to-text","downloads":699400,"likes":682,"trendingScore":51,"created":"2026-04-02","tags":["gemma4","uncensored","abliterated","vision","multimodal"],"summary":"Uncensored Gemma 4 E4B VLM with aggressive abliteration — multilingual image+text generation."},
+    {"repoId":"HauhauCS/Qwen3.6-27B-Uncensored-HauhauCS-Aggressive","author":"HauhauCS","name":"Qwen3.6-27B-Uncensored-Aggressive","url":"https://hf.co/HauhauCS/Qwen3.6-27B-Uncensored-HauhauCS-Aggressive","task":"image-text-to-text","downloads":525900,"likes":385,"trendingScore":42,"created":"2026-04-22","tags":["qwen3.6","uncensored","vision","multilingual"],"summary":"Uncensored Qwen 3.6 27B VLM with aggressive abliteration — bilingual zh/en multimodal."},
+    {"repoId":"moonshotai/Kimi-K2.6","author":"moonshotai","name":"Kimi-K2.6","url":"https://hf.co/moonshotai/Kimi-K2.6","task":"image-text-to-text","library":"transformers","downloads":2700000,"likes":1352,"trendingScore":39,"created":"2026-04-14","tags":["kimi_k25","compressed-tensors"],"summary":"Moonshot's Kimi K2.6 — long-context multimodal flagship VLM from Moonshot AI."},
+    {"repoId":"Kwai-Keye/Keye-VL-2.0-30B-A3B","author":"Kwai-Keye","name":"Keye-VL-2.0-30B-A3B","url":"https://hf.co/Kwai-Keye/Keye-VL-2.0-30B-A3B","task":"image-text-to-text","library":"transformers","downloads":47,"likes":37,"trendingScore":37,"created":"2026-05-25","tags":["KeyeVL2","multimodal"],"summary":"Kuaishou's Keye-VL 2.0 30B-A3B MoE — new multimodal model release (May 2026, very early)."},
+    {"repoId":"byteshape/Qwen3.6-35B-A3B-MTP-GGUF","author":"byteshape","name":"Qwen3.6-35B-A3B-MTP-GGUF","url":"https://hf.co/byteshape/Qwen3.6-35B-A3B-MTP-GGUF","task":"image-text-to-text","library":"transformers","downloads":20100,"likes":43,"trendingScore":37,"created":"2026-05-19","tags":["qwen3.6","byteshape","mtp"],"summary":"ByteShape's GGUF Qwen 3.6 35B-A3B VLM with multi-token prediction; fast local multimodal inference."}
+  ],
+  "papers": [
+    {"title":"AtlasOCR: Building the First Open-Source Darija OCR Model with Vision Language Models","authors":"Imane Momayiz, Soufiane Ait Elaouad, Abdeljalil Elmajjodi, Haitame Bouanane","published":"2026-04-09","summary":"AtlasOCR, the first open-source Darija OCR VLM, achieves state-of-the-art performance by fine-tuning a 3B-parameter Vision Language Model with QLoRA.","url":"https://hf.co/papers/2604.08070"},
+    {"title":"Typhoon OCR: Open Vision-Language Model For Thai Document Extraction","authors":"Surapon Nonesung, Natapong Nitarach, Teetouch Jaknamon, Pittawat Taveekitworachai, Kunat Pipatanakul","published":"2026-01-21","summary":"Thai-focused VLM for document extraction combining OCR, layout reconstruction, and structural consistency with reduced computational requirements.","url":"https://hf.co/papers/2601.14722"},
+    {"title":"POINTS1.5: Building a Vision-Language Model towards Real World Applications","authors":"Yuan Liu, Le Tian, Xiao Zhou, Xinyu Gao, Kavio Yu, Yang Yu, Jie Zhou","published":"2024-12-11","summary":"POINTS1.5, an enhanced VLM, incorporates a dynamic high-resolution vision encoder, bilingual support, and rigorous dataset filtering for superior performance.","url":"https://hf.co/papers/2412.08443"},
+    {"title":"CAD-Coder: An Open-Source Vision-Language Model for Computer-Aided Design Code Generation","authors":"Anna C. Doris, Md Ferdous Alam, Amin Heyrani Nobari, Faez Ahmed","published":"2025-05-20","summary":"CAD-Coder, a fine-tuned VLM, generates accurate and editable CAD code from visual input, outperforming larger models in syntax validity.","url":"https://hf.co/papers/2505.14646"}
+  ],
+  "modelscope": [
+    {"name":"qwen/Qwen3.6-27B","url":"https://modelscope.cn/models/qwen/Qwen3.6-27B","description":"Alibaba's Qwen 3.6 27B dense LLM — open-source flagship under Apache 2.0, available on ModelScope since April 2026.","downloads":null,"task":"text-generation","tags":["qwen","alibaba","apache-2.0"]},
+    {"name":"qwen/Qwen3.6-35B-A3B","url":"https://modelscope.cn/models/qwen/Qwen3.6-35B-A3B","description":"Qwen 3.6 35B-A3B MoE LLM — sparse flagship released April 16, 2026 on ModelScope.","downloads":null,"task":"text-generation","tags":["qwen","moe","alibaba"]},
+    {"name":"qwen/Qwen3-VL-30B-A3B-Instruct","url":"https://modelscope.cn/models/qwen/Qwen3-VL-30B-A3B-Instruct","description":"Qwen3-VL 30B-A3B Instruct — multimodal MoE supporting text and vision inputs, instruction-tuned variant.","downloads":null,"task":"image-text-to-text","tags":["qwen","vision","moe","instruct"]},
+    {"name":"qwen/Qwen3-VL-30B-A3B-Thinking","url":"https://modelscope.cn/models/qwen/Qwen3-VL-30B-A3B-Thinking","description":"Qwen3-VL 30B-A3B Thinking — reasoning-focused multimodal sibling of the Instruct variant with extended chain-of-thought.","downloads":null,"task":"image-text-to-text","tags":["qwen","vision","reasoning","moe"]},
+    {"name":"qwen/Qwen3-VL-32B-Instruct","url":"https://modelscope.cn/models/qwen/Qwen3-VL-32B-Instruct","description":"Qwen3-VL 32B dense instruction-tuned VLM — strong open-source multimodal performance.","downloads":null,"task":"image-text-to-text","tags":["qwen","vision","instruct"]},
+    {"name":"ZhipuAI/glm-4.5v","url":"https://modelscope.cn/models/ZhipuAI/glm-4.5v","description":"Zhipu's GLM-4.5V multimodal model — 128K context, native multimodal tool use, strong visual reasoning.","downloads":null,"task":"image-text-to-text","tags":["glm","zhipu","tool-use","128k-context"]},
+    {"name":"ZhipuAI/glm-5.1","url":"https://modelscope.cn/models/ZhipuAI/glm-5.1","description":"Zhipu GLM-5.1 — open-source MoE text-to-text LLM mirrored on ModelScope; claims SOTA on SWE-Bench Pro.","downloads":null,"task":"text-generation","tags":["glm","zhipu","moe"]},
+    {"name":"OpenGVLab/InternVL3_5","url":"https://modelscope.cn/models/OpenGVLab/InternVL3_5","description":"InternVL 3.5 — Shanghai AI Lab's open-source multimodal model series, available on ModelScope.","downloads":null,"task":"image-text-to-text","tags":["internvl","opengvlab","multimodal"]}
+  ],
+  "github": [
+    {"repo":"ggerganov/llama.cpp","url":"https://github.com/ggerganov/llama.cpp","description":"Plain C/C++ inference for LLaMA-style models — the de facto open-source local LLM runtime.","stars":75000,"tags":["c++","inference","ggml","quantization"]},
+    {"repo":"ollama/ollama","url":"https://github.com/ollama/ollama","description":"Run open-source LLMs locally with a single command — wraps llama.cpp into a developer-friendly daemon.","stars":110000,"tags":["go","local-inference","developer-tools"]},
+    {"repo":"vllm-project/vllm","url":"https://github.com/vllm-project/vllm","description":"High-throughput, memory-efficient LLM serving engine with PagedAttention — production inference for OSS models.","stars":35000,"tags":["python","serving","throughput"]},
+    {"repo":"huggingface/transformers","url":"https://github.com/huggingface/transformers","description":"The de facto open-source library for LLMs and VLMs — model definitions, training, and inference.","stars":140000,"tags":["python","pytorch","models"]},
+    {"repo":"QwenLM/Qwen3.6","url":"https://github.com/QwenLM/Qwen3.6","description":"Official repository for Alibaba's Qwen 3.6 text-to-text LLM series.","stars":15000,"tags":["python","qwen","llm"]},
+    {"repo":"QwenLM/Qwen3-VL","url":"https://github.com/QwenLM/Qwen3-VL","description":"Official repository for Qwen3-VL, Alibaba's multimodal vision-language model series.","stars":8000,"tags":["python","qwen","vlm","multimodal"]},
+    {"repo":"zai-org/CogVLM","url":"https://github.com/zai-org/CogVLM","description":"State-of-the-art open visual language model from Zhipu with 10B vision + 7B language parameters.","stars":6500,"tags":["python","vlm","multimodal"]},
+    {"repo":"Blaizzy/mlx-vlm","url":"https://github.com/Blaizzy/mlx-vlm","description":"Vision-language model inference and fine-tuning on Apple Silicon via MLX.","stars":1800,"tags":["python","apple-silicon","mlx","vlm"]}
+  ]
+}
+</script>
+<script>
+(() => {
+
+// ============================================================
+// STATE
+// ============================================================
+const state = {
+  minDownloads: parseInt(localStorage.getItem('osllm.minDownloads') || '500', 10),
+  windowDays:   parseInt(localStorage.getItem('osllm.windowDays')   || '30', 10),
+  sortBy:       localStorage.getItem('osllm.sortBy') || 'trendingScore',
+  showSummary:  localStorage.getItem('osllm.showSummary') !== '0',
+  snapshot: { lastUpdated: null, llm: [], vlm: [], papers: [], modelscope: [], github: [] },
+};
+
+const $ = sel => document.querySelector(sel);
+const els = {};
+
+// ============================================================
+// UTILS
+// ============================================================
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt = n => {
+  n = +n || 0;
+  if (n >= 1e6) return (n/1e6).toFixed(n>=1e7?0:1).replace(/\.0$/,'') + 'M';
+  if (n >= 1e3) return (n/1e3).toFixed(n>=1e4?0:1).replace(/\.0$/,'') + 'K';
+  return String(n);
+};
+const parseDate = v => { if (!v) return null; const d = new Date(v); return isNaN(d.getTime()) ? null : d; };
+const relDate = d => {
+  if (!d) return '—';
+  const days = Math.round((Date.now() - d.getTime()) / 86400000);
+  if (days <= 0) return 'today';
+  if (days === 1) return '1d ago';
+  if (days < 30) return days + 'd ago';
+  if (days < 365) return Math.round(days/30) + 'mo ago';
+  return Math.round(days/365) + 'y ago';
+};
+const tagsClean = (tags, limit) => {
+  if (!Array.isArray(tags)) return [];
+  const skip = /^(license:|region:|base_model:|endpoints_compatible|safetensors|transformers|gguf|conversational|fp8|fp16|8-bit|4-bit|imatrix|arxiv:|dataset:|library:|eval-results|text-generation-inference|custom_code|deploy:|pytorch|mlx)/i;
+  return tags.filter(t => !skip.test(t)).slice(0, limit || 4);
+};
+
+// ============================================================
+// LOAD SNAPSHOT
+// ============================================================
+function loadSnapshot() {
+  try {
+    const node = document.getElementById('snapshot-data');
+    if (!node) return;
+    const data = JSON.parse(node.textContent || '{}');
+    state.snapshot = {
+      lastUpdated: data.lastUpdated || null,
+      llm: Array.isArray(data.llm) ? data.llm : [],
+      vlm: Array.isArray(data.vlm) ? data.vlm : [],
+      papers: Array.isArray(data.papers) ? data.papers : [],
+      modelscope: Array.isArray(data.modelscope) ? data.modelscope : [],
+      github: Array.isArray(data.github) ? data.github : [],
+    };
+  } catch (e) { console.warn('Bad snapshot JSON', e); }
+}
+
+// ============================================================
+// FILTER + SORT
+// ============================================================
+function applyFilters(models) {
+  const cutoff = state.windowDays > 0 ? Date.now() - state.windowDays * 86400000 : null;
+  let out = models.filter(m => {
+    if ((+m.downloads || 0) < state.minDownloads) return false;
+    const created = parseDate(m.created);
+    if (cutoff && (!created || created.getTime() < cutoff)) return false;
+    return true;
+  });
+  const k = state.sortBy;
+  out.sort((a, b) => {
+    if (k === 'created') return (parseDate(b.created)?.getTime() || 0) - (parseDate(a.created)?.getTime() || 0);
+    return (+b[k] || 0) - (+a[k] || 0);
+  });
+  return out;
+}
+
+// ============================================================
+// RENDER — MODEL TABLE (LLM + VLM)
+// ============================================================
+function renderModelTable(container, models, kind) {
+  if (!models.length) {
+    container.innerHTML = `
+      <div class="empty">
+        <div class="empty__title">No ${kind === 'llm' ? 'text-to-text LLMs' : 'image+text-to-text VLMs'} match your filters.</div>
+        <div class="empty__sub">${state.snapshot.lastUpdated ? 'Lower the download threshold or widen the time window.' : 'The first scheduled run will populate this view.'}</div>
+      </div>`;
+    return;
+  }
+  const rows = models.map((m, i) => {
+    const author = m.author || (m.repoId && m.repoId.includes('/') ? m.repoId.split('/')[0] : '');
+    const name = m.name || (m.repoId && m.repoId.includes('/') ? m.repoId.split('/').slice(1).join('/') : m.repoId);
+    const tags = tagsClean(m.tags, 4);
+    const created = parseDate(m.created);
+    const taskLabel = (m.task || '').replace(/-/g, ' ');
+    return `
+      <tr>
+        <td class="col-rank">${i + 1}</td>
+        <td class="col-model">
+          <div class="model-cell">
+            <div class="model-cell__name"><a href="${esc(m.url || '#')}" target="_blank" rel="noopener">${esc(name || '')}</a></div>
+            ${author ? `<div class="model-cell__org">${esc(author)}</div>` : ''}
+            ${state.showSummary && m.summary ? `<div class="model-cell__summary">${esc(m.summary)}</div>` : ''}
+            ${tags.length ? `<div class="tag-row">${tags.map(t => `<span class="badge badge--mono">${esc(t)}</span>`).join('')}</div>` : ''}
+          </div>
+        </td>
+        <td class="col-task">${m.task ? `<span class="badge ${kind === 'llm' ? 'badge--llm' : 'badge--vlm'}">${esc(taskLabel)}</span>` : ''}</td>
+        <td class="col-num col-num--strong">${fmt(m.downloads)}</td>
+        <td class="col-num">${fmt(m.likes)}</td>
+        <td class="col-num col-trend">${m.trendingScore ? `<span class="trend trend--up">▲ ${Math.round(m.trendingScore)}</span>` : ''}</td>
+        <td class="col-when">${created ? esc(relDate(created)) : '—'}</td>
+      </tr>
+    `;
+  }).join('');
+  container.innerHTML = `
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th class="col-rank">#</th>
+            <th class="col-model">Model</th>
+            <th class="col-task">Task</th>
+            <th class="col-num">Downloads</th>
+            <th class="col-num">Likes</th>
+            <th class="col-num col-trend">Trend</th>
+            <th class="col-when">Updated</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+// ============================================================
+// RENDER — SNAPSHOT TABLE (ModelScope, GitHub)
+// ============================================================
+function renderSnapshotTable(container, items, kind) {
+  if (!items.length) {
+    container.innerHTML = `
+      <div class="empty">
+        <div class="empty__title">Awaiting first snapshot.</div>
+        <div class="empty__sub">The daily task at 8 AM populates this view.</div>
+      </div>`;
+    return;
+  }
+  const valueLabel = kind === 'github' ? 'Stars' : 'Downloads';
+  const rows = items.map((it, i) => {
+    const name = it.name || it.repo || '';
+    const url = it.url || '#';
+    const desc = it.description || '';
+    const stars = +it.stars || +it.likes || +it.downloads || 0;
+    const author = name.includes('/') ? name.split('/')[0] : '';
+    const displayName = name.includes('/') ? name.split('/').slice(1).join('/') : name;
+    const tags = tagsClean(it.tags, 4);
+    return `
+      <tr>
+        <td class="col-rank">${i + 1}</td>
+        <td class="col-model">
+          <div class="model-cell">
+            <div class="model-cell__name"><a href="${esc(url)}" target="_blank" rel="noopener">${esc(displayName || name)}</a></div>
+            ${author ? `<div class="model-cell__org">${esc(author)}</div>` : ''}
+            ${state.showSummary && desc ? `<div class="model-cell__summary">${esc(desc)}</div>` : ''}
+            ${tags.length ? `<div class="tag-row">${tags.map(t => `<span class="badge badge--mono">${esc(t)}</span>`).join('')}</div>` : ''}
+          </div>
+        </td>
+        <td class="col-task">${it.task ? `<span class="badge">${esc(it.task)}</span>` : ''}</td>
+        <td class="col-num col-num--strong">${stars ? fmt(stars) : '—'}</td>
+      </tr>
+    `;
+  }).join('');
+  container.innerHTML = `
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th class="col-rank">#</th>
+            <th class="col-model">${kind === 'github' ? 'Repository' : 'Model'}</th>
+            <th class="col-task">${kind === 'github' ? 'Topic' : 'Task'}</th>
+            <th class="col-num">${valueLabel}</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+// ============================================================
+// RENDER — PAPERS
+// ============================================================
+function renderPapers(container, papers) {
+  const cutoff = state.windowDays > 0 ? Date.now() - state.windowDays * 86400000 : null;
+  const list = papers.filter(p => !cutoff || (parseDate(p.published)?.getTime() >= cutoff));
+  els.countPapers.textContent = list.length;
+  if (!list.length) {
+    container.innerHTML = `
+      <div class="empty">
+        <div class="empty__title">No papers in this window.</div>
+        <div class="empty__sub">Widen the time window or check back tomorrow.</div>
+      </div>`;
+    return;
+  }
+  container.innerHTML = list.map(p => `
+    <div class="paper">
+      <div class="paper__title"><a href="${esc(p.url || '#')}" target="_blank" rel="noopener">${esc(p.title || '')}</a></div>
+      <div class="paper__meta">${esc(p.published || '')}${p.authors ? ' · ' + esc(p.authors.length > 110 ? p.authors.slice(0, 110) + '…' : p.authors) : ''}</div>
+      ${p.summary ? `<div class="paper__summary">${esc(p.summary)}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+// ============================================================
+// STATS + STATUS
+// ============================================================
+function updateStats(llmFiltered, vlmFiltered) {
+  const all = [...llmFiltered, ...vlmFiltered];
+  els.statLlm.textContent = llmFiltered.length;
+  els.statVlm.textContent = vlmFiltered.length;
+  els.countLlm.textContent = llmFiltered.length;
+  els.countVlm.textContent = vlmFiltered.length;
+
+  if (all.length) {
+    const top = [...all].sort((a,b) => (+b.trendingScore || 0) - (+a.trendingScore || 0))[0];
+    const topName = (top.name || top.repoId || '').split('/').slice(-1)[0] || '';
+    els.statTop.textContent = topName.length > 14 ? topName.slice(0, 14) + '…' : topName;
+    els.statTopSub.textContent = `${top.author || ''} · ▲ ${Math.round(+top.trendingScore || 0)}`;
+
+    const byOrg = {};
+    for (const m of all) {
+      const a = m.author || (m.repoId && m.repoId.includes('/') ? m.repoId.split('/')[0] : '');
+      if (!a) continue;
+      byOrg[a] = (byOrg[a] || 0) + (+m.trendingScore || 0);
+    }
+    const topOrg = Object.entries(byOrg).sort((a,b) => b[1] - a[1])[0];
+    if (topOrg) {
+      els.statOrg.textContent = topOrg[0].length > 12 ? topOrg[0].slice(0, 12) + '…' : topOrg[0];
+      const count = all.filter(m => (m.author || '') === topOrg[0]).length;
+      els.statOrgSub.textContent = `${count} model${count === 1 ? '' : 's'} in view`;
+    }
+  } else {
+    els.statTop.textContent = '—'; els.statTopSub.innerHTML = '&nbsp;';
+    els.statOrg.textContent = '—'; els.statOrgSub.innerHTML = '&nbsp;';
+  }
+}
+
+function updateStatus() {
+  const last = parseDate(state.snapshot.lastUpdated);
+  const ind = els.statusIndicator;
+  if (!last) {
+    els.statusText.textContent = 'No snapshot yet';
+    els.statusSub.textContent = 'Run the scheduled task to populate';
+    ind.className = 'status status--empty';
+    els.firstRun.style.display = 'block';
+    return;
+  }
+  const stale = (Date.now() - last.getTime()) > 36 * 3600 * 1000;
+  els.statusText.textContent = stale ? 'Stale snapshot' : 'Up to date';
+  els.statusSub.textContent = last.toLocaleString(undefined, { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' });
+  ind.className = stale ? 'status status--stale' : 'status';
+  els.firstRun.style.display = 'none';
+}
+
+// ============================================================
+// ORCHESTRATION
+// ============================================================
+function renderAll() {
+  updateStatus();
+  const llmFiltered = applyFilters(state.snapshot.llm);
+  const vlmFiltered = applyFilters(state.snapshot.vlm);
+  renderModelTable(els.llmContent, llmFiltered, 'llm');
+  renderModelTable(els.vlmContent, vlmFiltered, 'vlm');
+  renderPapers(els.papersContent, state.snapshot.papers);
+  renderSnapshotTable(els.modelscopeContent, state.snapshot.modelscope, 'modelscope');
+  renderSnapshotTable(els.githubContent, state.snapshot.github, 'github');
+  els.countModelscope.textContent = state.snapshot.modelscope.length;
+  els.countGithub.textContent = state.snapshot.github.length;
+  updateStats(llmFiltered, vlmFiltered);
+}
+
+// ============================================================
+// BIND CONTROLS
+// ============================================================
+function bindControls() {
+  els.minDownloads.value = state.minDownloads;
+  els.windowDays.value = String(state.windowDays);
+  els.sortBy.value = state.sortBy;
+  els.showSummary.checked = state.showSummary;
+
+  els.minDownloads.addEventListener('change', () => {
+    state.minDownloads = parseInt(els.minDownloads.value || '0', 10);
+    localStorage.setItem('osllm.minDownloads', String(state.minDownloads));
+    renderAll();
+  });
+  els.windowDays.addEventListener('change', () => {
+    state.windowDays = parseInt(els.windowDays.value, 10);
+    localStorage.setItem('osllm.windowDays', String(state.windowDays));
+    renderAll();
+  });
+  els.sortBy.addEventListener('change', () => {
+    state.sortBy = els.sortBy.value;
+    localStorage.setItem('osllm.sortBy', state.sortBy);
+    renderAll();
+  });
+  els.showSummary.addEventListener('change', () => {
+    state.showSummary = els.showSummary.checked;
+    localStorage.setItem('osllm.showSummary', state.showSummary ? '1' : '0');
+    renderAll();
+  });
+
+  document.querySelectorAll('.tab').forEach(t => {
+    t.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(x => x.classList.remove('tab--active'));
+      document.querySelectorAll('.pane').forEach(p => p.classList.remove('pane--active'));
+      t.classList.add('tab--active');
+      document.getElementById('pane-' + t.dataset.pane).classList.add('pane--active');
+      // Hide the global model-controls bar on the benchmarks/papers tabs
+      const showModelControls = ['llm','vlm','modelscope','github'].includes(t.dataset.pane);
+      document.getElementById('model-controls').style.display = showModelControls ? '' : 'none';
+      if (t.dataset.pane === 'benchmarks') maybeInitBenchmarks();
+    });
+  });
+}
+
+// ============================================================
+// BENCHMARKS
+// ============================================================
+let benchData = { benchmarks: [] };
+let benchChart = null;
+const benchState = {
+  selectedId: localStorage.getItem('osllm.benchId') || 'arena_text',
+  modelType: localStorage.getItem('osllm.benchType') || 'all',
+  showLabels: localStorage.getItem('osllm.benchLabels') !== '0',
+  openOnly: localStorage.getItem('osllm.benchOpenOnly') === '1',
+};
+
+function loadBenchmarkData() {
+  try {
+    const node = document.getElementById('benchmark-data');
+    if (!node) return;
+    benchData = JSON.parse(node.textContent || '{}');
+    if (!Array.isArray(benchData.benchmarks)) benchData.benchmarks = [];
+  } catch (e) { console.warn('Bad benchmark JSON', e); }
+}
+
+function computePareto(points) {
+  // Frontier computed only over open-weight models.
+  const open = points.filter(p => p.open !== false);
+  const sorted = [...open].sort((a,b) => a.params - b.params || b.score - a.score);
+  const frontier = [];
+  let best = -Infinity;
+  for (const p of sorted) {
+    if (p.score > best) { frontier.push(p); best = p.score; }
+  }
+  return new Set(frontier.map(p => p.model));
+}
+
+function populateBenchSelector() {
+  els.benchSelect.innerHTML = '';
+  // Group by category for readability
+  const groups = {};
+  benchData.benchmarks.forEach(b => {
+    if (!groups[b.category]) groups[b.category] = [];
+    groups[b.category].push(b);
+  });
+  Object.entries(groups).forEach(([cat, list]) => {
+    const og = document.createElement('optgroup'); og.label = cat;
+    list.forEach(b => {
+      const opt = document.createElement('option');
+      opt.value = b.id; opt.textContent = b.name;
+      og.appendChild(opt);
+    });
+    els.benchSelect.appendChild(og);
+  });
+  els.benchSelect.value = benchState.selectedId;
+  if (els.benchSelect.value !== benchState.selectedId) {
+    benchState.selectedId = els.benchSelect.value || benchData.benchmarks[0]?.id;
+  }
+}
+
+function getActiveBench() {
+  return benchData.benchmarks.find(b => b.id === benchState.selectedId) || benchData.benchmarks[0];
+}
+
+function renderBenchHeader(bench) {
+  els.benchHeader.innerHTML = `
+    <div class="bench-header__title">
+      <h2 class="t-h2">${esc(bench.name)}</h2>
+      <span class="badge badge--accent">${esc(bench.category)}</span>
+      <span class="t-meta">${esc(bench.scale)}</span>
+    </div>
+    <div class="bench-header__desc">${esc(bench.description)}</div>
+    <div class="bench-header__source">Source: <span class="t-mono">${esc(bench.source)}</span> · Applies to ${(bench.appliesTo||[]).join(', ')}</div>
+  `;
+}
+
+function toPoint(p) {
+  return { x: p.params, y: p.score, model: p.model, type: p.type, note: p.note, url: p.url, open: p.open !== false, org: p.org || '', eloCI: p.eloCI || null };
+}
+
+function renderBenchChart() {
+  const bench = getActiveBench();
+  if (!bench) return;
+  renderBenchHeader(bench);
+
+  const all = (bench.scores || []).slice();
+  let filtered = all.filter(p => benchState.modelType === 'all' || p.type === benchState.modelType);
+  if (benchState.openOnly) filtered = filtered.filter(p => p.open !== false);
+  els.countBenchmarks.textContent = benchData.benchmarks.length;
+
+  if (!filtered.length) {
+    if (benchChart) { benchChart.destroy(); benchChart = null; }
+    els.frontierList.innerHTML = `<div class="empty"><div class="empty__title">No models match the current filter.</div></div>`;
+    return;
+  }
+
+  const frontierSet = computePareto(filtered);
+  const frontierPts = filtered.filter(p => frontierSet.has(p.model)).sort((a,b) => a.params - b.params).map(toPoint);
+  const nonFrontier = filtered.filter(p => !frontierSet.has(p.model)).map(toPoint);
+  const openLLM = nonFrontier.filter(p => p.type === 'LLM' && p.open);
+  const openVLM = nonFrontier.filter(p => p.type === 'VLM' && p.open);
+  const prop = nonFrontier.filter(p => !p.open);
+
+  const css = getComputedStyle(document.documentElement);
+  const cLlm = css.getPropertyValue('--c-llm').trim() || '#1f5e57';
+  const cVlm = css.getPropertyValue('--c-vlm').trim() || '#6b3b8e';
+  const cAcc = css.getPropertyValue('--c-accent').trim() || '#2349b8';
+  const cText3 = css.getPropertyValue('--c-text-3').trim() || '#8c8990';
+  const cBorder = css.getPropertyValue('--c-border').trim() || '#e6e3da';
+
+  const datasets = [];
+  if (openLLM.length) datasets.push({
+    label: 'Open LLM', data: openLLM,
+    pointStyle: 'circle', pointRadius: 5, pointHoverRadius: 7,
+    backgroundColor: cLlm, borderColor: cLlm, showLine: false,
+  });
+  if (openVLM.length) datasets.push({
+    label: 'Open VLM', data: openVLM,
+    pointStyle: 'triangle', pointRadius: 6, pointHoverRadius: 8,
+    backgroundColor: cVlm, borderColor: cVlm, showLine: false,
+  });
+  if (prop.length) datasets.push({
+    label: 'Proprietary', data: prop,
+    pointStyle: 'circle', pointRadius: 6, pointHoverRadius: 8,
+    backgroundColor: 'rgba(255,255,255,0)', borderColor: cText3,
+    borderWidth: 1.5, showLine: false,
+  });
+  datasets.push({
+    label: 'Pareto frontier (open)', data: frontierPts,
+    pointStyle: 'circle', pointRadius: 7, pointHoverRadius: 9,
+    pointBorderColor: '#ffffff', pointBorderWidth: 1.5,
+    backgroundColor: cAcc, borderColor: cAcc,
+    showLine: true, borderWidth: 1.75, tension: 0, fill: false,
+  });
+
+  // Plugin: vertical error bars for confidence intervals
+  const errorBarsPlugin = {
+    id: 'errorBars',
+    beforeDatasetsDraw(chart) {
+      if (!bench.showCI) return;
+      const { ctx, scales } = chart;
+      const allPts = [...frontierPts, ...nonFrontier];
+      ctx.save();
+      ctx.lineWidth = 1;
+      for (const p of allPts) {
+        if (!p.eloCI) continue;
+        const x = scales.x.getPixelForValue(p.x);
+        const yTop = scales.y.getPixelForValue(p.y + p.eloCI);
+        const yBot = scales.y.getPixelForValue(p.y - p.eloCI);
+        ctx.strokeStyle = p.open ? 'rgba(91, 88, 95, 0.3)' : 'rgba(140, 137, 144, 0.45)';
+        ctx.beginPath();
+        ctx.moveTo(x, yTop); ctx.lineTo(x, yBot);
+        ctx.moveTo(x - 3, yTop); ctx.lineTo(x + 3, yTop);
+        ctx.moveTo(x - 3, yBot); ctx.lineTo(x + 3, yBot);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+  };
+
+  // Plugin: model labels next to frontier + proprietary points
+  const labelsPlugin = {
+    id: 'modelLabels',
+    afterDatasetsDraw(chart) {
+      if (!benchState.showLabels) return;
+      const { ctx, chartArea, scales } = chart;
+      ctx.save();
+      ctx.font = '500 10.5px ' + (css.getPropertyValue('--font') || '-apple-system');
+      ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      for (const p of frontierPts) {
+        const x = scales.x.getPixelForValue(p.x);
+        const y = scales.y.getPixelForValue(p.y);
+        if (x < chartArea.left || x > chartArea.right) continue;
+        ctx.fillStyle = cAcc;
+        ctx.fillText('  ' + p.model, x + 6, y - 2);
+      }
+      ctx.font = '400 10.5px ' + (css.getPropertyValue('--font') || '-apple-system');
+      for (const p of prop) {
+        const x = scales.x.getPixelForValue(p.x);
+        const y = scales.y.getPixelForValue(p.y);
+        if (x < chartArea.left || x > chartArea.right) continue;
+        ctx.fillStyle = cText3;
+        ctx.fillText('  ' + p.model, x + 6, y - 2);
+      }
+      ctx.restore();
+    }
+  };
+
+  if (benchChart) benchChart.destroy();
+  const ctx = document.getElementById('benchChart').getContext('2d');
+
+  benchChart = new Chart(ctx, {
+    type: 'scatter',
+    data: { datasets },
+    plugins: [errorBarsPlugin, labelsPlugin],
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      animation: { duration: 220 },
+      onClick: (evt, items) => {
+        const pt = items?.[0]?.element?.$context?.raw;
+        if (pt?.url) window.open(pt.url, '_blank', 'noopener');
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#18171b',
+          titleFont: { size: 12, weight: '600', family: css.getPropertyValue('--font') },
+          bodyFont:  { size: 11.5, family: css.getPropertyValue('--font') },
+          padding: 10, cornerRadius: 4,
+          displayColors: false,
+          callbacks: {
+            title: c => c[0].raw.model,
+            label: c => {
+              const r = c.raw;
+              const score = bench.showCI && r.eloCI
+                ? `${bench.name}: ${Math.round(r.y)} ± ${r.eloCI}`
+                : `${bench.name}: ${r.y.toFixed(1)}`;
+              const lines = [score, `${r.x}B params · ${r.type}${r.open ? '' : ' · proprietary'}`];
+              if (r.org) lines.push(r.org);
+              if (r.note) lines.push(r.note);
+              if (r.url) lines.push('Click to open');
+              return lines;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          type: 'logarithmic',
+          title: { display: true, text: 'Parameters (B, log scale)', color: cText3, font: { size: 11 } },
+          ticks: {
+            color: cText3,
+            font: { size: 11, family: css.getPropertyValue('--font') },
+            callback: v => [1,2,5,10,20,50,100,200,500,1000].includes(+v) ? v + 'B' : '',
+          },
+          grid: { color: cBorder, drawTicks: false },
+          border: { color: cBorder },
+          min: 0.5, max: 1000,
+        },
+        y: {
+          title: { display: true, text: bench.name + ' score', color: cText3, font: { size: 11 } },
+          ticks: { color: cText3, font: { size: 11, family: css.getPropertyValue('--font') } },
+          grid: { color: cBorder, drawTicks: false },
+          border: { color: cBorder },
+          beginAtZero: false,
+        }
+      }
+    }
+  });
+
+  renderFrontierList(bench, frontierSet, filtered);
+}
+
+function renderFrontierList(bench, frontierSet, filtered) {
+  const frontier = filtered.filter(p => frontierSet.has(p.model)).sort((a,b) => a.params - b.params);
+  if (!frontier.length) { els.frontierList.innerHTML = `<div class="empty"><div class="empty__title">No frontier models for the current filter.</div></div>`; return; }
+  const rows = frontier.map((p, i) => {
+    const scoreStr = bench.showCI && p.eloCI ? `${Math.round(p.score)} ± ${p.eloCI}` : p.score.toFixed(1);
+    return `
+      <tr>
+        <td class="col-rank">${i + 1}</td>
+        <td class="col-model">
+          <div class="model-cell">
+            <div class="model-cell__name"><a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.model)}</a></div>
+            ${p.org ? `<div class="model-cell__org">${esc(p.org)}</div>` : ''}
+            ${p.note ? `<div class="model-cell__summary">${esc(p.note)}</div>` : ''}
+          </div>
+        </td>
+        <td class="col-task">
+          <span class="badge ${p.type === 'LLM' ? 'badge--llm' : 'badge--vlm'}">${p.type}</span>
+          <span class="badge ${p.open === false ? 'badge--outline' : 'badge--pos'}" style="margin-left:4px;">${p.open === false ? 'proprietary' : 'open'}</span>
+        </td>
+        <td class="col-num col-num--strong">${p.params}B</td>
+        <td class="col-num col-num--strong" style="color:var(--c-accent);">${scoreStr}</td>
+      </tr>
+    `;
+  }).join('');
+  els.frontierList.innerHTML = `
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th class="col-rank">#</th>
+            <th class="col-model">Model</th>
+            <th class="col-task">Type · License</th>
+            <th class="col-num">Params</th>
+            <th class="col-num">${esc(bench.name)}</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+function bindBenchControls() {
+  els.benchModelType.value = benchState.modelType;
+  els.benchShowLabels.checked = benchState.showLabels;
+  els.benchOpenOnly.checked = benchState.openOnly;
+  els.benchSelect.addEventListener('change', () => {
+    benchState.selectedId = els.benchSelect.value;
+    localStorage.setItem('osllm.benchId', benchState.selectedId);
+    renderBenchChart();
+  });
+  els.benchModelType.addEventListener('change', () => {
+    benchState.modelType = els.benchModelType.value;
+    localStorage.setItem('osllm.benchType', benchState.modelType);
+    renderBenchChart();
+  });
+  els.benchShowLabels.addEventListener('change', () => {
+    benchState.showLabels = els.benchShowLabels.checked;
+    localStorage.setItem('osllm.benchLabels', benchState.showLabels ? '1' : '0');
+    renderBenchChart();
+  });
+  els.benchOpenOnly.addEventListener('change', () => {
+    benchState.openOnly = els.benchOpenOnly.checked;
+    localStorage.setItem('osllm.benchOpenOnly', benchState.openOnly ? '1' : '0');
+    renderBenchChart();
+  });
+}
+
+let benchInitialized = false;
+function maybeInitBenchmarks() {
+  if (benchInitialized) return;
+  benchInitialized = true;
+  if (typeof Chart === 'undefined') {
+    els.benchHeader.innerHTML = `<div class="t-body">Chart library failed to load. Check your network or open this page over HTTPS.</div>`;
+    return;
+  }
+  loadBenchmarkData();
+  populateBenchSelector();
+  bindBenchControls();
+  renderBenchChart();
+}
+
+// ============================================================
+// BOOT
+// ============================================================
+function cacheEls() {
+  els.minDownloads = $('#minDownloads');
+  els.windowDays   = $('#windowDays');
+  els.sortBy       = $('#sortBy');
+  els.showSummary  = $('#showSummary');
+  els.llmContent   = $('#llm-content');
+  els.vlmContent   = $('#vlm-content');
+  els.papersContent = $('#papers-content');
+  els.modelscopeContent = $('#modelscope-content');
+  els.githubContent = $('#github-content');
+  els.countLlm     = $('#count-llm');
+  els.countVlm     = $('#count-vlm');
+  els.countPapers  = $('#count-papers');
+  els.countModelscope = $('#count-modelscope');
+  els.countGithub  = $('#count-github');
+  els.countBenchmarks = $('#count-benchmarks');
+  els.statLlm      = $('#stat-llm');
+  els.statVlm      = $('#stat-vlm');
+  els.statTop      = $('#stat-top');
+  els.statTopSub   = $('#stat-top-sub');
+  els.statOrg      = $('#stat-org');
+  els.statOrgSub   = $('#stat-org-sub');
+  els.statusIndicator = $('#status-indicator');
+  els.statusText   = $('#status-text');
+  els.statusSub    = $('#status-sub');
+  els.firstRun     = $('#first-run-banner');
+  els.benchSelect  = $('#benchSelect');
+  els.benchModelType = $('#benchModelType');
+  els.benchShowLabels = $('#benchShowLabels');
+  els.benchOpenOnly = $('#benchOpenOnly');
+  els.benchHeader  = $('#bench-header');
+  els.frontierList = $('#frontier-list');
+}
+
+cacheEls();
+bindControls();
+loadSnapshot();
+renderAll();
+
+})();
+</script>
+</body>
+</html>
