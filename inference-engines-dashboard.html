@@ -197,86 +197,93 @@
 
 <script type="application/json" id="snapshot-data">
 {
-  "lastUpdated": "2026-05-28T08:30:00-07:00",
+  "lastUpdated": "2026-05-29T10:00:00-07:00",
   "production": [
-    {"name":"vLLM","org":"vllm-project","url":"https://github.com/vllm-project/vllm","type":"Server","license":"oss","stars":77000,"tps":12500,"hardware":"H100","model":"Llama 3.1 8B","tags":["python","paged-attention","openai-compatible","throughput","2k-contributors"],"summary":"High-throughput serving engine with PagedAttention; 77K stars, 2K+ contributors; balanced performance, OpenAI-compatible API."},
-    {"name":"SGLang","org":"sgl-project","url":"https://github.com/sgl-project/sglang","type":"Server","license":"oss","stars":null,"tps":16200,"hardware":"H100","model":"Llama 3.1 8B","tags":["python","structured-generation","radix-cache","fastest-tied","400k-gpus"],"summary":"High-performance serving framework with structured generation; ~16.2K tok/s H100; runs on 400K+ production GPUs."},
-    {"name":"LMDeploy","org":"InternLM","url":"https://github.com/InternLM/lmdeploy","type":"Server","license":"oss","stars":null,"tps":16100,"hardware":"H100","model":"Llama 3.1 8B","tags":["turbomind","python","internlm","quantized-latency","fastest-tied"],"summary":"InternLM's serving engine; matches SGLang throughput (~16.1K tok/s on H100), standout latency on quantized models."},
-    {"name":"TensorRT-LLM","org":"NVIDIA","url":"https://github.com/NVIDIA/TensorRT-LLM","type":"Server","license":"oss","stars":null,"tps":4500,"hardware":"H100","model":"Llama 70B","tags":["nvidia","cuda","compiled","low-level","best-throughput-70b"],"summary":"NVIDIA's hardware-tuned LLM inference; 4,500 tok/s on Llama 70B H100, 20-50ms p50 latency on 7B — best throughput in class."},
+    {"name":"vLLM","org":"vllm-project","url":"https://github.com/vllm-project/vllm","type":"Server","license":"oss","stars":77000,"tps":12500,"hardware":"H100","model":"Llama 3.1 8B","tags":["python","paged-attention","openai-compatible","v0.21","eagle-3.1"],"summary":"PagedAttention serving engine; v0.21 (May 15) lands TokenSpeed MLA backend on Blackwell; EAGLE 3.1 spec decode shipped May 26."},
+    {"name":"SGLang","org":"sgl-project","url":"https://github.com/sgl-project/sglang","type":"Server","license":"oss","stars":null,"tps":16200,"hardware":"H100","model":"Llama 3.1 8B","tags":["python","structured-generation","radix-cache","v0.5.12","400k-gpus"],"summary":"High-perf serving framework; v0.5.12 ships DeepSeek V4, HiCache UnifiedRadixTree, CUDA 13 migration; runs on 400K+ GPUs."},
+    {"name":"LMDeploy","org":"InternLM","url":"https://github.com/InternLM/lmdeploy","type":"Server","license":"oss","stars":null,"tps":16100,"hardware":"H100","model":"Llama 3.1 8B","tags":["turbomind","python","internlm","quantized-latency","fastest-tied"],"summary":"InternLM's TurboMind engine; matches SGLang at ~16.1K tok/s on H100, standout latency on quantized models, trivial install."},
+    {"name":"TensorRT-LLM","org":"NVIDIA","url":"https://github.com/NVIDIA/TensorRT-LLM","type":"Server","license":"oss","stars":null,"tps":4500,"hardware":"H100","model":"Llama 70B","tags":["nvidia","cuda","compiled","v1.2","best-throughput-70b"],"summary":"NVIDIA's hardware-tuned LLM inference (v1.2.0); 4.5K tok/s on Llama 70B H100, 20-50ms p50 latency — best throughput at 70B."},
     {"name":"TGI","org":"huggingface","url":"https://github.com/huggingface/text-generation-inference","type":"Server","license":"oss","stars":11000,"tps":null,"hardware":null,"model":null,"tags":["rust","python","huggingface","production","openai-compatible"],"summary":"Hugging Face's production-grade Rust+Python serving toolkit for open-source LLMs — used at HF inference endpoints."},
     {"name":"NVIDIA Triton","org":"NVIDIA","url":"https://github.com/triton-inference-server/server","type":"Server","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["nvidia","multi-framework","grpc","kubernetes","tensorrt-backend"],"summary":"NVIDIA's general-purpose inference server with TensorRT-LLM backend — multi-framework, gRPC, Kubernetes-ready."},
-    {"name":"TokenSpeed","org":"lightseekorg","url":"https://github.com/lightseekorg/tokenspeed","type":"Server","license":"oss","stars":null,"tps":580,"hardware":"H100","model":"Qwen3.5-397B-A17B","tags":["lightseek","preview","agentic","trt-llm-perf","vllm-usability"],"summary":"LightSeek's preview engine for agentic workloads — TensorRT-LLM-level perf with vLLM-level usability; 580 TPS on Qwen3.5-397B."},
-    {"name":"Modular MAX","org":"modular","url":"https://www.modular.com/max","type":"Server","license":"commercial","stars":null,"tps":null,"hardware":null,"model":null,"tags":["mojo","graph-compiled","cpu-gpu","custom-kernels"],"summary":"Modular's serving framework with graph-compiled Mojo kernels; outperforms vLLM on dense models at high concurrency."},
+    {"name":"TokenSpeed","org":"lightseekorg","url":"https://github.com/lightseekorg/tokenspeed","type":"Server","license":"oss","stars":null,"tps":580,"hardware":"H100","model":"Qwen3.5-397B-A17B","tags":["lightseek","mit","agentic","trt-llm-perf","mla-backend"],"summary":"LightSeek's MIT engine for agentic workloads — TRT-LLM-level perf, vLLM usability; MLA backend now upstream in vLLM + SGLang."},
+    {"name":"llm-d","org":"llm-d","url":"https://github.com/llm-d/llm-d","type":"Server","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["kubernetes","distributed","cncf-sandbox","v0.7","redhat-nvidia"],"summary":"CNCF sandbox distributed inference on K8s (vLLM-based); v0.7 May 2026 stabilizes baseline, kustomize guides, nightly CI."},
+    {"name":"Modular MAX","org":"modular","url":"https://www.modular.com/max","type":"Server","license":"commercial","stars":null,"tps":null,"hardware":null,"model":null,"tags":["mojo","graph-compiled","blackwell","mi355x","bentoml"],"summary":"Modular's Mojo-compiled engine; day-0 Gemma 4 on NVIDIA Blackwell + AMD MI355X; ~15% higher throughput vs vLLM on B200."},
     {"name":"DeepSpeed-FastGen","org":"microsoft","url":"https://github.com/microsoft/DeepSpeed-MII","type":"Server","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["microsoft","mii","dynamic-splitfuse","throughput"],"summary":"Microsoft's MII-based high-throughput text generation engine on top of DeepSpeed-Inference."},
     {"name":"Fireworks FireAttention","org":"Fireworks AI","url":"https://fireworks.ai","type":"Cloud","license":"commercial","stars":null,"tps":null,"hardware":null,"model":null,"tags":["proprietary","cloud","4x-lower-latency","multimodal"],"summary":"Fireworks' proprietary engine — 4× lower latency than open-source vLLM; powers text, image, and audio inference."},
     {"name":"LightLLM","org":"ModelTC","url":"https://github.com/ModelTC/lightllm","type":"Server","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["python","triton","lightweight","tokenattention"],"summary":"Lightweight pure-Python+Triton serving framework; TokenAttention paged KV-cache for memory efficiency."},
     {"name":"Aphrodite Engine","org":"aphrodite-engine","url":"https://github.com/aphrodite-engine/aphrodite-engine","type":"Server","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["pygmalion","gptq-kernels","large-scale","forked-vllm"],"summary":"PygmalionAI's large-scale inference engine for thousands of concurrent users; ExLlamaV2 GPTQ kernels for batch throughput."},
-    {"name":"LoRAX","org":"predibase","url":"https://github.com/predibase/lorax","type":"Server","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["predibase","lora-multiplexing","batched-loras","multi-tenant"],"summary":"Multi-LoRA serving engine — batches requests for many different LoRA adapters on a single base model."}
+    {"name":"LoRAX","org":"predibase","url":"https://github.com/predibase/lorax","type":"Server","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["predibase","lora-multiplexing","batched-loras","multi-tenant"],"summary":"Multi-LoRA serving engine — batches requests for many different LoRA adapters on a single base model."},
+    {"name":"xLLM","org":"jd-opensource","url":"https://github.com/jd-opensource/xllm","type":"Server","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["jd","chinese-accelerators","enterprise","glm-5","day-0"],"summary":"JD.com's high-perf engine optimized for Chinese AI accelerators; day-0 GLM-5 support; enterprise deployment focus."},
+    {"name":"Tokasaurus","org":"ScalingIntelligence","url":"https://github.com/ScalingIntelligence/tokasaurus","type":"Server","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["throughput","research","stanford","up-to-3x"],"summary":"Stanford ScalingIntelligence's high-throughput engine — outperforms vLLM and SGLang by up to 3x+ on throughput-focused benchmarks."},
+    {"name":"Cloudflare Infire","org":"Cloudflare","url":"https://www.infoq.com/news/2026/05/cloudflare-llm-infrastructure/","type":"Cloud","license":"commercial","stars":null,"tps":null,"hardware":null,"model":null,"tags":["cloudflare","custom","gpu-efficient","fast-startup","workers-ai"],"summary":"Cloudflare's custom inference engine — efficient GPU management, reduced memory, faster model startup; powers Workers AI globally."}
   ],
   "local": [
-    {"name":"Ollama","org":"ollama","url":"https://github.com/ollama/ollama","type":"Daemon","license":"oss","stars":162000,"tps":null,"hardware":null,"model":null,"tags":["go","llama-cpp","cli","easy-install","openai-compatible"],"summary":"Run local LLMs with one command — wraps llama.cpp into a developer-friendly daemon; 162K stars, 282M+ downloads."},
-    {"name":"llama.cpp","org":"ggml-org","url":"https://github.com/ggml-org/llama.cpp","type":"Library","license":"oss","stars":98600,"tps":null,"hardware":null,"model":null,"tags":["c++","ggml","gguf","cpu","metal","cuda"],"summary":"Plain C/C++ LLM inference; foundation for Ollama, LM Studio, GPT4All, KoboldCpp — 98.6K stars."},
-    {"name":"MLX-LM","org":"ml-explore","url":"https://github.com/ml-explore/mlx-lm","type":"Library","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["apple","mlx","metal","apple-silicon","python"],"summary":"Apple's MLX-based LLM toolkit — fast inference on M-series Macs via the MLX array framework."},
+    {"name":"Ollama","org":"ollama","url":"https://github.com/ollama/ollama","type":"Daemon","license":"oss","stars":172000,"tps":null,"hardware":null,"model":null,"tags":["go","mlx","cli","easy-install","v0.30-rc"],"summary":"Run local LLMs with one command — 172K stars; v0.30.0-rc23 May 22; MLX backend on Apple Silicon (Ollama 0.19+) yields 93% faster decode."},
+    {"name":"llama.cpp","org":"ggml-org","url":"https://github.com/ggml-org/llama.cpp","type":"Library","license":"oss","stars":114000,"tps":null,"hardware":null,"model":null,"tags":["c++","ggml","gguf","cpu","metal","cuda"],"summary":"Plain C/C++ LLM inference — 114K stars (crossed 100K in March 2026); foundation for Ollama, LM Studio, GPT4All, KoboldCpp."},
+    {"name":"MLX-LM","org":"ml-explore","url":"https://github.com/ml-explore/mlx-lm","type":"Library","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["apple","mlx","metal","apple-silicon","python"],"summary":"Apple's MLX-based LLM toolkit — fast inference on M-series Macs via the MLX array framework; now powers Ollama on Apple Silicon."},
     {"name":"Rapid-MLX","org":"raullenchai","url":"https://github.com/raullenchai/Rapid-MLX","type":"Daemon","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["mlx","apple-silicon","openai-compatible","ttft","tool-calling"],"summary":"Fastest local AI engine for Apple Silicon — 4.2× faster than Ollama, 0.08s cached TTFT, drop-in OpenAI replacement."},
-    {"name":"KTransformers","org":"kvcache-ai","url":"https://github.com/kvcache-ai/ktransformers","type":"Framework","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["heterogeneous","cpu-gpu","moe","amd-epyc","v0.6.1"],"summary":"Heterogeneous LLM inference with CPU+GPU offload; v0.6.1 April 2026 — strong on MoE models with AMD Epyc NPS0."},
+    {"name":"KTransformers","org":"kvcache-ai","url":"https://github.com/kvcache-ai/ktransformers","type":"Framework","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["heterogeneous","cpu-gpu","moe","amd-epyc","v0.6.1"],"summary":"Heterogeneous LLM inference with CPU+GPU offload; v0.6.1 (April 2026) — strong on MoE models with AMD Epyc NPS0."},
     {"name":"ik_llama.cpp","org":"ikawrakow","url":"https://github.com/ikawrakow/ik_llama.cpp","type":"Library","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["llama-cpp-fork","quantization","cpu-perf","iqmatrix"],"summary":"Performance-focused llama.cpp fork by quantization expert iKawrakow; advanced i-quants and CPU kernels."},
     {"name":"ExLlamaV2","org":"turboderp-org","url":"https://github.com/turboderp-org/exllamav2","type":"Library","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["consumer-gpu","exl2","gptq","python","fast-decode"],"summary":"Fast inference library for consumer GPUs; supports EXL2 (2-8 bit) and GPTQ 4-bit quantization formats."},
     {"name":"MLC-LLM","org":"mlc-ai","url":"https://github.com/mlc-ai/mlc-llm","type":"Compiler","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["tvm","compiler","multi-platform","ios","android","web"],"summary":"ML-compiled LLM deployment via Apache TVM — runs on AMD/NVIDIA/Apple/Intel GPUs plus iOS, Android, browsers."},
     {"name":"Web-LLM","org":"mlc-ai","url":"https://github.com/mlc-ai/web-llm","type":"Browser","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["webgpu","browser","client-side","javascript","tvm"],"summary":"In-browser LLM inference via WebGPU — runs models entirely client-side; built on MLC-LLM's TVM pipeline."},
-    {"name":"LM Studio","org":"LMStudio","url":"https://lmstudio.ai","type":"Desktop","license":"commercial","stars":null,"tps":null,"hardware":null,"model":null,"tags":["desktop","gui","llama-cpp","mlx","mac-windows-linux"],"summary":"Cross-platform desktop GUI for local LLMs powered by llama.cpp + MLX — point-and-click model running."},
+    {"name":"LM Studio","org":"LMStudio","url":"https://lmstudio.ai","type":"Desktop","license":"commercial","stars":null,"tps":null,"hardware":null,"model":null,"tags":["desktop","gui","llama-cpp","mlx-v1.8.1","mac-windows-linux"],"summary":"Cross-platform desktop GUI for local LLMs; May 13 beta adds mlx-engine v1.8.1 with parallel predictions for Qwen 3.5/3.6, Gemma 4."},
     {"name":"llamafile","org":"Mozilla-Ocho","url":"https://github.com/Mozilla-Ocho/llamafile","type":"Executable","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["mozilla","single-binary","cross-platform","cosmopolitan","portable"],"summary":"Distribute and run LLMs as a single executable file via Cosmopolitan libc — runs on six OSes from one binary."},
     {"name":"KoboldCpp","org":"LostRuins","url":"https://github.com/LostRuins/koboldcpp","type":"Desktop","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["llama-cpp","gui","creative-writing","horde","fork"],"summary":"Single-file llama.cpp distribution with built-in UI optimized for creative writing and Horde compatibility."},
-    {"name":"GPT4All","org":"nomic-ai","url":"https://github.com/nomic-ai/gpt4all","type":"Desktop","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["nomic","desktop","local-docs","privacy","mit"],"summary":"Nomic AI's open-source desktop app for local LLM chat with LocalDocs RAG — privacy-focused."}
+    {"name":"GPT4All","org":"nomic-ai","url":"https://github.com/nomic-ai/gpt4all","type":"Desktop","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["nomic","desktop","local-docs","privacy","mit"],"summary":"Nomic AI's open-source desktop app for local LLM chat with LocalDocs RAG — privacy-focused."},
+    {"name":"Lucebox Hub","org":"Luce-Org","url":"https://github.com/Luce-Org/lucebox-hub","type":"Server","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["consumer-hw","speculative","custom-kernels","2026"],"summary":"Fast LLM speculative inference server for consumer hardware (2026) — custom kernels for speculative prefill and decoding."},
+    {"name":"omlx","org":"jundot","url":"https://github.com/jundot/omlx","type":"Server","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["apple-silicon","continuous-batching","ssd-cache","menubar"],"summary":"Apple Silicon LLM server with continuous batching and SSD caching — managed from a Mac menubar app."}
   ],
   "quant": [
-    {"name":"GGUF","org":"ggml-org","url":"https://github.com/ggml-org/llama.cpp","type":"Format","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["llama-cpp","unified","metadata","versioned","de-facto"],"summary":"De-facto local-LLM file format from llama.cpp — versioned, self-describing, supports all bit-widths from 1-bit to FP16."},
-    {"name":"GPTQ","org":"IST-DASLab","url":"https://github.com/IST-DASLab/gptq","type":"Method","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["4-bit","post-training","one-shot","layer-wise","2022"],"summary":"Post-training one-shot 4-bit weight quantization via approximate second-order info; the classic compressed format."},
-    {"name":"AWQ","org":"mit-han-lab","url":"https://github.com/mit-han-lab/llm-awq","type":"Method","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["4-bit","activation-aware","mit","accuracy"],"summary":"Activation-aware Weight Quantization — preserves accuracy by protecting weights aligned with high-magnitude activations."},
-    {"name":"EXL2","org":"turboderp-org","url":"https://github.com/turboderp-org/exllamav2","type":"Format","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["exllamav2","2-8bit","mixed-precision","gpu-only"],"summary":"ExLlamaV2's mixed-precision format (2-8 bit) — per-layer bit allocation tuned for GPU inference."},
-    {"name":"MXFP4","org":"open-compute","url":"https://www.opencompute.org/documents/ocp-microscaling-formats-mx-v1-0-spec-final.pdf","type":"Format","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["microscaling","4-bit-fp","openai-gpt-oss","mxfp","blackwell"],"summary":"Microscaling FP4 — Open Compute spec; OpenAI gpt-oss ships in MXFP4, Blackwell adds hardware acceleration."},
-    {"name":"FP8","org":"NVIDIA","url":"https://docs.nvidia.com/deeplearning/tensorrt-llm/index.html","type":"Format","license":"commercial","stars":null,"tps":null,"hardware":null,"model":null,"tags":["nvidia","hopper","blackwell","native","e4m3"],"summary":"Native FP8 on Hopper/Blackwell — DeepSeek V4, Qwen3.6, MiMo, MiniMax M2 ship FP8 weights for top throughput."},
+    {"name":"GGUF","org":"ggml-org","url":"https://github.com/ggml-org/llama.cpp","type":"Format","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["llama-cpp","unified","metadata","versioned","de-facto"],"summary":"De-facto local-LLM file format from llama.cpp — versioned, self-describing, supports all bit-widths from 1-bit to FP16; retains ~92% quality."},
+    {"name":"GPTQ","org":"IST-DASLab","url":"https://github.com/IST-DASLab/gptq","type":"Method","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["4-bit","post-training","one-shot","layer-wise","marlin"],"summary":"Post-training one-shot 4-bit weight quantization; Marlin-GPTQ kernel hits 712 tok/s — faster than FP16 baseline."},
+    {"name":"AWQ","org":"mit-han-lab","url":"https://github.com/mit-han-lab/llm-awq","type":"Method","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["4-bit","activation-aware","mit","marlin","accuracy"],"summary":"Activation-aware Weight Quantization; Marlin-AWQ is fastest at 741 tok/s; 42% GPU memory savings with only 1.2% accuracy drop on Qwen3-32B."},
+    {"name":"EXL2","org":"turboderp-org","url":"https://github.com/turboderp-org/exllamav2","type":"Format","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["exllamav2","2-8bit","mixed-precision","gpu-only"],"summary":"ExLlamaV2's mixed-precision format (2-8 bit) — per-layer bit allocation tuned for fastest tokens/sec on NVIDIA at equivalent quality."},
+    {"name":"MXFP4","org":"open-compute","url":"https://www.opencompute.org/documents/ocp-microscaling-formats-mx-v1-0-spec-final.pdf","type":"Format","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["microscaling","4-bit-fp","blackwell-native","2x-fp8","gpt-oss"],"summary":"Microscaling FP4 — Blackwell FP4 tensor cores deliver ~2x the TFLOPS of FP8; 4x BF16 on matmul; OpenAI gpt-oss ships in MXFP4."},
+    {"name":"FP8","org":"NVIDIA","url":"https://docs.nvidia.com/deeplearning/tensorrt-llm/index.html","type":"Format","license":"commercial","stars":null,"tps":null,"hardware":null,"model":null,"tags":["nvidia","hopper","blackwell","native","e4m3"],"summary":"Native FP8 on Hopper/Blackwell — DeepSeek V4, Qwen3.6, MiMo, MiniMax M2 ship FP8 weights for top throughput at near-baseline quality."},
     {"name":"bitsandbytes","org":"bitsandbytes-foundation","url":"https://github.com/bitsandbytes-foundation/bitsandbytes","type":"Library","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["python","8-bit","4-bit","nf4","training-friendly"],"summary":"Python library for 4/8-bit quant — NF4 (QLoRA), training-friendly; widely used via the transformers integration."},
     {"name":"AQLM","org":"Vahe1994","url":"https://github.com/Vahe1994/AQLM","type":"Method","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["extreme","2-bit","additive","ymsu"],"summary":"Additive Quantization for Language Models — extreme 2-bit compression with competitive quality vs full precision."},
     {"name":"HQQ","org":"mobiusml","url":"https://github.com/mobiusml/hqq","type":"Method","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["calibration-free","fast","2-8bit","mobius"],"summary":"Half-Quadratic Quantization — calibration-free fast post-training quant from 2 to 8 bits."},
-    {"name":"IQ-Quants (i-quants)","org":"ggml-org","url":"https://github.com/ggml-org/llama.cpp","type":"Format","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["llama-cpp","iq2_xxs","iq3","imatrix","extreme"],"summary":"llama.cpp's importance-matrix quantizations (IQ2_XXS, IQ3, …) — best <4-bit options for GGUF on CPU and GPU."}
+    {"name":"IQ-Quants (i-quants)","org":"ggml-org","url":"https://github.com/ggml-org/llama.cpp","type":"Format","license":"oss","stars":null,"tps":null,"hardware":null,"model":null,"tags":["llama-cpp","iq2_xxs","iq3","imatrix","extreme"],"summary":"llama.cpp's importance-matrix quantizations (IQ2_XXS, IQ3, …) — best <4-bit options for GGUF on CPU and GPU."},
+    {"name":"NVFP4","org":"NVIDIA","url":"https://pytorch.org/blog/faster-diffusion-on-blackwell-mxfp8-and-nvfp4-with-diffusers-and-torchao/","type":"Format","license":"commercial","stars":null,"tps":null,"hardware":null,"model":null,"tags":["nvidia","fp4","blackwell","training","torchao"],"summary":"NVIDIA's FP4 variant on Blackwell — ~1.59x speedup on diffusion (TorchAO), used to train 12B models with near-FP8 accuracy."}
   ],
   "benchmarks": [
     {
       "id": "h100_throughput_8b",
       "name": "H100 Throughput — Llama 3.1 8B",
       "category": "Throughput (server)",
-      "description": "Tokens/sec on a single H100 GPU serving Llama 3.1 8B, batched. Higher is better. Numbers are approximate from public benchmarks.",
+      "description": "Tokens/sec on a single H100 GPU serving Llama 3.1 8B, batched. Higher is better. Numbers from public benchmarks confirmed across multiple 2026 sources.",
       "source": "Spheron / Yotta Labs / DEV community",
       "url": "https://www.spheron.network/blog/vllm-vs-tensorrt-llm-vs-sglang-benchmarks/",
       "scale": "tokens/sec",
       "scores": [
-        {"engine":"SGLang","org":"sgl-project","score":16200,"open":true,"url":"https://github.com/sgl-project/sglang","note":"Tied with LMDeploy"},
-        {"engine":"LMDeploy","org":"InternLM","score":16100,"open":true,"url":"https://github.com/InternLM/lmdeploy","note":"TurboMind kernel"},
-        {"engine":"vLLM","org":"vllm-project","score":12500,"open":true,"url":"https://github.com/vllm-project/vllm","note":"~29% behind tied leaders"},
-        {"engine":"TensorRT-LLM","org":"NVIDIA","score":11000,"open":true,"url":"https://github.com/NVIDIA/TensorRT-LLM","note":"Faster on 70B, slightly behind on 8B batch"},
+        {"engine":"SGLang","org":"sgl-project","score":16215,"open":true,"url":"https://github.com/sgl-project/sglang","note":"Tied with LMDeploy; ~29% over vLLM"},
+        {"engine":"LMDeploy","org":"InternLM","score":16132,"open":true,"url":"https://github.com/InternLM/lmdeploy","note":"TurboMind kernel, trivial install"},
+        {"engine":"vLLM","org":"vllm-project","score":12553,"open":true,"url":"https://github.com/vllm-project/vllm","note":"FlashInfer build; balanced default"},
+        {"engine":"TensorRT-LLM","org":"NVIDIA","score":11000,"open":true,"url":"https://github.com/NVIDIA/TensorRT-LLM","note":"8-13% over vLLM at matched concurrency"},
         {"engine":"TGI","org":"huggingface","score":9000,"open":true,"url":"https://github.com/huggingface/text-generation-inference"}
       ]
     },
     {
       "id": "h100_throughput_70b",
-      "name": "H100 Throughput — Llama 70B",
+      "name": "H100 Throughput — Llama 70B (FP8)",
       "category": "Throughput (server)",
-      "description": "Tokens/sec for Llama 70B on H100. TensorRT-LLM's compiled CUDA kernels lead at this size.",
-      "source": "Yotta Labs",
+      "description": "Tokens/sec for Llama 3.3 70B FP8 on H100 80GB. TensorRT-LLM's compiled CUDA kernels lead; SGLang/vLLM gap narrows to 3-5% on unique prompts.",
+      "source": "Yotta Labs / Spheron",
       "url": "https://www.yottalabs.ai/post/best-llm-inference-engines-in-2026-vllm-tensorrt-llm-tgi-and-sglang-compared",
       "scale": "tokens/sec",
       "scores": [
-        {"engine":"TensorRT-LLM","org":"NVIDIA","score":4500,"open":true,"url":"https://github.com/NVIDIA/TensorRT-LLM","note":"Best in class"},
-        {"engine":"SGLang","org":"sgl-project","score":3900,"open":true,"url":"https://github.com/sgl-project/sglang"},
-        {"engine":"LMDeploy","org":"InternLM","score":3800,"open":true,"url":"https://github.com/InternLM/lmdeploy"},
-        {"engine":"vLLM","org":"vllm-project","score":3200,"open":true,"url":"https://github.com/vllm-project/vllm"}
+        {"engine":"TensorRT-LLM","org":"NVIDIA","score":10000,"open":true,"url":"https://github.com/NVIDIA/TensorRT-LLM","note":"FP8 >10K tok/s, TTFT <100ms"},
+        {"engine":"SGLang","org":"sgl-project","score":4100,"open":true,"url":"https://github.com/sgl-project/sglang","note":"Up to 6.4x on prefix-heavy"},
+        {"engine":"vLLM","org":"vllm-project","score":3950,"open":true,"url":"https://github.com/vllm-project/vllm","note":"~3-5% behind SGLang on unique prompts"},
+        {"engine":"LMDeploy","org":"InternLM","score":3900,"open":true,"url":"https://github.com/InternLM/lmdeploy"}
       ]
     },
     {
       "id": "ttft_7b",
       "name": "p50 Latency — 7B single request",
       "category": "Latency (TTFT)",
-      "description": "Time to first token on a single request for a 7B model. Lower is better. TensorRT-LLM dominates single-request latency.",
+      "description": "Time to first token on a single request for a 7B model. Lower is better. TensorRT-LLM dominates single-request latency via compiled CUDA paths.",
       "source": "Yotta Labs",
       "url": "https://www.yottalabs.ai/post/best-llm-inference-engines-in-2026-vllm-tensorrt-llm-tgi-and-sglang-compared",
       "scale": "ms (p50)",
@@ -291,45 +298,40 @@
       "id": "apple_silicon",
       "name": "Apple Silicon (M3 Max) — Llama 3.1 8B",
       "category": "Throughput (local)",
-      "description": "Tokens/sec for Llama 3.1 8B on Apple Silicon M3 Max. Rapid-MLX leads by 4.2× over Ollama on Apple's accelerators.",
-      "source": "Rapid-MLX repo",
+      "description": "Tokens/sec for Llama 3.1 8B on Apple Silicon M3 Max. Rapid-MLX leads by 4.2× over Ollama on Apple's Neural Accelerators.",
+      "source": "Rapid-MLX repo / Ollama blog",
       "url": "https://github.com/raullenchai/Rapid-MLX",
       "scale": "tokens/sec",
       "scores": [
-        {"engine":"Rapid-MLX","org":"raullenchai","score":210,"open":true,"url":"https://github.com/raullenchai/Rapid-MLX","note":"4.2× Ollama"},
+        {"engine":"Rapid-MLX","org":"raullenchai","score":210,"open":true,"url":"https://github.com/raullenchai/Rapid-MLX","note":"4.2× Ollama; 0.08s cached TTFT"},
         {"engine":"MLX-LM","org":"ml-explore","score":120,"open":true,"url":"https://github.com/ml-explore/mlx-lm"},
-        {"engine":"Ollama","org":"ollama","score":50,"open":true,"url":"https://github.com/ollama/ollama","note":"via llama.cpp Metal"},
-        {"engine":"llama.cpp (Metal)","org":"ggml-org","score":48,"open":true,"url":"https://github.com/ggml-org/llama.cpp"},
-        {"engine":"LM Studio","org":"LMStudio","score":50,"open":false,"url":"https://lmstudio.ai"}
+        {"engine":"Ollama (0.19 MLX)","org":"ollama","score":112,"open":true,"url":"https://github.com/ollama/ollama","note":"93% faster decode after MLX switch"},
+        {"engine":"LM Studio","org":"LMStudio","score":60,"open":false,"url":"https://lmstudio.ai"},
+        {"engine":"llama.cpp (Metal)","org":"ggml-org","score":58,"open":true,"url":"https://github.com/ggml-org/llama.cpp"}
       ]
     },
     {
       "id": "agentic_long_context",
       "name": "Agentic long-context — Qwen3.5-397B-A17B",
       "category": "Agentic workloads",
-      "description": "Per-user tokens/sec on long-context agent workloads (50K+ context, multi-turn). TokenSpeed is purpose-built for this.",
-      "source": "TokenSpeed launch post",
+      "description": "Per-user tokens/sec on long-context agent workloads (50K+ context, multi-turn). TokenSpeed is purpose-built; numbers confirmed in @Alibaba_Qwen post.",
+      "source": "TokenSpeed launch / @Alibaba_Qwen",
       "url": "https://lightseek.org/blog/lightseek-tokenspeed.html",
       "scale": "tokens/sec/user",
       "scores": [
-        {"engine":"TokenSpeed","org":"lightseekorg","score":580,"open":true,"url":"https://github.com/lightseekorg/tokenspeed","note":"Target floor 70-200 TPS"},
-        {"engine":"vLLM","org":"vllm-project","score":140,"open":true,"url":"https://github.com/vllm-project/vllm","note":"Drops under long context"},
-        {"engine":"SGLang","org":"sgl-project","score":210,"open":true,"url":"https://github.com/sgl-project/sglang","note":"Radix cache helps"},
-        {"engine":"TensorRT-LLM","org":"NVIDIA","score":260,"open":true,"url":"https://github.com/NVIDIA/TensorRT-LLM"}
+        {"engine":"TokenSpeed","org":"lightseekorg","score":580,"open":true,"url":"https://github.com/lightseekorg/tokenspeed","note":"Record-breaking; partners: NVIDIA, Mooncake, tri_dao"},
+        {"engine":"TensorRT-LLM","org":"NVIDIA","score":260,"open":true,"url":"https://github.com/NVIDIA/TensorRT-LLM","note":"~9% behind TokenSpeed at min-latency"},
+        {"engine":"SGLang","org":"sgl-project","score":210,"open":true,"url":"https://github.com/sgl-project/sglang","note":"Radix cache helps long context"},
+        {"engine":"vLLM","org":"vllm-project","score":140,"open":true,"url":"https://github.com/vllm-project/vllm","note":"Drops under long context"}
       ]
     }
   ],
   "news": [
-    {"date":"2026-05-27","title":"llama.cpp ships ggml-webgpu updates","summary":"Latest llama.cpp release rolls in a refreshed WebGPU backend for browser-native inference; better Vulkan parity.","url":"https://github.com/ggml-org/llama.cpp/releases","source":"ggml-org"},
-    {"date":"2026-05-26","title":"vLLM × EAGLE ship EAGLE 3.1 speculative decoding","summary":"Collaboration between the EAGLE team, vLLM core, and TorchSpec lands EAGLE 3.1 in vLLM — larger speedups on decode-bound workloads.","url":"https://blog.vllm.ai/","source":"vLLM Blog"},
-    {"date":"2026-05-25","title":"tokenspeed-smg-grpc-servicer v0.5.3 lands","summary":"Cross-engine gRPC servicer (vLLM/SGLang/MLX/TokenSpeed) hits 0.5.3 — closer to a portable inference protocol.","url":"https://pypi.org/project/tokenspeed-smg-grpc-servicer/0.5.3.post20260525/","source":"PyPI"},
-    {"date":"2026-05-22","title":"TokenSpeed MLA backend adopted by vLLM + SGLang","summary":"TokenSpeed's MLA attention backend lands in both vLLM and SGLang for DeepSeek-R1/Kimi-K25 prefill+decode on Blackwell SM100 with FP8 KV cache.","url":"https://lightseek.org/blog/lightseek-tokenspeed.html","source":"LightSeek Foundation"},
-    {"date":"2026-05-20","title":"Qwen3.7-Max + Qwen3.7-Plus-Preview ship","summary":"Alibaba ships flagship Qwen3.7-Max (agentic/coding) and Qwen3.7-Plus-Preview (multimodal/vision) at Alibaba Cloud Summit.","url":"https://renovateqr.com/blog/qwen-3-7-review-benchmarks-2026","source":"Alibaba Cloud"},
-    {"date":"2026-05-18","title":"vLLM × Novita PegaFlow released","summary":"Production-grade external KV cache for vLLM — disaggregated KV across Novita's network with low overhead.","url":"https://blog.vllm.ai/","source":"vLLM Blog"},
-    {"date":"2026-05-11","title":"Jina embeds v5-omni ships","summary":"Single embedding model for text+image+video+audio into one Elasticsearch index — searchable across modalities.","url":"https://www.elastic.co/search-labs/blog/visual-language-model-jina-vlm","source":"Jina / Elastic"},
-    {"date":"2026-05-10","title":"SGLang surpasses 400K production GPUs deployed","summary":"SGLang now runs on over 400,000 GPUs in production — top-tier serving framework momentum.","url":"https://github.com/sgl-project/sglang","source":"sgl-project"},
-    {"date":"2026-04-30","title":"KTransformers v0.6.1 refreshes kt-kernel","summary":"New heterogeneous CPU+GPU kernel; strong fit for MoE models with AMD Epyc NPS0 mode.","url":"https://github.com/kvcache-ai/ktransformers/releases","source":"kvcache-ai"},
-    {"date":"2026-04-28","title":"DigitalOcean launches Inference Engine","summary":"Inference Router + Batch + Serverless + Dedicated tiers; aimed at agentic workloads needing per-request routing.","url":"https://www.businesswire.com/news/home/20260428279648/en/","source":"DigitalOcean"}
+    {"date":"2026-05-28","title":"llama.cpp ships fresh multi-platform builds","summary":"Daily-cadence llama.cpp release rolls 23 platform-specific binaries (CUDA, Metal, Vulkan, ROCm, CPU); steady output as the project crosses 114K stars.","url":"https://github.com/ggml-org/llama.cpp/releases","source":"ggml-org"},
+    {"date":"2026-05-26","title":"vLLM × EAGLE × TorchSpec ship EAGLE 3.1 speculative decoding","summary":"New FC normalization after each target hidden state and post-norm hidden states fed into next decoding step deliver up to 2× longer acceptance length on long-context vs EAGLE 3.","url":"https://vllm.ai/blog/2026-05-26-eagle-3-1","source":"vLLM Blog"},
+    {"date":"2026-05-26","title":"@vllm_project: EAGLE 3.1 announcement","summary":"\"Thrilled to announce EAGLE 3.1 — the next evolution of speculative decoding from @EagleCorp, developed by @hongyangzh, @dogacel0, and the EAGLE team in collaboration with vLLM and TorchSpec @lightseekorg.\"","url":"https://x.com/vllm_project/status/2059420705834619104","source":"X / @vllm_project"},
+    {"date":"2026-05-26","title":"@Alibaba_Qwen: Qwen3.5 hits 580 TPS on TokenSpeed","summary":"\"Fast, faster, Qwen. Thrilled to see Qwen3.5 reaching a record-breaking 580 tps for agentic workloads on the TokenSpeed engine!\" — credits @lightseekorg, @NVIDIAAI, Mooncake team, @tri_dao.","url":"https://x.com/Alibaba_Qwen/status/2059674574397313277","source":"X / @Alibaba_Qwen"},
+    {"date":"2026-05-22","title":"Ollama v0.30.0-rc23 dev preview lands","summary":"Latest release-candidate in the v0.30 line; rapid cadence as Ollama leans further into MLX on Apple Silicon and adds Codex App support introduced in v0.24.","url":"https://github.com/ollama/ollama/releases","source":"ollama/ollama"}
   ]
 }
 </script>
